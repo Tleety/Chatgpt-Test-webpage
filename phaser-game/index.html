@@ -4,16 +4,23 @@
   <meta charset="UTF-8">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <title>Simple Phaser Game</title>
+  <link rel="stylesheet" href="../style.css">
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
-    body { font-family: sans-serif; text-align: center; }
+    main { text-align: center; }
     #game { margin: 0 auto; }
   </style>
 </head>
 <body>
-  <h1>Simple Phaser Game</h1>
-  <p>This minimal example uses Phaser 3 to animate a logo bouncing around the screen. Use the arrow keys to steer the logo and click anywhere to spawn more logos. Feel free to explore the code in `phaser-game/index.html`.</p>
-  <div id="game"></div>
+  <header class="top-bar">
+    <img src="../favicon.svg" alt="Site logo" class="logo">
+    <span class="title">My GitHub Page</span>
+  </header>
+  <main>
+    <h1>Simple Phaser Game</h1>
+    <p>This minimal example uses Phaser 3 to animate a logo bouncing around the screen. Use the arrow keys to steer the logo and click anywhere to spawn more logos. Feel free to explore the code in <code>phaser-game/index.html</code>.</p>
+    <div id="game"></div>
+  </main>
   <script>
     let player;
     let cursors;
