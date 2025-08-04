@@ -4,16 +4,32 @@
     <meta charset="UTF-8">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <title>My GitHub Page</title>
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>Hello from GitHub Pages!</h1>
-    <p>This page is hosted entirely on GitHub.</p>
-    <h2>Projects</h2>
-    <ul>
-      <li><a href="jekyll-site/index.html">Simple Jekyll Project</a> – a minimal static page generated with Jekyll.</li>
-      <li><a href="phaser-game/index.html">Simple Phaser Game</a> – a small interactive demo built with Phaser.</li>
-      <li><a href="go-wasm-game/index.html">Go WASM Game</a> – a tiny square you can move with the arrow keys, built in Go and compiled to WebAssembly.</li>
-    </ul>
-    <p>Click a link above to explore the project directories.</p>
+    <header class="top-bar">
+      <img src="favicon.svg" alt="Site logo" class="logo">
+      <span class="title">My GitHub Page</span>
+    </header>
+    <main>
+      <section class="hero">
+        <h1>Welcome!</h1>
+        <p>Select a project to explore.</p>
+      </section>
+      <section class="projects">
+        <a class="project-card" href="jekyll-site/index.html">
+          <div class="project-icon">📝</div>
+          <div class="project-name">Simple Jekyll Project</div>
+        </a>
+        <a class="project-card" href="phaser-game/index.html">
+          <div class="project-icon">🎮</div>
+          <div class="project-name">Simple Phaser Game</div>
+        </a>
+        <a class="project-card" href="go-wasm-game/index.html">
+          <div class="project-icon">🎮</div>
+          <div class="project-name">go-wasm-game</div>
+        </a>
+      </section>
+    </main>
   </body>
 </html>
