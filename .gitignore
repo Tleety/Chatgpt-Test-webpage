@@ -1,7 +1,3 @@
 *.wasm
 node_modules/
 coverage/
-
-# Auto-generated Jekyll files
-jekyll-site/_includes/README.md
-jekyll-site/_site/
