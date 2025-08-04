@@ -5,7 +5,6 @@
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <title>Snake Game</title>
   <link rel="stylesheet" href="../style.css">
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
     main { 
       text-align: center; 
@@ -16,9 +15,28 @@
       justify-content: center;
       padding: 20px;
     }
-    #game { 
+    #gameContainer { 
       margin: 20px auto;
-      display: inline-block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    #gameCanvas { 
+      border: 2px solid #333;
+      background: #000;
+      display: block;
+    }
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    #gameOver {
+      color: #ff0000;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -30,87 +48,108 @@
   <main>
     <h1>Snake Game</h1>
     <p>Use the arrow keys to move the snake and eat the red squares. Don't run into the walls or yourself!</p>
-    <div id="game"></div>
+    <div id="gameContainer">
+      <div id="score">Score: 0</div>
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <div id="gameOver" style="display: none;">Game Over! Press SPACE to restart</div>
+    </div>
   </main>
+  <script src="../snake-game-logic.js"></script>
   <script>
-    const CELL_SIZE = 20;
-    let cursors;
-    const config = {
-      type: Phaser.AUTO,
-      width: 800,
-      height: 600,
-      backgroundColor: '#000',
-      parent: 'game',
-      scene: {
-        create,
-        update
+    // Canvas-based Snake Game Implementation
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const gameOverElement = document.getElementById('gameOver');
+    
+    // Game state
+    let game = new SnakeGameLogic(800, 600);
+    let gameRunning = true;
+    let lastFrameTime = 0;
+    const frameDelay = 150; // milliseconds between moves
+    
+    // Input handling
+    const keys = {};
+    document.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      
+      if (e.code === 'Space' && !gameRunning) {
+        restartGame();
+        e.preventDefault();
       }
-    };
-
-    function create() {
-      this.snake = [];
-      this.direction = { x: CELL_SIZE, y: 0 };
-      cursors = this.input.keyboard.createCursorKeys();
-      this.score = 0;
-      this.scoreText = this.add.text(10, 10, 'Score: 0', { font: '20px Arial', fill: '#fff' });
-
-      const startX = Math.floor(config.width / 2 / CELL_SIZE) * CELL_SIZE;
-      const startY = Math.floor(config.height / 2 / CELL_SIZE) * CELL_SIZE;
-      const head = this.add.rectangle(startX, startY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
-      this.snake.push(head);
-
-      this.food = this.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, 0xff0000).setOrigin(0);
-      placeFood.call(this);
-
-      this.time.addEvent({ delay: 150, callback: move, callbackScope: this, loop: true });
-    }
-
-    function update() {
-      if (cursors.left.isDown && this.direction.x === 0) {
-        this.direction = { x: -CELL_SIZE, y: 0 };
-      } else if (cursors.right.isDown && this.direction.x === 0) {
-        this.direction = { x: CELL_SIZE, y: 0 };
-      } else if (cursors.up.isDown && this.direction.y === 0) {
-        this.direction = { x: 0, y: -CELL_SIZE };
-      } else if (cursors.down.isDown && this.direction.y === 0) {
-        this.direction = { x: 0, y: CELL_SIZE };
+    });
+    
+    document.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+    
+    // Game functions
+    function handleInput() {
+      if (keys['ArrowLeft'] && game.direction.x === 0) {
+        game.changeDirection({ x: -20, y: 0 });
+      } else if (keys['ArrowRight'] && game.direction.x === 0) {
+        game.changeDirection({ x: 20, y: 0 });
+      } else if (keys['ArrowUp'] && game.direction.y === 0) {
+        game.changeDirection({ x: 0, y: -20 });
+      } else if (keys['ArrowDown'] && game.direction.y === 0) {
+        game.changeDirection({ x: 0, y: 20 });
       }
     }
-
-    function move() {
-      const head = this.snake[0];
-      const newX = head.x + this.direction.x;
-      const newY = head.y + this.direction.y;
-
-      if (newX < 0 || newX >= config.width || newY < 0 || newY >= config.height ||
-          this.snake.some(seg => seg.x === newX && seg.y === newY)) {
-        this.scene.restart();
-        return;
-      }
-
-      const newHead = this.add.rectangle(newX, newY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
-      this.snake.unshift(newHead);
-
-      if (newX === this.food.x && newY === this.food.y) {
-        placeFood.call(this);
-        this.score += 1;
-        this.scoreText.setText('Score: ' + this.score);
-      } else {
-        const tail = this.snake.pop();
-        tail.destroy();
-      }
+    
+    function render() {
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const state = game.getGameState();
+      
+      // Draw snake
+      ctx.fillStyle = '#00ff00';
+      state.snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, game.CELL_SIZE, game.CELL_SIZE);
+      });
+      
+      // Draw food
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(state.food.x, state.food.y, game.CELL_SIZE, game.CELL_SIZE);
+      
+      // Update score
+      scoreElement.textContent = `Score: ${state.score}`;
     }
-
-    function placeFood() {
-      let x, y;
-      do {
-        x = Math.floor(Math.random() * config.width / CELL_SIZE) * CELL_SIZE;
-        y = Math.floor(Math.random() * config.height / CELL_SIZE) * CELL_SIZE;
-      } while (this.snake.some(seg => seg.x === x && seg.y === y));
-      this.food.setPosition(x, y);
+    
+    function gameLoop(currentTime) {
+      if (!gameRunning) return;
+      
+      handleInput();
+      
+      // Move snake at fixed intervals
+      if (currentTime - lastFrameTime >= frameDelay) {
+        const result = game.moveSnake();
+        
+        if (result.collision) {
+          gameRunning = false;
+          gameOverElement.style.display = 'block';
+          return;
+        }
+        
+        lastFrameTime = currentTime;
+      }
+      
+      render();
+      requestAnimationFrame(gameLoop);
     }
-
-    new Phaser.Game(config);
+    
+    function restartGame() {
+      game.reset();
+      gameRunning = true;
+      gameOverElement.style.display = 'none';
+      lastFrameTime = 0;
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Start the game
+    render();
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
