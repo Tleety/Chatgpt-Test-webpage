@@ -7,8 +7,19 @@
   <link rel="stylesheet" href="../style.css">
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
-    main { text-align: center; }
-    #game { margin: 0 auto; }
+    main { 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: calc(100vh - 60px); /* Account for header height */
+      justify-content: center;
+      padding: 20px;
+    }
+    #game { 
+      margin: 20px auto;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -29,6 +40,7 @@
       width: 800,
       height: 600,
       backgroundColor: '#000',
+      parent: 'game',
       scene: {
         create,
         update
