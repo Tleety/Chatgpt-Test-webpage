@@ -21,6 +21,21 @@ body {
   font-size: 1.5em;
 }
 
+.top-bar .navigation {
+  margin-left: auto;
+  display: flex;
+  gap: 15px;
+}
+
+.top-bar .navigation a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.top-bar .navigation a:hover {
+  text-decoration: underline;
+}
+
 .hero {
   text-align: center;
   padding: 40px 20px 10px;
