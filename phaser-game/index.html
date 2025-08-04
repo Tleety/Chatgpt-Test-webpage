@@ -39,6 +39,8 @@
       this.snake = [];
       this.direction = { x: CELL_SIZE, y: 0 };
       cursors = this.input.keyboard.createCursorKeys();
+      this.score = 0;
+      this.scoreText = this.add.text(10, 10, 'Score: 0', { font: '20px Arial', fill: '#fff' });
 
       const startX = Math.floor(config.width / 2 / CELL_SIZE) * CELL_SIZE;
       const startY = Math.floor(config.height / 2 / CELL_SIZE) * CELL_SIZE;
@@ -79,6 +81,8 @@
 
       if (newX === this.food.x && newY === this.food.y) {
         placeFood.call(this);
+        this.score += 1;
+        this.scoreText.setText('Score: ' + this.score);
       } else {
         const tail = this.snake.pop();
         tail.destroy();
