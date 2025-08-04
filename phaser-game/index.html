@@ -32,9 +32,14 @@
     <p>Use the arrow keys to move the snake and eat the red squares. Don't run into the walls or yourself!</p>
     <div id="game"></div>
   </main>
+  <script src="snake-game.js"></script>
   <script>
     const CELL_SIZE = 20;
     let cursors;
+    let gameLogic;
+    let snakeSegments = [];
+    let foodSprite;
+    
     const config = {
       type: Phaser.AUTO,
       width: 800,
@@ -48,66 +53,83 @@
     };
 
     function create() {
-      this.snake = [];
-      this.direction = { x: CELL_SIZE, y: 0 };
+      // Initialize game logic
+      gameLogic = new SnakeGame({ width: config.width, height: config.height });
+      gameLogic.initGame();
+      
       cursors = this.input.keyboard.createCursorKeys();
-      this.score = 0;
       this.scoreText = this.add.text(10, 10, 'Score: 0', { font: '20px Arial', fill: '#fff' });
 
-      const startX = Math.floor(config.width / 2 / CELL_SIZE) * CELL_SIZE;
-      const startY = Math.floor(config.height / 2 / CELL_SIZE) * CELL_SIZE;
-      const head = this.add.rectangle(startX, startY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
-      this.snake.push(head);
+      // Create visual snake segments
+      snakeSegments = [];
+      const state = gameLogic.getGameState();
+      state.snake.forEach(segment => {
+        const segmentSprite = this.add.rectangle(segment.x, segment.y, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
+        snakeSegments.push(segmentSprite);
+      });
 
-      this.food = this.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, 0xff0000).setOrigin(0);
-      placeFood.call(this);
+      // Create food sprite
+      foodSprite = this.add.rectangle(state.food.x, state.food.y, CELL_SIZE, CELL_SIZE, 0xff0000).setOrigin(0);
 
       this.time.addEvent({ delay: 150, callback: move, callbackScope: this, loop: true });
     }
 
     function update() {
-      if (cursors.left.isDown && this.direction.x === 0) {
-        this.direction = { x: -CELL_SIZE, y: 0 };
-      } else if (cursors.right.isDown && this.direction.x === 0) {
-        this.direction = { x: CELL_SIZE, y: 0 };
-      } else if (cursors.up.isDown && this.direction.y === 0) {
-        this.direction = { x: 0, y: -CELL_SIZE };
-      } else if (cursors.down.isDown && this.direction.y === 0) {
-        this.direction = { x: 0, y: CELL_SIZE };
+      if (cursors.left.isDown) {
+        gameLogic.changeDirection({ x: -CELL_SIZE, y: 0 });
+      } else if (cursors.right.isDown) {
+        gameLogic.changeDirection({ x: CELL_SIZE, y: 0 });
+      } else if (cursors.up.isDown) {
+        gameLogic.changeDirection({ x: 0, y: -CELL_SIZE });
+      } else if (cursors.down.isDown) {
+        gameLogic.changeDirection({ x: 0, y: CELL_SIZE });
       }
     }
 
     function move() {
-      const head = this.snake[0];
-      const newX = head.x + this.direction.x;
-      const newY = head.y + this.direction.y;
-
-      if (newX < 0 || newX >= config.width || newY < 0 || newY >= config.height ||
-          this.snake.some(seg => seg.x === newX && seg.y === newY)) {
-        this.scene.restart();
+      const result = gameLogic.moveSnake();
+      
+      if (result.gameOver) {
+        // Reset game logic
+        gameLogic.initGame();
+        
+        // Clear old visual elements
+        snakeSegments.forEach(segment => segment.destroy());
+        snakeSegments = [];
+        
+        // Create new visual snake
+        const state = gameLogic.getGameState();
+        state.snake.forEach(segment => {
+          const segmentSprite = this.add.rectangle(segment.x, segment.y, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
+          snakeSegments.push(segmentSprite);
+        });
+        
+        // Update food position
+        foodSprite.setPosition(state.food.x, state.food.y);
+        
+        // Update score display
+        this.scoreText.setText('Score: ' + gameLogic.score);
         return;
       }
 
-      const newHead = this.add.rectangle(newX, newY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
-      this.snake.unshift(newHead);
-
-      if (newX === this.food.x && newY === this.food.y) {
-        placeFood.call(this);
-        this.score += 1;
-        this.scoreText.setText('Score: ' + this.score);
-      } else {
-        const tail = this.snake.pop();
-        tail.destroy();
-      }
-    }
-
-    function placeFood() {
-      let x, y;
-      do {
-        x = Math.floor(Math.random() * config.width / CELL_SIZE) * CELL_SIZE;
-        y = Math.floor(Math.random() * config.height / CELL_SIZE) * CELL_SIZE;
-      } while (this.snake.some(seg => seg.x === x && seg.y === y));
-      this.food.setPosition(x, y);
+      // Update visual representation
+      const state = gameLogic.getGameState();
+      
+      // Remove old snake segments
+      snakeSegments.forEach(segment => segment.destroy());
+      snakeSegments = [];
+      
+      // Create new snake segments
+      state.snake.forEach(segment => {
+        const segmentSprite = this.add.rectangle(segment.x, segment.y, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
+        snakeSegments.push(segmentSprite);
+      });
+      
+      // Update food position if needed
+      foodSprite.setPosition(state.food.x, state.food.y);
+      
+      // Update score
+      this.scoreText.setText('Score: ' + state.score);
     }
 
     new Phaser.Game(config);
