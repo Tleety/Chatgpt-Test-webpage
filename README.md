@@ -37,6 +37,20 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
+## Testing
+
+Unit tests are available for the Snake game logic:
+
+```bash
+# Install test dependencies
+npm install
+
+# Run tests
+npm test
+```
+
+See [TESTING.md](TESTING.md) for detailed information about the test suite.
+
 ## License
 
 The Go runtime file `wasm_exec.js` is licensed under the BSD-style license from the Go authors.

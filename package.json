@@ -1,0 +1,21 @@
+{
+  "name": "chatgpt-test-webpage",
+  "version": "1.0.0",
+  "description": "A GitHub Pages site with web projects including a Snake game",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "@jest/globals": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/?(*.)+(spec|test).js"
+    ]
+  }
+}
