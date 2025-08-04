@@ -42,8 +42,11 @@
     function create () {
         this.add.image(400, 300, 'sky');
 
-        const particles = this.add.particles('red');
-        const emitter = particles.createEmitter({
+        // Phaser 3.60 removed ParticleEmitterManager.createEmitter. Instead,
+        // the emitter is created directly via this.add.particles, which now
+        // returns a ParticleEmitter instance. See the Phaser 3.60 migration
+        // guide for details.
+        const emitter = this.add.particles(0, 0, 'red', {
             speed: 100,
             scale: { start: 1, end: 0 },
             blendMode: 'ADD'
