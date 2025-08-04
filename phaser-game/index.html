@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-  <title>Simple Phaser Game</title>
+  <title>Snake Game</title>
   <link rel="stylesheet" href="../style.css">
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
@@ -17,86 +17,84 @@
     <span class="title">My GitHub Page</span>
   </header>
   <main>
-    <h1>Simple Phaser Game</h1>
-    <p>This minimal example uses Phaser 3 to animate a logo bouncing around the screen. Use the arrow keys to steer the logo and click anywhere to spawn more logos. Feel free to explore the code in <code>phaser-game/index.html</code>.</p>
+    <h1>Snake Game</h1>
+    <p>Use the arrow keys to move the snake and eat the red squares. Don't run into the walls or yourself!</p>
     <div id="game"></div>
   </main>
   <script>
-    let player;
+    const CELL_SIZE = 20;
     let cursors;
     const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        physics: {
-            default: 'arcade',
-            arcade: {
-                gravity: { y: 200 }
-            }
-        },
-        scene: {
-            preload: preload,
-            create: create,
-            update: update
-        }
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      backgroundColor: '#000',
+      scene: {
+        create,
+        update
+      }
     };
 
-    function preload () {
-        this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-        this.load.image('logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png');
-        this.load.image('red', 'https://labs.phaser.io/assets/particles/red.png');
+    function create() {
+      this.snake = [];
+      this.direction = { x: CELL_SIZE, y: 0 };
+      cursors = this.input.keyboard.createCursorKeys();
+
+      const startX = Math.floor(config.width / 2 / CELL_SIZE) * CELL_SIZE;
+      const startY = Math.floor(config.height / 2 / CELL_SIZE) * CELL_SIZE;
+      const head = this.add.rectangle(startX, startY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
+      this.snake.push(head);
+
+      this.food = this.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, 0xff0000).setOrigin(0);
+      placeFood.call(this);
+
+      this.time.addEvent({ delay: 150, callback: move, callbackScope: this, loop: true });
     }
 
-    function create () {
-        this.add.image(400, 300, 'sky');
-
-        // Phaser 3.60 removed ParticleEmitterManager.createEmitter. Instead,
-        // the emitter is created directly via this.add.particles, which now
-        // returns a ParticleEmitter instance. See the Phaser 3.60 migration
-        // guide for details.
-        const emitter = this.add.particles(0, 0, 'red', {
-            speed: 100,
-            scale: { start: 1, end: 0 },
-            blendMode: 'ADD'
-        });
-
-        const logo = this.physics.add.image(400, 100, 'logo');
-        logo.setVelocity(100, 200);
-        logo.setBounce(1, 1);
-        logo.setCollideWorldBounds(true);
-
-        emitter.startFollow(logo);
-
-        player = logo;
-        cursors = this.input.keyboard.createCursorKeys();
-
-        this.input.on('pointerdown', (pointer) => {
-            const newLogo = this.physics.add.image(pointer.x, pointer.y, 'logo');
-            newLogo.setBounce(1, 1);
-            newLogo.setCollideWorldBounds(true);
-            newLogo.setVelocity(Phaser.Math.Between(-200, 200), Phaser.Math.Between(-200, 200));
-        });
+    function update() {
+      if (cursors.left.isDown && this.direction.x === 0) {
+        this.direction = { x: -CELL_SIZE, y: 0 };
+      } else if (cursors.right.isDown && this.direction.x === 0) {
+        this.direction = { x: CELL_SIZE, y: 0 };
+      } else if (cursors.up.isDown && this.direction.y === 0) {
+        this.direction = { x: 0, y: -CELL_SIZE };
+      } else if (cursors.down.isDown && this.direction.y === 0) {
+        this.direction = { x: 0, y: CELL_SIZE };
+      }
     }
 
-    function update () {
-        if (!cursors) {
-            return;
-        }
+    function move() {
+      const head = this.snake[0];
+      const newX = head.x + this.direction.x;
+      const newY = head.y + this.direction.y;
 
-        if (cursors.left.isDown) {
-            player.setVelocityX(-200);
-        } else if (cursors.right.isDown) {
-            player.setVelocityX(200);
-        }
+      if (newX < 0 || newX >= config.width || newY < 0 || newY >= config.height ||
+          this.snake.some(seg => seg.x === newX && seg.y === newY)) {
+        this.scene.restart();
+        return;
+      }
 
-        if (cursors.up.isDown) {
-            player.setVelocityY(-200);
-        } else if (cursors.down.isDown) {
-            player.setVelocityY(200);
-        }
+      const newHead = this.add.rectangle(newX, newY, CELL_SIZE, CELL_SIZE, 0x00ff00).setOrigin(0);
+      this.snake.unshift(newHead);
+
+      if (newX === this.food.x && newY === this.food.y) {
+        placeFood.call(this);
+      } else {
+        const tail = this.snake.pop();
+        tail.destroy();
+      }
     }
 
-    const game = new Phaser.Game(config);
+    function placeFood() {
+      let x, y;
+      do {
+        x = Math.floor(Math.random() * config.width / CELL_SIZE) * CELL_SIZE;
+        y = Math.floor(Math.random() * config.height / CELL_SIZE) * CELL_SIZE;
+      } while (this.snake.some(seg => seg.x === x && seg.y === y));
+      this.food.setPosition(x, y);
+    }
+
+    new Phaser.Game(config);
   </script>
 </body>
 </html>
