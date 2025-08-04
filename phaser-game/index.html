@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <title>Simple Phaser Game</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
@@ -11,9 +12,11 @@
 </head>
 <body>
   <h1>Simple Phaser Game</h1>
-  <p>This minimal example uses Phaser 3 to animate a logo bouncing around the screen. Feel free to explore the code in `phaser-game/index.html`.</p>
+  <p>This minimal example uses Phaser 3 to animate a logo bouncing around the screen. Use the arrow keys to steer the logo and click anywhere to spawn more logos. Feel free to explore the code in `phaser-game/index.html`.</p>
   <div id="game"></div>
   <script>
+    let player;
+    let cursors;
     const config = {
         type: Phaser.AUTO,
         width: 800,
@@ -40,8 +43,11 @@
     function create () {
         this.add.image(400, 300, 'sky');
 
-        const particles = this.add.particles('red');
-        const emitter = particles.createEmitter({
+        // Phaser 3.60 removed ParticleEmitterManager.createEmitter. Instead,
+        // the emitter is created directly via this.add.particles, which now
+        // returns a ParticleEmitter instance. See the Phaser 3.60 migration
+        // guide for details.
+        const emitter = this.add.particles(0, 0, 'red', {
             speed: 100,
             scale: { start: 1, end: 0 },
             blendMode: 'ADD'
@@ -53,9 +59,35 @@
         logo.setCollideWorldBounds(true);
 
         emitter.startFollow(logo);
+
+        player = logo;
+        cursors = this.input.keyboard.createCursorKeys();
+
+        this.input.on('pointerdown', (pointer) => {
+            const newLogo = this.physics.add.image(pointer.x, pointer.y, 'logo');
+            newLogo.setBounce(1, 1);
+            newLogo.setCollideWorldBounds(true);
+            newLogo.setVelocity(Phaser.Math.Between(-200, 200), Phaser.Math.Between(-200, 200));
+        });
     }
 
-    function update () {}
+    function update () {
+        if (!cursors) {
+            return;
+        }
+
+        if (cursors.left.isDown) {
+            player.setVelocityX(-200);
+        } else if (cursors.right.isDown) {
+            player.setVelocityX(200);
+        }
+
+        if (cursors.up.isDown) {
+            player.setVelocityY(-200);
+        } else if (cursors.down.isDown) {
+            player.setVelocityY(200);
+        }
+    }
 
     const game = new Phaser.Game(config);
   </script>
