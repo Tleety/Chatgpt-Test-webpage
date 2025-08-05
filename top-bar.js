@@ -6,24 +6,72 @@
  */
 
 function createTopBar(options = {}) {
-  // Determine the relative path to the root based on current location
-  const pathToRoot = options.pathToRoot || '';
+  // Maintain backward compatibility with pathToRoot option
+  // while supporting the new basePath system
+  let basePath;
+  
+  if (options.pathToRoot !== undefined) {
+    // Legacy API: use pathToRoot directly for backward compatibility
+    basePath = options.pathToRoot;
+  } else if (options.basePath !== undefined) {
+    // New API: use basePath
+    basePath = options.basePath;
+  } else {
+    // Auto-detect based on environment
+    basePath = getBasePath();
+  }
   
   // Create the top bar HTML
   const topBarHTML = `
     <header class="top-bar">
-      <img src="${pathToRoot}favicon.svg" alt="Site logo" class="logo">
+      <img src="${basePath}favicon.svg" alt="Site logo" class="logo">
       <span class="title">My GitHub Page</span>
       <span class="version">v1.0.0</span>
       <nav class="navigation">
-        <a href="${pathToRoot}index.html#hero">Home</a>
-        <a href="${pathToRoot}index.html#projects">Projects</a>
-        <a href="${pathToRoot}test-results.html">Test Visualizer</a>
+        <a href="${basePath}index.html#hero">Home</a>
+        <a href="${basePath}index.html#projects">Projects</a>
+        <a href="${basePath}test-results.html">Test Visualizer</a>
       </nav>
     </header>
   `;
   
   return topBarHTML;
+}
+
+function getBasePath() {
+  // Detect if we're on GitHub Pages or local development
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+  
+  // If running locally, use relative paths
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Calculate relative path based on current directory depth
+    const pathSegments = pathname.split('/').filter(segment => segment.length > 0);
+    
+    // Remove filename if present
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    if (lastSegment && lastSegment.includes('.html')) {
+      pathSegments.pop();
+    }
+    
+    const relativePath = pathSegments.length > 0 ? '../'.repeat(pathSegments.length) : '';
+    return relativePath;
+  }
+  
+  // For GitHub Pages, use absolute paths with repository base
+  // GitHub Pages serves repositories at: username.github.io/repository-name/
+  if (hostname.includes('github.io')) {
+    // Extract repository name from the path
+    const segments = pathname.split('/').filter(segment => segment.length > 0);
+    if (segments.length > 0) {
+      const repoName = segments[0];
+      const absolutePath = `/${repoName}/`;
+      return absolutePath;
+    }
+  }
+  
+  // Default to root-relative paths
+  return '/';
 }
 
 function insertTopBar(options = {}) {
@@ -45,22 +93,9 @@ function insertTopBar(options = {}) {
   }
 }
 
-// Auto-detect path depth and insert top bar when DOM is ready
+// Auto-detect path and insert top bar when DOM is ready
 function autoInsertTopBar() {
-  // Try to detect if we're in a subdirectory by looking at the current page path
-  const path = window.location.pathname;
-  const pathSegments = path.split('/').filter(segment => segment.length > 0);
-  
-  // Remove filename from path segments to count directories
-  const currentFile = pathSegments[pathSegments.length - 1];
-  if (currentFile && currentFile.includes('.html')) {
-    pathSegments.pop();
-  }
-  
-  // Calculate path to root based on directory depth
-  const pathToRoot = pathSegments.length > 0 ? '../'.repeat(pathSegments.length) : '';
-  
-  insertTopBar({ pathToRoot });
+  insertTopBar();
 }
 
 // Export functions for manual use
