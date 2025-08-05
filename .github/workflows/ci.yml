@@ -76,7 +76,7 @@ jobs:
     - name: Validate HTML structure
       run: |
         # Basic validation that HTML files are well-formed
-        find . -name "*.html" -not -path "./node_modules/*" -not -path "./_site/*" | xargs -I {} sh -c 'echo "Checking {}" && grep -q "</html>" "{}"'
+        find . -name "*.html" -not -path "./node_modules/*" -not -path "./_site/*" -not -path "./jekyll-site/vendor/*" | xargs -I {} sh -c 'echo "Checking {}" && grep -q "</html>" "{}"'
 
   deploy:
     runs-on: ubuntu-latest
