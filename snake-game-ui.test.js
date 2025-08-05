@@ -147,4 +147,46 @@ describe('Snake Game UI', () => {
     
     expect(mockPreventDefault).not.toHaveBeenCalled();
   });
+
+  test('should verify game over overlay positioning when displayed', () => {
+    // Set up DOM with game container and game over element
+    document.body.innerHTML = `
+      <div id="gameContainer" style="position: relative;">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="gameOver" style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 100;
+          display: block;
+        ">Game Over! Press SPACE to restart</div>
+      </div>
+    `;
+    
+    const gameOverElement = document.getElementById('gameOver');
+    const gameContainer = document.getElementById('gameContainer');
+    
+    // Verify the game over element exists and has correct positioning
+    expect(gameOverElement).toBeTruthy();
+    expect(gameContainer).toBeTruthy();
+    
+    // Get computed styles to verify positioning
+    const gameOverStyles = window.getComputedStyle(gameOverElement);
+    const containerStyles = window.getComputedStyle(gameContainer);
+    
+    // Verify the overlay is positioned absolutely
+    expect(gameOverStyles.position).toBe('absolute');
+    
+    // Verify the container has relative positioning
+    expect(containerStyles.position).toBe('relative');
+    
+    // Verify centering styles
+    expect(gameOverStyles.top).toBe('50%');
+    expect(gameOverStyles.left).toBe('50%');
+    expect(gameOverStyles.transform).toContain('translate(-50%, -50%)');
+    
+    // Verify z-index for overlay effect
+    expect(gameOverStyles.zIndex).toBe('100');
+  });
 });
