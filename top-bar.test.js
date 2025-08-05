@@ -16,8 +16,18 @@ describe('Top Bar Component', () => {
       global.cachedVersion = null;
     }
     
-    // Mock fetch for package.json
+    // Mock fetch for deployment.json and package.json
     global.fetch = jest.fn().mockImplementation((url) => {
+      if (url.includes('deployment.json')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ 
+            version: 'deploy-55',
+            deployNumber: 55,
+            shortSha: '47a1f10'
+          })
+        });
+      }
       if (url.includes('package.json')) {
         return Promise.resolve({
           ok: true,
@@ -44,7 +54,7 @@ describe('Top Bar Component', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('v1.0.0');
+      expect(topBarHTML).toContain('vdeploy-55');
     });
 
     test('should maintain existing structure with logo, title, and navigation', async () => {
@@ -67,8 +77,8 @@ describe('Top Bar Component', () => {
       expect(topBarHTML).toContain('href="../test-results.html"');
     });
 
-    test('should use fallback version when package.json fails to load', async () => {
-      // Mock fetch to fail
+    test('should use fallback version when deployment.json and package.json fail to load', async () => {
+      // Mock fetch to fail for both deployment.json and package.json
       global.fetch.mockImplementation(() => Promise.reject(new Error('Failed to load')));
       
       const topBarHTML = await createTopBar();
@@ -77,9 +87,36 @@ describe('Top Bar Component', () => {
       expect(topBarHTML).toContain('v1.0.0'); // fallback version
     });
 
-    test('should use version from package.json when available', async () => {
-      // Mock fetch to return different version
+    test('should prefer deployment.json over package.json when both are available', async () => {
+      // Mock fetch to return both deployment.json and package.json
       global.fetch.mockImplementation((url) => {
+        if (url.includes('deployment.json')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ version: 'deploy-123' })
+          });
+        }
+        if (url.includes('package.json')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ version: '2.5.1' })
+          });
+        }
+        return Promise.reject(new Error('Not found'));
+      });
+      
+      const topBarHTML = await createTopBar();
+      
+      expect(topBarHTML).toContain('class="version"');
+      expect(topBarHTML).toContain('vdeploy-123'); // Should use deployment.json
+    });
+
+    test('should fallback to package.json when deployment.json is not available', async () => {
+      // Mock fetch to fail for deployment.json but succeed for package.json
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('deployment.json')) {
+          return Promise.reject(new Error('Not found'));
+        }
         if (url.includes('package.json')) {
           return Promise.resolve({
             ok: true,
@@ -107,10 +144,10 @@ describe('Top Bar Component', () => {
       expect(topBar).toBeTruthy();
       expect(document.body.firstElementChild).toBe(topBar);
       
-      // Check that version is included
+      // Check that version is included (should use deployment.json)
       const version = topBar.querySelector('.version');
       expect(version).toBeTruthy();
-      expect(version.textContent.trim()).toBe('v1.0.0');
+      expect(version.textContent.trim()).toBe('vdeploy-55');
     });
 
     test('should not insert duplicate top bar', async () => {
