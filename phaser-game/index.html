@@ -77,6 +77,11 @@
         restartGame();
         e.preventDefault();
       }
+      
+      // Prevent default behavior for arrow keys to stop page scrolling
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+      }
     });
     
     document.addEventListener('keyup', (e) => {
