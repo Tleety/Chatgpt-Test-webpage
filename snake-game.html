@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>Snake Game - My GitHub Page</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    main { 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: calc(100vh - 60px); /* Account for header height */
+      justify-content: center;
+      padding: 20px;
+    }
+    #gameContainer { 
+      margin: 20px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    #gameCanvas { 
+      border: 2px solid #333;
+      background: #000;
+      display: block;
+    }
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    #gameOver {
+      color: #ff0000;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .game-instructions {
+      max-width: 500px;
+      color: #666;
+      font-size: 1.1em;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <script src="top-bar.js"></script>
+  <main>
+    <section class="hero">
+      <h1>Snake Game</h1>
+      <p class="game-instructions">Use the arrow keys to move the snake and eat the red squares. Don't run into the walls or yourself!</p>
+    </section>
+    <div id="gameContainer">
+      <div id="score">Score: 0</div>
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <div id="gameOver" style="display: none;">Game Over! Press SPACE to restart</div>
+    </div>
+  </main>
+  <script src="snake-game-logic.js"></script>
+  <script>
+    // Canvas-based Snake Game Implementation
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const gameOverElement = document.getElementById('gameOver');
+    
+    // Game state
+    let game = new SnakeGameLogic(800, 600);
+    let gameRunning = true;
+    let lastFrameTime = 0;
+    const frameDelay = 150; // milliseconds between moves
+    
+    // Input handling
+    const keys = {};
+    document.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      
+      if (e.code === 'Space' && !gameRunning) {
+        restartGame();
+        e.preventDefault();
+      }
+      
+      // Prevent default behavior for arrow keys to stop page scrolling
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+      }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+    
+    // Game functions
+    function handleInput() {
+      if (keys['ArrowLeft'] && game.direction.x === 0) {
+        game.changeDirection({ x: -20, y: 0 });
+      } else if (keys['ArrowRight'] && game.direction.x === 0) {
+        game.changeDirection({ x: 20, y: 0 });
+      } else if (keys['ArrowUp'] && game.direction.y === 0) {
+        game.changeDirection({ x: 0, y: -20 });
+      } else if (keys['ArrowDown'] && game.direction.y === 0) {
+        game.changeDirection({ x: 0, y: 20 });
+      }
+    }
+    
+    function render() {
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const state = game.getGameState();
+      
+      // Draw snake
+      ctx.fillStyle = '#00ff00';
+      state.snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, game.CELL_SIZE, game.CELL_SIZE);
+      });
+      
+      // Draw food
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(state.food.x, state.food.y, game.CELL_SIZE, game.CELL_SIZE);
+      
+      // Update score
+      scoreElement.textContent = `Score: ${state.score}`;
+    }
+    
+    function gameLoop(currentTime) {
+      if (!gameRunning) return;
+      
+      handleInput();
+      
+      // Move snake at fixed intervals
+      if (currentTime - lastFrameTime >= frameDelay) {
+        const result = game.moveSnake();
+        
+        if (result.collision) {
+          gameRunning = false;
+          gameOverElement.style.display = 'block';
+          return;
+        }
+        
+        lastFrameTime = currentTime;
+      }
+      
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    function restartGame() {
+      game.reset();
+      gameRunning = true;
+      gameOverElement.style.display = 'none';
+      lastFrameTime = 0;
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Start the game
+    render();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

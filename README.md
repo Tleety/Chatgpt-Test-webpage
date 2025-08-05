@@ -6,7 +6,8 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 ## Projects
 
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
-- **Simple Phaser Game** – Phaser 3 example with a bouncing logo.
+- **Simple Phaser Game** – HTML5 Canvas bouncing logo demo with color-changing effects.
+- **Snake Game** – Classic Snake game with HTML5 Canvas and comprehensive unit tests.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 
 ## Running locally
@@ -28,9 +29,15 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    open phaser-game/index.html
    ```
-   It loads Phaser from a CDN, so no build step is necessary.
+   This is a bouncing logo demo built with HTML5 Canvas.
 
-4. **Build the Go WASM demo**
+4. **Run the Snake game**
+   ```
+   open snake-game.html
+   ```
+   Classic Snake game with unit tested game logic.
+
+5. **Build the Go WASM demo**
    ```
    cd go-wasm-game
    GOOS=js GOARCH=wasm go build -o game.wasm
@@ -51,7 +58,9 @@ npm test
 
 **Current Test Coverage:**
 - **Snake Game Logic**: Comprehensive tests for game mechanics, collision detection, and state management
+- **Snake Game UI**: Tests for user interface interactions and visual elements
 - **Todo List Logic**: Full test suite for task management, data persistence, and input validation
+- **Top Bar Component**: Tests for navigation functionality and responsive behavior
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
@@ -61,9 +70,9 @@ See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
 This project uses a diverse set of technologies to demonstrate different web development approaches:
 
-- **HTML/CSS/JavaScript** - Core web technologies for the main landing page and Snake game
+- **HTML/CSS/JavaScript** - Core web technologies for the main landing page and games
 - **Jekyll** - Ruby-based static site generator for the todo list project
-- **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
+- **HTML5 Canvas** - JavaScript graphics API for interactive game demos
 - **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
 - **Jest** - JavaScript testing framework with jsdom environment for unit testing
 - **GitHub Pages** - Static site hosting and deployment
@@ -84,11 +93,12 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - Organize content in logical directory structures
 - Leverage Jekyll's built-in features (layouts, includes) for DRY principles
 
-#### Phaser 3
-- Load Phaser from CDN for simplicity in demo projects
+#### Phaser 3 / HTML5 Canvas Games
+- Use HTML5 Canvas for simple game demos and animations
 - Structure game code with clear initialization, update, and render phases
-- Use Phaser's built-in systems (scenes, sprites, physics) appropriately
+- Implement proper game loops using requestAnimationFrame
 - Keep game logic modular and testable where possible
+- Use vanilla JavaScript for lightweight implementations
 
 #### Go + WebAssembly
 - Use standard Go project structure
