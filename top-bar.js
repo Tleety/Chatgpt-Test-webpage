@@ -5,7 +5,46 @@
  * to ensure consistency. If the top bar needs to change, only this file needs to be updated.
  */
 
-function createTopBar(options = {}) {
+// Cache for version to avoid multiple fetches
+let cachedVersion = null;
+
+async function getVersion() {
+  if (cachedVersion) {
+    return cachedVersion;
+  }
+  
+  try {
+    // Try different paths for package.json based on current location
+    const possiblePaths = [
+      'package.json',           // Current directory
+      '../package.json',        // One level up
+      '../../package.json',     // Two levels up (for deeply nested pages)
+      '/Chatgpt-Test-webpage/package.json'  // Absolute path for GitHub Pages
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        const response = await fetch(path);
+        if (response.ok) {
+          const packageJson = await response.json();
+          cachedVersion = `v${packageJson.version}`;
+          return cachedVersion;
+        }
+      } catch (e) {
+        // Continue to next path
+        continue;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load version from package.json:', error);
+  }
+  
+  // Fallback to default version
+  cachedVersion = 'v1.0.0';
+  return cachedVersion;
+}
+
+async function createTopBar(options = {}) {
   // Maintain backward compatibility with pathToRoot option
   // while supporting the new basePath system
   let basePath;
@@ -21,12 +60,15 @@ function createTopBar(options = {}) {
     basePath = getBasePath();
   }
   
+  // Get version dynamically
+  const version = await getVersion();
+  
   // Create the top bar HTML
   const topBarHTML = `
     <header class="top-bar">
       <img src="${basePath}favicon.svg" alt="Site logo" class="logo">
       <span class="title">My GitHub Page</span>
-      <span class="version">v1.0.0</span>
+      <span class="version">${version}</span>
       <nav class="navigation">
         <a href="${basePath}index.html#hero">Home</a>
         <a href="${basePath}index.html#projects">Projects</a>
@@ -98,7 +140,7 @@ function updateFaviconPath(basePath) {
   }
 }
 
-function insertTopBar(options = {}) {
+async function insertTopBar(options = {}) {
   // Check if top bar already exists
   if (document.querySelector('.top-bar')) {
     console.log('Top bar already exists, skipping insertion');
@@ -120,7 +162,7 @@ function insertTopBar(options = {}) {
   
   // Create and insert the top bar at the beginning of the body
   const topBarElement = document.createElement('div');
-  topBarElement.innerHTML = createTopBar(options);
+  topBarElement.innerHTML = await createTopBar(options);
   
   // Insert as the first child of body
   if (document.body.firstChild) {
@@ -131,8 +173,8 @@ function insertTopBar(options = {}) {
 }
 
 // Auto-detect path and insert top bar when DOM is ready
-function autoInsertTopBar() {
-  insertTopBar();
+async function autoInsertTopBar() {
+  await insertTopBar();
 }
 
 // Export functions for manual use
@@ -142,9 +184,9 @@ window.autoInsertTopBar = autoInsertTopBar;
 window.updateFaviconPath = updateFaviconPath;
 
 // Auto-insert when DOM is ready if not prevented
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Only auto-insert if no manual insertion has occurred
   if (!document.querySelector('.top-bar')) {
-    autoInsertTopBar();
+    await autoInsertTopBar();
   }
 });
