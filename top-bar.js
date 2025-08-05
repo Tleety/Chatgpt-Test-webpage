@@ -26,6 +26,9 @@ async function getVersion() {
         cachedVersion = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
         return cachedVersion;
       }
+    } else if (releaseResponse.status === 404) {
+      // Repository has no releases yet, this is expected - don't log as error
+      console.debug('No releases found for repository (this is normal for new repositories)');
     }
   } catch (error) {
     console.warn('Could not load version from GitHub releases:', error);
@@ -60,7 +63,9 @@ async function getVersion() {
         const response = await fetch(path);
         if (response.ok) {
           const deploymentInfo = await response.json();
-          cachedVersion = `v${deploymentInfo.version}`;
+          // Extract just the number from deploy-xxx format for cleaner display
+          const versionNumber = deploymentInfo.version.replace('deploy-', '');
+          cachedVersion = `#${versionNumber}`;
           return cachedVersion;
         }
       } catch (e) {

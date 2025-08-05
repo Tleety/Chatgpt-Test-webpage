@@ -216,7 +216,7 @@ describe('Deployment Info Generation', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('vdeploy-55');
+      expect(topBarHTML).toContain('#55');
     });
 
     test('should fallback to default version when GitHub API and deployment.json fail', async () => {
