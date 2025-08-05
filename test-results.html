@@ -213,7 +213,7 @@
     <main class="test-results-container">
       <section class="hero">
         <h1>Test Visualizer Dashboard</h1>
-        <p>Interactive visualization of Snake Game unit test results</p>
+        <p>Interactive visualization of all unit test results from the CI/CD pipeline</p>
       </section>
 
       <div class="test-execution">
@@ -250,67 +250,169 @@
       </div>
     </main>
 
+    <!-- Load all testable modules -->
     <script src="snake-game-logic.js"></script>
+    <script src="todo-list-logic.js"></script>
+    <script src="top-bar.js"></script>
+    
+    <!-- Load auto-generated test definitions -->
+    <script src="test-definitions.js"></script>
+    
     <script>
-      // Test suite definitions based on the actual Jest tests
-      const testSuite = {
-        'Initialization': [
-          'should initialize with correct default values',
-          'should place snake in center of game area',
-          'should place food at valid position'
-        ],
-        'Direction Changes': [
-          'should allow valid direction changes',
-          'should prevent 180-degree turns',
-          'should validate direction changes correctly'
-        ],
-        'Collision Detection': [
-          'should detect wall collisions',
-          'should detect self collisions',
-          'should detect food collisions'
-        ],
-        'Snake Movement': [
-          'should move snake forward correctly',
-          'should grow snake when eating food',
-          'should detect collision with wall',
-          'should detect collision with self'
-        ],
-        'Food Placement': [
-          'should place food in valid grid positions',
-          'should not place food on snake body'
-        ],
-        'Game State': [
-          'should return complete game state',
-          'should reset game state correctly'
-        ],
-        'Edge Cases': [
-          'should handle very small game area',
-          'should handle food placement when most spaces are occupied'
-        ]
-      };
+      // Simple Jest-like assertion library for browser
+      function expect(actual) {
+        return {
+          toBe: function(expected) {
+            if (actual !== expected) {
+              throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+            }
+          },
+          toEqual: function(expected) {
+            // Handle object comparison better
+            if (typeof actual === 'object' && typeof expected === 'object' && actual !== null && expected !== null) {
+              var actualKeys = Object.keys(actual).sort();
+              var expectedKeys = Object.keys(expected).sort();
+              
+              if (actualKeys.length !== expectedKeys.length) {
+                throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+              }
+              
+              for (var i = 0; i < actualKeys.length; i++) {
+                if (actualKeys[i] !== expectedKeys[i]) {
+                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+                }
+                if (actual[actualKeys[i]] !== expected[expectedKeys[i]]) {
+                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+                }
+              }
+              return;
+            }
+            
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+              throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+            }
+          },
+          toHaveLength: function(expected) {
+            if (actual.length !== expected) {
+              throw new Error('Expected length ' + expected + ', but got ' + actual.length);
+            }
+          },
+          toBeGreaterThan: function(expected) {
+            if (actual <= expected) {
+              throw new Error('Expected ' + actual + ' to be greater than ' + expected);
+            }
+          },
+          toBeGreaterThanOrEqual: function(expected) {
+            if (actual < expected) {
+              throw new Error('Expected ' + actual + ' to be greater than or equal to ' + expected);
+            }
+          },
+          toBeLessThan: function(expected) {
+            if (actual >= expected) {
+              throw new Error('Expected ' + actual + ' to be less than ' + expected);
+            }
+          },
+          toBeDefined: function() {
+            if (actual === undefined) {
+              throw new Error('Expected value to be defined');
+            }
+          },
+          toHaveProperty: function(prop) {
+            if (!(prop in actual)) {
+              throw new Error('Expected object to have property ' + prop);
+            }
+          },
+          toContain: function(expected) {
+            if (!actual.includes(expected)) {
+              throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
+            }
+          },
+          not: {
+            toBe: function(expected) {
+              if (actual === expected) {
+                throw new Error('Expected ' + JSON.stringify(actual) + ' not to be ' + JSON.stringify(expected));
+              }
+            }
+          }
+        };
+      }
 
-      // Simple test implementations
+      // Browser-compatible test runner that mirrors the actual Jest tests
+      // This runs the same test logic as the CI/CD pipeline
+      // Test definitions are auto-generated from Jest files using build-test-definitions.js
+      
+      // The testSuites object is loaded from test-definitions.js
+      // DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
+
+      // Handle beforeEach setup for test suites
+      function setupTestEnvironment(suiteName) {
+        if (suiteName === 'SnakeGameLogic') {
+          // Use smaller game area for easier testing
+          window.game = new SnakeGameLogic(400, 300);
+        } else if (suiteName === 'TodoListLogic') {
+          // Clear localStorage mock before each test
+          if (typeof localStorage !== 'undefined') {
+            localStorage.clear();
+          }
+          window.todoList = new TodoListLogic();
+        } else if (suiteName === 'SnakeGameUI') {
+          // Set up DOM and mocks for UI tests
+          window.mockPreventDefault = function() { 
+            mockPreventDefault.called = true; 
+          };
+          window.mockPreventDefault.called = false;
+        }
+      }
+
+      // Run all test suites
       function runTestSuite() {
-        const results = {};
-        let totalTests = 0;
-        let passedTests = 0;
+        var results = {};
+        var totalTests = 0;
+        var passedTests = 0;
 
-        for (const [category, tests] of Object.entries(testSuite)) {
-          results[category] = [];
-          
-          for (const testName of tests) {
-            totalTests++;
-            const testResult = runSingleTest(category, testName);
-            results[category].push({
-              name: testName,
-              passed: testResult
-            });
-            if (testResult) passedTests++;
+        for (var suiteName in testSuites) {
+          var suiteCategories = testSuites[suiteName];
+          for (var categoryName in suiteCategories) {
+            var tests = suiteCategories[categoryName];
+            var fullCategoryName = suiteName + ' - ' + categoryName;
+            results[fullCategoryName] = [];
+            
+            for (var i = 0; i < tests.length; i++) {
+              var testObj = tests[i];
+              totalTests++;
+              var testResult = false;
+              var errorMessage = null;
+              
+              try {
+                setupTestEnvironment(suiteName);
+                
+                // Execute the test function
+                if (typeof testObj.test === 'function') {
+                  testObj.test();
+                } else {
+                  // If it's a string function, create a function from it
+                  var testFunction = new Function(testObj.test);
+                  testFunction();
+                }
+                testResult = true;
+              } catch (error) {
+                testResult = false;
+                errorMessage = error.message;
+              }
+              
+              results[fullCategoryName].push({
+                name: testObj.name,
+                passed: testResult,
+                error: errorMessage
+              });
+              
+              if (testResult) passedTests++;
+            }
           }
         }
 
         return {
-          results,
+          results: results,
           summary: {
             total: totalTests,
             passed: passedTests,
@@ -318,184 +420,51 @@
           }
         };
       }
+      function runTestSuite() {
+        var results = {};
+        var totalTests = 0;
+        var passedTests = 0;
 
-      function runSingleTest(category, testName) {
-        try {
-          const game = new SnakeGameLogic(400, 300);
-          
-          // Simple test implementations based on the actual test cases
-          switch (category) {
-            case 'Initialization':
-              if (testName.includes('correct default values')) {
-                const result = game.gameWidth === 400 && game.gameHeight === 300 && 
-                       game.CELL_SIZE === 20 && game.score === 0 && 
-                       game.snake.length === 1;
-                if (!result) {
-                  throw new Error(`Expected game properties to match defaults, but got: gameWidth=${game.gameWidth}, gameHeight=${game.gameHeight}, CELL_SIZE=${game.CELL_SIZE}, score=${game.score}, snake.length=${game.snake.length}`);
-                }
-                return result;
+        for (var suiteName in testSuites) {
+          var suiteCategories = testSuites[suiteName];
+          for (var categoryName in suiteCategories) {
+            var tests = suiteCategories[categoryName];
+            var fullCategoryName = suiteName + ' - ' + categoryName;
+            results[fullCategoryName] = [];
+            
+            for (var i = 0; i < tests.length; i++) {
+              var testObj = tests[i];
+              totalTests++;
+              var testResult = false;
+              var errorMessage = null;
+              
+              try {
+                testObj.test();
+                testResult = true;
+              } catch (error) {
+                testResult = false;
+                errorMessage = error.message;
               }
-              if (testName.includes('center of game area')) {
-                const expectedX = Math.floor(400 / 2 / 20) * 20;
-                const expectedY = Math.floor(300 / 2 / 20) * 20;
-                const result = game.snake[0].x === expectedX && game.snake[0].y === expectedY;
-                if (!result) {
-                  throw new Error(`Expected snake head at (${expectedX}, ${expectedY}), but got (${game.snake[0].x}, ${game.snake[0].y})`);
-                }
-                return result;
-              }
-              if (testName.includes('food at valid position')) {
-                const result = game.food && game.food.x >= 0 && game.food.x < 400 && 
-                       game.food.y >= 0 && game.food.y < 300 && 
-                       game.food.x % 20 === 0 && game.food.y % 20 === 0;
-                if (!result) {
-                  throw new Error(`Expected food at valid position, but got: ${JSON.stringify(game.food)}`);
-                }
-                return result;
-              }
-              break;
-
-            case 'Direction Changes':
-              if (testName.includes('allow valid direction changes')) {
-                const result = game.changeDirection({ x: 0, y: -20 }) && 
-                       game.direction.x === 0 && game.direction.y === -20;
-                if (!result) {
-                  throw new Error(`Expected direction change to work, but direction is: ${JSON.stringify(game.direction)}`);
-                }
-                return result;
-              }
-              if (testName.includes('prevent 180-degree turns')) {
-                const result = !game.changeDirection({ x: -20, y: 0 });
-                if (!result) {
-                  throw new Error(`Expected 180-degree turn to be prevented, but changeDirection returned true`);
-                }
-                return result;
-              }
-              if (testName.includes('validate direction changes')) {
-                const result = game.isValidDirectionChange({ x: 0, y: -20 }) && 
-                       !game.isValidDirectionChange({ x: -20, y: 0 });
-                if (!result) {
-                  throw new Error(`Direction validation failed: up should be valid, left should be invalid`);
-                }
-                return result;
-              }
-              break;
-
-            case 'Collision Detection':
-              if (testName.includes('wall collisions')) {
-                const result = game.isWallCollision(-20, 100);
-                if (!result) {
-                  throw new Error(`Expected wall collision at (-20, 100) to be detected`);
-                }
-                return result;
-              }
-              if (testName.includes('self collisions')) {
-                game.snake = [{ x: 100, y: 100 }, { x: 80, y: 100 }];
-                const result = game.isSelfCollision(100, 100);
-                if (!result) {
-                  throw new Error(`Expected self collision at (100, 100) to be detected with snake: ${JSON.stringify(game.snake)}`);
-                }
-                return result;
-              }
-              if (testName.includes('food collisions')) {
-                game.food = { x: 100, y: 100 };
-                const result = game.isFoodCollision(100, 100);
-                if (!result) {
-                  throw new Error(`Expected food collision at (100, 100) to be detected`);
-                }
-                return result;
-              }
-              break;
-
-            case 'Snake Movement':
-              if (testName.includes('move snake forward correctly')) {
-                const originalHead = { ...game.snake[0] };
-                const result = game.moveSnake();
-                const success = game.snake[0].x === originalHead.x + game.direction.x && !result.collision;
-                if (!success) {
-                  throw new Error(`Expected snake to move forward without collision. Original head: ${JSON.stringify(originalHead)}, new head: ${JSON.stringify(game.snake[0])}, collision: ${result.collision}`);
-                }
-                return success;
-              }
-              if (testName.includes('grow snake when eating food')) {
-                const originalLength = game.snake.length;
-                game.snake[0] = { x: game.food.x - game.direction.x, y: game.food.y - game.direction.y };
-                const result = game.moveSnake();
-                const success = game.snake.length === originalLength + 1 && result.ateFood;
-                if (!success) {
-                  throw new Error(`Expected snake to grow when eating food. Length: ${game.snake.length} (was ${originalLength}), ateFood: ${result.ateFood}`);
-                }
-                return success;
-              }
-              if (testName.includes('detect collision with wall')) {
-                game.snake[0] = { x: game.gameWidth - game.CELL_SIZE, y: 100 };
-                const result = game.moveSnake();
-                if (!result.collision) {
-                  throw new Error(`Expected wall collision to be detected when snake at edge moves toward wall`);
-                }
-                return result.collision;
-              }
-              if (testName.includes('detect collision with self')) {
-                game.snake = [
-                  { x: 100, y: 100 },
-                  { x: 80, y: 100 },
-                  { x: 60, y: 100 },
-                  { x: 60, y: 80 },
-                  { x: 80, y: 80 },
-                  { x: 100, y: 80 }
-                ];
-                game.direction = { x: 0, y: 20 };
-                const result = game.moveSnake();
-                if (!result.collision) {
-                  const newHeadPos = { x: game.snake[0].x, y: game.snake[0].y };
-                  throw new Error(`Expected self collision to be detected. Snake head moved to ${JSON.stringify(newHeadPos)} but no collision detected. Snake body: ${JSON.stringify(game.snake.slice(1))}`);
-                }
-                return result.collision;
-              }
-              break;
-
-            case 'Food Placement':
-              if (testName.includes('valid grid positions')) {
-                const food = game.placeFood();
-                const result = food.x >= 0 && food.x < 400 && food.y >= 0 && food.y < 300 &&
-                       food.x % 20 === 0 && food.y % 20 === 0;
-                if (!result) {
-                  throw new Error(`Food placed at invalid position: ${JSON.stringify(food)}`);
-                }
-                return result;
-              }
-              return true; // Simplified for food placement tests
-              break;
-
-            case 'Game State':
-              if (testName.includes('complete game state')) {
-                const state = game.getGameState();
-                const result = state && state.snake && state.food !== undefined && state.score !== undefined;
-                if (!result) {
-                  throw new Error(`Game state incomplete: ${JSON.stringify(state)}`);
-                }
-                return result;
-              }
-              if (testName.includes('reset game state')) {
-                game.score = 100;
-                game.reset();
-                const result = game.score === 0 && game.snake.length === 1;
-                if (!result) {
-                  throw new Error(`Game reset failed: score=${game.score}, snake.length=${game.snake.length}`);
-                }
-                return result;
-              }
-              break;
-
-            case 'Edge Cases':
-              return true; // Simplified for edge case tests
+              
+              results[fullCategoryName].push({
+                name: testObj.name,
+                passed: testResult,
+                error: errorMessage
+              });
+              
+              if (testResult) passedTests++;
+            }
           }
-          
-          return true; // Default pass for unimplemented tests
-        } catch (error) {
-          console.error(`Test failed: ${category} - ${testName}`, error);
-          throw error; // Re-throw to capture error details
         }
+
+        return {
+          results: results,
+          summary: {
+            total: totalTests,
+            passed: passedTests,
+            failed: totalTests - passedTests
+          }
+        };
       }
 
       function updateProgressBar(progress) {
@@ -509,29 +478,31 @@
       }
 
       function displayResults(results) {
-        const container = document.getElementById('testCategories');
+        var container = document.getElementById('testCategories');
         container.innerHTML = '';
 
-        for (const [category, tests] of Object.entries(results)) {
-          const categoryDiv = document.createElement('div');
+        for (var category in results) {
+          var tests = results[category];
+          var categoryDiv = document.createElement('div');
           categoryDiv.className = 'test-category';
           
-          const title = document.createElement('div');
+          var title = document.createElement('div');
           title.className = 'category-title';
           title.textContent = category;
           categoryDiv.appendChild(title);
 
-          tests.forEach(test => {
-            const testItem = document.createElement('div');
+          for (var i = 0; i < tests.length; i++) {
+            var test = tests[i];
+            var testItem = document.createElement('div');
             testItem.className = 'test-item';
             
-            const testHeader = document.createElement('div');
+            var testHeader = document.createElement('div');
             testHeader.className = 'test-item-header';
             
-            const status = document.createElement('div');
-            status.className = `test-status ${test.passed ? 'passed' : 'failed'}`;
+            var status = document.createElement('div');
+            status.className = 'test-status ' + (test.passed ? 'passed' : 'failed');
             
-            const name = document.createElement('div');
+            var name = document.createElement('div');
             name.className = 'test-name';
             name.textContent = test.name;
             
@@ -541,94 +512,151 @@
             
             // Add error details for failed tests
             if (!test.passed && test.error) {
-              const errorDiv = document.createElement('div');
+              var errorDiv = document.createElement('div');
               errorDiv.className = 'test-error';
               errorDiv.textContent = test.error;
               testItem.appendChild(errorDiv);
             }
             
             categoryDiv.appendChild(testItem);
-          });
+          }
 
           container.appendChild(categoryDiv);
         }
       }
 
-      async function runTests() {
-        const runButton = document.getElementById('runTestsBtn');
-        const executionTime = document.getElementById('executionTime');
-        
-        runButton.disabled = true;
-        runButton.textContent = 'Running Tests...';
-        executionTime.textContent = 'Executing tests...';
-        
-        const startTime = Date.now();
-        
-        // Simulate test execution with progress updates
-        updateProgressBar(0);
-        
-        const totalCategories = Object.keys(testSuite).length;
-        let currentCategory = 0;
-        
-        const results = {};
-        let totalTests = 0;
-        let passedTests = 0;
-
-        for (const [category, tests] of Object.entries(testSuite)) {
-          results[category] = [];
+      function runTests() {
+        return new Promise(function(resolve) {
+          var runButton = document.getElementById('runTestsBtn');
+          var executionTime = document.getElementById('executionTime');
           
-          for (const testName of tests) {
-            // Simulate some test execution time
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            totalTests++;
-            let testResult = false;
-            let errorMessage = null;
-            
-            try {
-              testResult = runSingleTest(category, testName);
-            } catch (error) {
-              testResult = false;
-              errorMessage = error.message;
+          runButton.disabled = true;
+          runButton.textContent = 'Running Tests...';
+          executionTime.textContent = 'Executing tests...';
+          
+          var startTime = Date.now();
+          
+          // Simulate test execution with progress updates
+          updateProgressBar(0);
+          
+          // Calculate total number of tests for progress
+          var totalTestCount = 0;
+          for (var suiteName in testSuites) {
+            var suiteCategories = testSuites[suiteName];
+            for (var categoryName in suiteCategories) {
+              var tests = suiteCategories[categoryName];
+              totalTestCount += tests.length;
             }
-            
-            results[category].push({
-              name: testName,
-              passed: testResult,
-              error: errorMessage
-            });
-            if (testResult) passedTests++;
-            
-            // Update progress
-            const progress = (totalTests / 19) * 100;
-            updateProgressBar(progress);
           }
           
-          currentCategory++;
-        }
+          var results = {};
+          var currentTestIndex = 0;
+          var totalTests = 0;
+          var passedTests = 0;
+          
+          var processCategories = Object.keys(testSuites);
+          var categoryIndex = 0;
+          
+          function processNextCategory() {
+            if (categoryIndex >= processCategories.length) {
+              var endTime = Date.now();
+              var duration = endTime - startTime;
+              
+              var summary = {
+                total: totalTests,
+                passed: passedTests,
+                failed: totalTests - passedTests
+              };
 
-        const endTime = Date.now();
-        const duration = endTime - startTime;
-        
-        const summary = {
-          total: totalTests,
-          passed: passedTests,
-          failed: totalTests - passedTests
-        };
-
-        updateSummary(summary);
-        displayResults(results);
-        
-        executionTime.textContent = `Tests completed in ${duration}ms`;
-        runButton.disabled = false;
-        runButton.textContent = 'Run Tests Again';
+              updateSummary(summary);
+              displayResults(results);
+              
+              executionTime.textContent = 'Tests completed in ' + duration + 'ms';
+              runButton.disabled = false;
+              runButton.textContent = 'Run Tests Again';
+              resolve();
+              return;
+            }
+            
+            var suiteName = processCategories[categoryIndex];
+            var suiteCategories = testSuites[suiteName];
+            var categories = Object.keys(suiteCategories);
+            var subCategoryIndex = 0;
+            
+            function processNextSubCategory() {
+              if (subCategoryIndex >= categories.length) {
+                categoryIndex++;
+                setTimeout(processNextCategory, 10);
+                return;
+              }
+              
+              var categoryName = categories[subCategoryIndex];
+              var tests = suiteCategories[categoryName];
+              var fullCategoryName = suiteName + ' - ' + categoryName;
+              results[fullCategoryName] = [];
+              
+              var testIndex = 0;
+              
+              function processNextTest() {
+                if (testIndex >= tests.length) {
+                  subCategoryIndex++;
+                  setTimeout(processNextSubCategory, 10);
+                  return;
+                }
+                
+                var testObj = tests[testIndex];
+                totalTests++;
+                currentTestIndex++;
+                var testResult = false;
+                var errorMessage = null;
+                
+                try {
+                  setupTestEnvironment(suiteName);
+                  
+                  // Execute the test function
+                  if (typeof testObj.test === 'function') {
+                    testObj.test();
+                  } else {
+                    // If it's a string function, create a function from it
+                    var testFunction = new Function(testObj.test);
+                    testFunction();
+                  }
+                  testResult = true;
+                } catch (error) {
+                  testResult = false;
+                  errorMessage = error.message;
+                }
+                
+                results[fullCategoryName].push({
+                  name: testObj.name,
+                  passed: testResult,
+                  error: errorMessage
+                });
+                if (testResult) passedTests++;
+                
+                // Update progress
+                var progress = (currentTestIndex / totalTestCount) * 100;
+                updateProgressBar(progress);
+                
+                testIndex++;
+                setTimeout(processNextTest, 30);
+              }
+              
+              processNextTest();
+            }
+            
+            processNextSubCategory();
+          }
+          
+          processNextCategory();
+        });
       }
 
       // Event listeners
       document.getElementById('runTestsBtn').addEventListener('click', runTests);
 
       // Auto-run tests on page load
-      window.addEventListener('load', () => {
+      window.addEventListener('load', function() {
         setTimeout(runTests, 500);
       });
     </script>
