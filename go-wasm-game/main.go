@@ -7,8 +7,8 @@ import (
 var (
 	ctx          js.Value
 	canvas       js.Value
-	x            float64 = 50
-	y            float64 = 50
+	x            float64
+	y            float64
 	canvasWidth  float64
 	canvasHeight float64
 )
@@ -65,6 +65,11 @@ func main() {
 	// Get initial canvas dimensions
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
+
+	// Center the player box on the canvas
+	// Box size is 20x20, so position it at center minus half the box size
+	x = (canvasWidth - 20) / 2
+	y = (canvasHeight - 20) / 2
 
 	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
 
