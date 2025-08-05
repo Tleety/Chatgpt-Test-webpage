@@ -1,10 +1,17 @@
 ---
 layout: default
-title: ChatGPT Test Webpage README
+title: Todo List
 ---
 
-{% capture readme_content %}
-{% include_relative README.md %}
-{% endcapture %}
-
-{{ readme_content | markdownify }}
+<div class="todo-container">
+    <h1>My Todo List</h1>
+    
+    <div class="todo-input">
+        <input type="text" id="taskInput" placeholder="Enter a new task..." maxlength="100">
+        <button id="addButton">Add Task</button>
+    </div>
+    
+    <ul class="todo-list" id="todoList">
+        <!-- Tasks will be dynamically added here -->
+    </ul>
+</div>
