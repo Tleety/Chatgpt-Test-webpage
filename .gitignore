@@ -1,5 +1,6 @@
 node_modules/
 coverage/
+go-wasm-game/game.wasm
 jekyll-site/_site/
 jekyll-site/.sass-cache/
 jekyll-site/.jekyll-cache/
