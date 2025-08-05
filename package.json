@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "build:test-definitions": "node build-test-definitions.js"
+    "build:test-definitions": "node build-test-definitions.js",
     "bump-version": "node scripts/bump-version.js"
   },
   "devDependencies": {
