@@ -10,10 +10,10 @@ The test visualizer page (`test-results.html`) automatically discovers and execu
 
 ## Test Files Included
 
-- `snake-game-logic.test.js` - Logic tests for the Snake game
-- `snake-game-ui.test.js` - UI and event handling tests  
 - `todo-list-logic.test.js` - TodoList functionality tests
 - `top-bar.test.js` - Top bar component tests
+- `deployment-info.test.js` - Deployment information tests
+- `version-update.test.js` - Version management tests
 
 ## Adding New Tests
 
@@ -41,6 +41,6 @@ test-results.html
 
 ## Automatic Test Count
 
-Current test count extracted from Jest files: **84 tests**
+Current test count extracted from Jest files: **75 tests**
 
 The test visualizer will always show the exact same number of tests as the CI/CD pipeline, ensuring complete synchronization.

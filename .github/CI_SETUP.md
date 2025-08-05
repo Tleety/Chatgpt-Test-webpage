@@ -44,12 +44,12 @@ Enable the following required status checks:
 ## Testing Coverage
 
 Current test coverage includes:
-- **Snake Game Logic** (17 tests): Game mechanics, collision detection, state management
-- **Snake Game UI** (4 tests): UI interactions and keyboard handling  
-- **Todo List Logic** (37 tests): Task management, data persistence, input validation
-- **Top Bar Component** (8 tests): Navigation and UI consistency
+- **Todo List Logic** (38 tests): Task management, data persistence, input validation
+- **Top Bar Component** (13 tests): Navigation and UI consistency
+- **Deployment Info** (14 tests): Build and deployment information
+- **Version Update** (10 tests): Version management functionality
 
-**Total: 66 tests across 4 test suites**
+**Total: 75 tests across 4 test suites**
 
 ## Benefits
 
