@@ -87,13 +87,20 @@
 
       .test-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         padding: 8px 0;
         border-bottom: 1px solid #f5f5f5;
+        flex-direction: column;
       }
 
       .test-item:last-child {
         border-bottom: none;
+      }
+
+      .test-item-header {
+        display: flex;
+        align-items: center;
+        width: 100%;
       }
 
       .test-status {
@@ -115,6 +122,20 @@
       .test-name {
         flex-grow: 1;
         font-size: 0.9em;
+      }
+
+      .test-error {
+        margin-top: 8px;
+        margin-left: 30px;
+        padding: 10px;
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 4px;
+        color: #c53030;
+        font-size: 0.85em;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
 
       .test-execution {
@@ -306,47 +327,83 @@
           switch (category) {
             case 'Initialization':
               if (testName.includes('correct default values')) {
-                return game.gameWidth === 400 && game.gameHeight === 300 && 
+                const result = game.gameWidth === 400 && game.gameHeight === 300 && 
                        game.CELL_SIZE === 20 && game.score === 0 && 
                        game.snake.length === 1;
+                if (!result) {
+                  throw new Error(`Expected game properties to match defaults, but got: gameWidth=${game.gameWidth}, gameHeight=${game.gameHeight}, CELL_SIZE=${game.CELL_SIZE}, score=${game.score}, snake.length=${game.snake.length}`);
+                }
+                return result;
               }
               if (testName.includes('center of game area')) {
                 const expectedX = Math.floor(400 / 2 / 20) * 20;
                 const expectedY = Math.floor(300 / 2 / 20) * 20;
-                return game.snake[0].x === expectedX && game.snake[0].y === expectedY;
+                const result = game.snake[0].x === expectedX && game.snake[0].y === expectedY;
+                if (!result) {
+                  throw new Error(`Expected snake head at (${expectedX}, ${expectedY}), but got (${game.snake[0].x}, ${game.snake[0].y})`);
+                }
+                return result;
               }
               if (testName.includes('food at valid position')) {
-                return game.food && game.food.x >= 0 && game.food.x < 400 && 
+                const result = game.food && game.food.x >= 0 && game.food.x < 400 && 
                        game.food.y >= 0 && game.food.y < 300 && 
                        game.food.x % 20 === 0 && game.food.y % 20 === 0;
+                if (!result) {
+                  throw new Error(`Expected food at valid position, but got: ${JSON.stringify(game.food)}`);
+                }
+                return result;
               }
               break;
 
             case 'Direction Changes':
               if (testName.includes('allow valid direction changes')) {
-                return game.changeDirection({ x: 0, y: -20 }) && 
+                const result = game.changeDirection({ x: 0, y: -20 }) && 
                        game.direction.x === 0 && game.direction.y === -20;
+                if (!result) {
+                  throw new Error(`Expected direction change to work, but direction is: ${JSON.stringify(game.direction)}`);
+                }
+                return result;
               }
               if (testName.includes('prevent 180-degree turns')) {
-                return !game.changeDirection({ x: -20, y: 0 });
+                const result = !game.changeDirection({ x: -20, y: 0 });
+                if (!result) {
+                  throw new Error(`Expected 180-degree turn to be prevented, but changeDirection returned true`);
+                }
+                return result;
               }
               if (testName.includes('validate direction changes')) {
-                return game.isValidDirectionChange({ x: 0, y: -20 }) && 
+                const result = game.isValidDirectionChange({ x: 0, y: -20 }) && 
                        !game.isValidDirectionChange({ x: -20, y: 0 });
+                if (!result) {
+                  throw new Error(`Direction validation failed: up should be valid, left should be invalid`);
+                }
+                return result;
               }
               break;
 
             case 'Collision Detection':
               if (testName.includes('wall collisions')) {
-                return game.isWallCollision(-20, 100);
+                const result = game.isWallCollision(-20, 100);
+                if (!result) {
+                  throw new Error(`Expected wall collision at (-20, 100) to be detected`);
+                }
+                return result;
               }
               if (testName.includes('self collisions')) {
                 game.snake = [{ x: 100, y: 100 }, { x: 80, y: 100 }];
-                return game.isSelfCollision(100, 100);
+                const result = game.isSelfCollision(100, 100);
+                if (!result) {
+                  throw new Error(`Expected self collision at (100, 100) to be detected with snake: ${JSON.stringify(game.snake)}`);
+                }
+                return result;
               }
               if (testName.includes('food collisions')) {
                 game.food = { x: 100, y: 100 };
-                return game.isFoodCollision(100, 100);
+                const result = game.isFoodCollision(100, 100);
+                if (!result) {
+                  throw new Error(`Expected food collision at (100, 100) to be detected`);
+                }
+                return result;
               }
               break;
 
@@ -354,17 +411,28 @@
               if (testName.includes('move snake forward correctly')) {
                 const originalHead = { ...game.snake[0] };
                 const result = game.moveSnake();
-                return game.snake[0].x === originalHead.x + game.direction.x && !result.collision;
+                const success = game.snake[0].x === originalHead.x + game.direction.x && !result.collision;
+                if (!success) {
+                  throw new Error(`Expected snake to move forward without collision. Original head: ${JSON.stringify(originalHead)}, new head: ${JSON.stringify(game.snake[0])}, collision: ${result.collision}`);
+                }
+                return success;
               }
               if (testName.includes('grow snake when eating food')) {
                 const originalLength = game.snake.length;
                 game.snake[0] = { x: game.food.x - game.direction.x, y: game.food.y - game.direction.y };
                 const result = game.moveSnake();
-                return game.snake.length === originalLength + 1 && result.ateFood;
+                const success = game.snake.length === originalLength + 1 && result.ateFood;
+                if (!success) {
+                  throw new Error(`Expected snake to grow when eating food. Length: ${game.snake.length} (was ${originalLength}), ateFood: ${result.ateFood}`);
+                }
+                return success;
               }
               if (testName.includes('detect collision with wall')) {
                 game.snake[0] = { x: game.gameWidth - game.CELL_SIZE, y: 100 };
                 const result = game.moveSnake();
+                if (!result.collision) {
+                  throw new Error(`Expected wall collision to be detected when snake at edge moves toward wall`);
+                }
                 return result.collision;
               }
               if (testName.includes('detect collision with self')) {
@@ -378,6 +446,10 @@
                 ];
                 game.direction = { x: 0, y: 20 };
                 const result = game.moveSnake();
+                if (!result.collision) {
+                  const newHeadPos = { x: game.snake[0].x, y: game.snake[0].y };
+                  throw new Error(`Expected self collision to be detected. Snake head moved to ${JSON.stringify(newHeadPos)} but no collision detected. Snake body: ${JSON.stringify(game.snake.slice(1))}`);
+                }
                 return result.collision;
               }
               break;
@@ -385,8 +457,12 @@
             case 'Food Placement':
               if (testName.includes('valid grid positions')) {
                 const food = game.placeFood();
-                return food.x >= 0 && food.x < 400 && food.y >= 0 && food.y < 300 &&
+                const result = food.x >= 0 && food.x < 400 && food.y >= 0 && food.y < 300 &&
                        food.x % 20 === 0 && food.y % 20 === 0;
+                if (!result) {
+                  throw new Error(`Food placed at invalid position: ${JSON.stringify(food)}`);
+                }
+                return result;
               }
               return true; // Simplified for food placement tests
               break;
@@ -394,12 +470,20 @@
             case 'Game State':
               if (testName.includes('complete game state')) {
                 const state = game.getGameState();
-                return state && state.snake && state.food !== undefined && state.score !== undefined;
+                const result = state && state.snake && state.food !== undefined && state.score !== undefined;
+                if (!result) {
+                  throw new Error(`Game state incomplete: ${JSON.stringify(state)}`);
+                }
+                return result;
               }
               if (testName.includes('reset game state')) {
                 game.score = 100;
                 game.reset();
-                return game.score === 0 && game.snake.length === 1;
+                const result = game.score === 0 && game.snake.length === 1;
+                if (!result) {
+                  throw new Error(`Game reset failed: score=${game.score}, snake.length=${game.snake.length}`);
+                }
+                return result;
               }
               break;
 
@@ -410,7 +494,7 @@
           return true; // Default pass for unimplemented tests
         } catch (error) {
           console.error(`Test failed: ${category} - ${testName}`, error);
-          return false;
+          throw error; // Re-throw to capture error details
         }
       }
 
@@ -441,6 +525,9 @@
             const testItem = document.createElement('div');
             testItem.className = 'test-item';
             
+            const testHeader = document.createElement('div');
+            testHeader.className = 'test-item-header';
+            
             const status = document.createElement('div');
             status.className = `test-status ${test.passed ? 'passed' : 'failed'}`;
             
@@ -448,8 +535,18 @@
             name.className = 'test-name';
             name.textContent = test.name;
             
-            testItem.appendChild(status);
-            testItem.appendChild(name);
+            testHeader.appendChild(status);
+            testHeader.appendChild(name);
+            testItem.appendChild(testHeader);
+            
+            // Add error details for failed tests
+            if (!test.passed && test.error) {
+              const errorDiv = document.createElement('div');
+              errorDiv.className = 'test-error';
+              errorDiv.textContent = test.error;
+              testItem.appendChild(errorDiv);
+            }
+            
             categoryDiv.appendChild(testItem);
           });
 
@@ -485,10 +582,20 @@
             await new Promise(resolve => setTimeout(resolve, 50));
             
             totalTests++;
-            const testResult = runSingleTest(category, testName);
+            let testResult = false;
+            let errorMessage = null;
+            
+            try {
+              testResult = runSingleTest(category, testName);
+            } catch (error) {
+              testResult = false;
+              errorMessage = error.message;
+            }
+            
             results[category].push({
               name: testName,
-              passed: testResult
+              passed: testResult,
+              error: errorMessage
             });
             if (testResult) passedTests++;
             
