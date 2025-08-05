@@ -62,20 +62,20 @@ npm test -- --coverage
 
 ### Test Visualizer
 
-The [Test Visualizer](test-results.html) provides an interactive dashboard showing real-time test results that mirror the actual CI/CD pipeline execution. **All tests are automatically discovered** from Jest test files, ensuring the visualizer stays in sync with code changes.
+The [Test Visualizer](test-results.html) provides a real-time dashboard showing test results directly from the CI/CD pipeline. **All test results are fetched from GitHub Actions**, ensuring the visualizer displays the same results that determine deployment success/failure.
 
 **Key Features:**
-- ✅ **Automatic Discovery**: New tests added to any `*.test.js` file are automatically included
-- ✅ **Real Test Logic**: Executes the same logic as `npm test` command  
-- ✅ **Browser Compatible**: Runs without Node.js dependencies
-- ✅ **Live Updates**: Regenerate with `npm run build:test-definitions`
+- ✅ **Real Pipeline Results**: Fetches actual test results from GitHub Actions workflows
+- ✅ **Live Updates**: Auto-refreshes every 2 minutes to show latest test status
+- ✅ **Accurate Data**: Shows the same test results that control deployments
+- ✅ **No Environment Issues**: Eliminates browser vs CI/CD environment mismatches
 
-**Architecture:**
+**How it Works:**
 ```
-Jest Test Files (*.test.js) → build-test-definitions.js → test-definitions.js → test-results.html
+GitHub Actions Workflow → Jest Test Execution → API Results → Test Visualizer
 ```
 
-See [TEST-INTEGRATION.md](TEST-INTEGRATION.md) for detailed information about automatic test discovery.
+The visualizer uses the GitHub Actions API to fetch the latest workflow run results, parsing Jest output to display comprehensive test summaries and individual test file statuses.
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
 

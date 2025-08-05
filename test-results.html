@@ -159,7 +159,7 @@
         color: #333;
       }
 
-      .run-tests-btn {
+      .refresh-btn {
         background: #007bff;
         color: white;
         border: none;
@@ -170,11 +170,11 @@
         transition: background 0.2s;
       }
 
-      .run-tests-btn:hover {
+      .refresh-btn:hover {
         background: #0056b3;
       }
 
-      .run-tests-btn:disabled {
+      .refresh-btn:disabled {
         background: #6c757d;
         cursor: not-allowed;
       }
@@ -190,20 +190,55 @@
         font-style: italic;
       }
 
-      .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #f0f0f0;
-        border-radius: 4px;
-        margin: 10px 0;
-        overflow: hidden;
+      .error-message {
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #c53030;
       }
 
-      .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #28a745, #20c997);
-        width: 0%;
-        transition: width 0.3s ease;
+      .pipeline-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        border-left: 4px solid #007bff;
+      }
+
+      .pipeline-info h3 {
+        margin: 0 0 10px 0;
+        color: #495057;
+      }
+
+      .pipeline-info p {
+        margin: 5px 0;
+        color: #6c757d;
+      }
+
+      .run-status {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .run-status.success {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .run-status.failure {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .run-status.in_progress {
+        background: #fff3cd;
+        color: #856404;
       }
     </style>
   </head>
@@ -213,18 +248,22 @@
     <main class="test-results-container">
       <section class="hero">
         <h1>Test Visualizer Dashboard</h1>
-        <p>Interactive visualization of all unit test results from the CI/CD pipeline</p>
+        <p>Real-time test results from the CI/CD pipeline</p>
       </section>
+
+      <div class="pipeline-info">
+        <h3>Pipeline Information</h3>
+        <p><strong>Repository:</strong> Tleety/Chatgpt-Test-webpage</p>
+        <p id="pipelineStatus">Loading...</p>
+        <p id="pipelineTime">Loading...</p>
+      </div>
 
       <div class="test-execution">
         <div class="execution-header">
-          <span class="execution-title">Test Execution</span>
-          <button id="runTestsBtn" class="run-tests-btn">Run Tests</button>
+          <span class="execution-title">Latest Test Results</span>
+          <button id="refreshBtn" class="refresh-btn">Refresh Results</button>
         </div>
-        <div class="progress-bar">
-          <div id="progressFill" class="progress-fill"></div>
-        </div>
-        <div id="executionTime" class="execution-time">Click "Run Tests" to execute the test suite</div>
+        <div id="executionTime" class="execution-time">Fetching latest test results from GitHub Actions...</div>
       </div>
 
       <div class="test-summary">
@@ -246,450 +285,272 @@
       </div>
 
       <div id="testCategories" class="test-categories">
-        <div class="loading">Run tests to see detailed results...</div>
+        <div class="loading">Fetching test results from CI/CD pipeline...</div>
       </div>
+
+      <div id="errorContainer" style="display: none;"></div>
     </main>
 
-    <!-- Load all testable modules -->
-    <script src="snake-game-logic.js"></script>
-    <script src="todo-list-logic.js"></script>
-    
-    <!-- Load auto-generated test definitions -->
-    <script src="test-definitions.js"></script>
-    
     <script>
-      // Simple Jest-like assertion library for browser
-      function expect(actual) {
-        return {
-          toBe: function(expected) {
-            if (actual !== expected) {
-              throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
-            }
-          },
-          toEqual: function(expected) {
-            // Handle object comparison better
-            if (typeof actual === 'object' && typeof expected === 'object' && actual !== null && expected !== null) {
-              var actualKeys = Object.keys(actual).sort();
-              var expectedKeys = Object.keys(expected).sort();
-              
-              if (actualKeys.length !== expectedKeys.length) {
-                throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
-              }
-              
-              for (var i = 0; i < actualKeys.length; i++) {
-                if (actualKeys[i] !== expectedKeys[i]) {
-                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
-                }
-                if (actual[actualKeys[i]] !== expected[expectedKeys[i]]) {
-                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
-                }
-              }
-              return;
-            }
-            
-            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-              throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
-            }
-          },
-          toHaveLength: function(expected) {
-            if (actual.length !== expected) {
-              throw new Error('Expected length ' + expected + ', but got ' + actual.length);
-            }
-          },
-          toBeGreaterThan: function(expected) {
-            if (actual <= expected) {
-              throw new Error('Expected ' + actual + ' to be greater than ' + expected);
-            }
-          },
-          toBeGreaterThanOrEqual: function(expected) {
-            if (actual < expected) {
-              throw new Error('Expected ' + actual + ' to be greater than or equal to ' + expected);
-            }
-          },
-          toBeLessThan: function(expected) {
-            if (actual >= expected) {
-              throw new Error('Expected ' + actual + ' to be less than ' + expected);
-            }
-          },
-          toBeDefined: function() {
-            if (actual === undefined) {
-              throw new Error('Expected value to be defined');
-            }
-          },
-          toHaveProperty: function(prop) {
-            if (!(prop in actual)) {
-              throw new Error('Expected object to have property ' + prop);
-            }
-          },
-          toContain: function(expected) {
-            if (typeof actual === 'string') {
-              if (actual.indexOf(expected) === -1) {
-                throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
-              }
-            } else if (actual && typeof actual.includes === 'function') {
-              if (!actual.includes(expected)) {
-                throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
-              }
-            } else {
-              throw new Error('toContain expects a string or array-like object, got ' + typeof actual);
-            }
-          },
-          not: {
-            toBe: function(expected) {
-              if (actual === expected) {
-                throw new Error('Expected ' + JSON.stringify(actual) + ' not to be ' + JSON.stringify(expected));
-              }
-            }
+      // GitHub repository configuration
+      const GITHUB_REPO = {
+        owner: 'Tleety',
+        repo: 'Chatgpt-Test-webpage'
+      };
+
+      // GitHub API base URL
+      const GITHUB_API_BASE = 'https://api.github.com';
+
+      let currentTestData = null;
+
+      // Fetch latest workflow runs
+      async function fetchLatestTestRun() {
+        try {
+          // First, try to get the latest test workflow run
+          const testResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions/workflows/test.yml/runs?per_page=5`);
+          const testData = await testResponse.json();
+
+          // Also get the CI workflow runs as backup
+          const ciResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions/workflows/ci.yml/runs?per_page=5`);
+          const ciData = await ciResponse.json();
+
+          // Combine and sort by creation date to get the most recent
+          const allRuns = [...(testData.workflow_runs || []), ...(ciData.workflow_runs || [])];
+          allRuns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          // Find the most recent completed run
+          const latestRun = allRuns.find(run => run.status === 'completed') || allRuns[0];
+
+          if (latestRun) {
+            return latestRun;
+          } else {
+            throw new Error('No workflow runs found');
           }
+        } catch (error) {
+          console.error('Error fetching workflow runs:', error);
+          throw error;
+        }
+      }
+
+      // Fetch job logs and parse test results
+      async function fetchTestResults(workflowRun) {
+        try {
+          // Get jobs for the workflow run
+          const jobsResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions/runs/${workflowRun.id}/jobs`);
+          const jobsData = await jobsResponse.json();
+
+          // Find the test job (either "Unit Tests" or "Run Tests")
+          const testJob = jobsData.jobs.find(job => 
+            job.name === 'Unit Tests' || 
+            job.name === 'Run Tests' ||
+            job.steps.some(step => step.name === 'Run unit tests')
+          );
+
+          if (!testJob) {
+            throw new Error('No test job found in workflow run');
+          }
+
+          // Try to get artifacts first (if available)
+          try {
+            const artifactsResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions/runs/${workflowRun.id}/artifacts`);
+            const artifactsData = await artifactsResponse.json();
+            
+            const testArtifact = artifactsData.artifacts.find(artifact => artifact.name === 'test-results');
+            if (testArtifact) {
+              // If we have a test results artifact, we could download and parse it
+              // For now, we'll fall back to parsing logs since artifact download requires authentication
+            }
+          } catch (artifactError) {
+            // Continue with log parsing if artifacts aren't available
+          }
+
+          // Parse logs to extract test results
+          const logsResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions/jobs/${testJob.id}/logs`);
+          const logsText = await logsResponse.text();
+
+          return parseTestResultsFromLogs(logsText, workflowRun, testJob);
+        } catch (error) {
+          console.error('Error fetching test results:', error);
+          throw error;
+        }
+      }
+
+      // Parse Jest test results from workflow logs
+      function parseTestResultsFromLogs(logsText, workflowRun, testJob) {
+        const lines = logsText.split('\n');
+        let testResults = {
+          summary: { total: 0, passed: 0, failed: 0 },
+          testSuites: [],
+          workflowRun: workflowRun,
+          testJob: testJob
         };
-      }
 
-      // Browser-compatible test runner that mirrors the actual Jest tests
-      // This runs the same test logic as the CI/CD pipeline
-      // Test definitions are auto-generated from Jest files using build-test-definitions.js
-      
-      // The testSuites object is loaded from test-definitions.js
-      // DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
-
-      // Clean up DOM elements that might interfere with the test visualizer
-      function cleanupTestEnvironment() {
-        // Remove specific game-related overlay elements that might cover the UI
-        var gameOverElements = document.querySelectorAll('#gameOver');
-        gameOverElements.forEach(function(element) {
-          element.remove();
-        });
-        
-        // Remove game container elements created by tests
-        var gameContainers = document.querySelectorAll('#gameContainer');
-        gameContainers.forEach(function(element) {
-          element.remove();
-        });
-        
-        // Remove any elements with "Game Over" text that have high z-index
-        var allElements = document.querySelectorAll('*');
-        allElements.forEach(function(element) {
-          if (element.textContent && element.textContent.indexOf('Game Over') !== -1) {
-            var styles = window.getComputedStyle(element);
-            var zIndex = parseInt(styles.zIndex);
-            // Remove elements with high z-index that contain "Game Over" text
-            if (zIndex >= 100 && 
-                !element.closest('.test-results-container') && 
-                !element.closest('main')) {
-              element.remove();
-            }
-          }
-        });
-        
-        // Clean up any temporary DOM changes that don't belong to the test interface
-        // but be more conservative to avoid breaking the main UI
-        if (document.body.innerHTML.indexOf('test-results-container') === -1) {
-          // Only reload if the main interface was completely destroyed
-          location.reload();
-        }
-      }
-
-      // Handle beforeEach setup for test suites
-      function setupTestEnvironment(suiteName) {
-        // Clean up any leftover DOM elements first
-        cleanupTestEnvironment();
-        
-        if (suiteName === 'SnakeGameLogic') {
-          // Use smaller game area for easier testing
-          window.game = new SnakeGameLogic(400, 300);
-        } else if (suiteName === 'TodoListLogic') {
-          // Clear localStorage mock before each test
-          if (typeof localStorage !== 'undefined') {
-            localStorage.clear();
-          }
-          window.todoList = new TodoListLogic();
-        } else if (suiteName === 'SnakeGameUI') {
-          // Set up DOM and mocks for UI tests
-          window.mockPreventDefault = function() { 
-            mockPreventDefault.called = true; 
-          };
-          window.mockPreventDefault.called = false;
-        } else if (suiteName === 'TopBarComponent') {
-          // Override createTopBar to be synchronous for testing
-          window.createTopBar = function(options = {}) {
-            // Synchronous version for browser tests
-            var basePath = options.pathToRoot || options.basePath || '';
-            var version = 'v1.0.0'; // Use fallback version for tests
+        // Find test summary line
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          
+          // Look for Jest summary line: "Test Suites: X passed, Y total"
+          if (line.includes('Test Suites:') && line.includes('Tests:')) {
+            const testSuitesMatch = line.match(/Test Suites:\s*(\d+)\s*passed(?:,\s*(\d+)\s*failed)?(?:,\s*(\d+)\s*total)?/);
+            const testsMatch = line.match(/Tests:\s*(\d+)\s*passed(?:,\s*(\d+)\s*failed)?(?:,\s*(\d+)\s*total)?/);
             
-            return `
-              <header class="top-bar">
-                <img src="${basePath}favicon.svg" alt="Site logo" class="logo">
-                <span class="title">My GitHub Page</span>
-                <span class="version">${version}</span>
-                <nav class="navigation">
-                  <a href="${basePath}index.html#hero">Home</a>
-                  <a href="${basePath}index.html#projects">Projects</a>
-                  <a href="${basePath}test-results.html">Test Visualizer</a>
-                </nav>
-              </header>
-            `;
-          };
-        }
-      }
-
-      // Run all test suites
-      function runTestSuite() {
-        var results = {};
-        var totalTests = 0;
-        var passedTests = 0;
-
-        for (var suiteName in testSuites) {
-          var suiteCategories = testSuites[suiteName];
-          for (var categoryName in suiteCategories) {
-            var tests = suiteCategories[categoryName];
-            var fullCategoryName = suiteName + ' - ' + categoryName;
-            results[fullCategoryName] = [];
-            
-            for (var i = 0; i < tests.length; i++) {
-              var testObj = tests[i];
-              totalTests++;
-              var testResult = false;
-              var errorMessage = null;
-              
-              try {
-                setupTestEnvironment(suiteName);
-                
-                // Execute the test function
-                if (typeof testObj.test === 'function') {
-                  testObj.test();
-                } else {
-                  // If it's a string function, create a function from it
-                  var testFunction = new Function(testObj.test);
-                  testFunction();
-                }
-                testResult = true;
-              } catch (error) {
-                testResult = false;
-                errorMessage = error.message;
-              }
-              
-              results[fullCategoryName].push({
-                name: testObj.name,
-                passed: testResult,
-                error: errorMessage
-              });
-              
-              if (testResult) passedTests++;
+            if (testsMatch) {
+              testResults.summary.passed = parseInt(testsMatch[1]) || 0;
+              testResults.summary.failed = parseInt(testsMatch[2]) || 0;
+              testResults.summary.total = parseInt(testsMatch[3]) || (testResults.summary.passed + testResults.summary.failed);
             }
+            break;
           }
         }
 
-        return {
-          results: results,
-          summary: {
-            total: totalTests,
-            passed: passedTests,
-            failed: totalTests - passedTests
+        // Look for individual test file results
+        const testFilePattern = /PASS|FAIL.*\.\/(.*\.test\.js)/;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const match = line.match(testFilePattern);
+          
+          if (match) {
+            const status = line.trim().startsWith('PASS') ? 'passed' : 'failed';
+            const fileName = match[1];
+            
+            testResults.testSuites.push({
+              name: fileName.replace('.test.js', '').replace(/-/g, ' '),
+              status: status,
+              file: fileName
+            });
           }
-        };
-      }
-
-      function updateProgressBar(progress) {
-        var progressFill = document.getElementById('progressFill');
-        if (progressFill) {
-          progressFill.style.width = progress + '%';
         }
+
+        return testResults;
       }
 
-      function updateSummary(summary) {
-        document.getElementById('totalTests').textContent = summary.total;
-        document.getElementById('passedTests').textContent = summary.passed;
-        document.getElementById('failedTests').textContent = summary.failed;
-      }
+      // Update the UI with test results
+      function updateUI(testResults) {
+        // Update summary stats
+        document.getElementById('totalTests').textContent = testResults.summary.total;
+        document.getElementById('passedTests').textContent = testResults.summary.passed;
+        document.getElementById('failedTests').textContent = testResults.summary.failed;
 
-      function displayResults(results) {
-        var container = document.getElementById('testCategories');
-        container.innerHTML = '';
+        // Update pipeline info
+        const runStatus = testResults.workflowRun.conclusion || testResults.workflowRun.status;
+        document.getElementById('pipelineStatus').innerHTML = 
+          `<strong>Status:</strong> <span class="run-status ${runStatus}">${runStatus}</span> (Run #${testResults.workflowRun.run_number})`;
+        
+        const runDate = new Date(testResults.workflowRun.created_at).toLocaleString();
+        document.getElementById('pipelineTime').innerHTML = 
+          `<strong>Last Run:</strong> ${runDate}`;
 
-        for (var category in results) {
-          var tests = results[category];
-          var categoryDiv = document.createElement('div');
+        // Update execution time
+        const jobDuration = testResults.testJob.completed_at ? 
+          Math.round((new Date(testResults.testJob.completed_at) - new Date(testResults.testJob.started_at)) / 1000) :
+          'In progress';
+        document.getElementById('executionTime').textContent = 
+          `Tests completed in ${jobDuration}s | Fetched from GitHub Actions`;
+
+        // Update test categories
+        const categoriesContainer = document.getElementById('testCategories');
+        categoriesContainer.innerHTML = '';
+
+        if (testResults.testSuites.length === 0) {
+          categoriesContainer.innerHTML = '<div class="loading">No test suite details available</div>';
+          return;
+        }
+
+        testResults.testSuites.forEach(suite => {
+          const categoryDiv = document.createElement('div');
           categoryDiv.className = 'test-category';
           
-          var title = document.createElement('div');
+          const title = document.createElement('div');
           title.className = 'category-title';
-          title.textContent = category;
+          title.textContent = suite.name;
           categoryDiv.appendChild(title);
 
-          for (var i = 0; i < tests.length; i++) {
-            var test = tests[i];
-            var testItem = document.createElement('div');
-            testItem.className = 'test-item';
-            
-            var testHeader = document.createElement('div');
-            testHeader.className = 'test-item-header';
-            
-            var status = document.createElement('div');
-            status.className = 'test-status ' + (test.passed ? 'passed' : 'failed');
-            
-            var name = document.createElement('div');
-            name.className = 'test-name';
-            name.textContent = test.name;
-            
-            testHeader.appendChild(status);
-            testHeader.appendChild(name);
-            testItem.appendChild(testHeader);
-            
-            // Add error details for failed tests
-            if (!test.passed && test.error) {
-              var errorDiv = document.createElement('div');
-              errorDiv.className = 'test-error';
-              errorDiv.textContent = test.error;
-              testItem.appendChild(errorDiv);
-            }
-            
-            categoryDiv.appendChild(testItem);
-          }
+          const testItem = document.createElement('div');
+          testItem.className = 'test-item';
+          
+          const testHeader = document.createElement('div');
+          testHeader.className = 'test-item-header';
+          
+          const status = document.createElement('div');
+          status.className = `test-status ${suite.status}`;
+          
+          const name = document.createElement('div');
+          name.className = 'test-name';
+          name.textContent = `Test Suite: ${suite.file}`;
+          
+          testHeader.appendChild(status);
+          testHeader.appendChild(name);
+          testItem.appendChild(testHeader);
+          categoryDiv.appendChild(testItem);
 
-          container.appendChild(categoryDiv);
-        }
+          categoriesContainer.appendChild(categoryDiv);
+        });
       }
 
-      function runTests() {
-        return new Promise(function(resolve) {
-          var runButton = document.getElementById('runTestsBtn');
-          var executionTime = document.getElementById('executionTime');
-          
-          runButton.disabled = true;
-          runButton.textContent = 'Running Tests...';
-          executionTime.textContent = 'Executing tests...';
-          
-          var startTime = Date.now();
-          
-          // Simulate test execution with progress updates
-          updateProgressBar(0);
-          
-          // Calculate total number of tests for progress
-          var totalTestCount = 0;
-          for (var suiteName in testSuites) {
-            var suiteCategories = testSuites[suiteName];
-            for (var categoryName in suiteCategories) {
-              var tests = suiteCategories[categoryName];
-              totalTestCount += tests.length;
-            }
-          }
-          
-          var results = {};
-          var currentTestIndex = 0;
-          var totalTests = 0;
-          var passedTests = 0;
-          
-          var processCategories = Object.keys(testSuites);
-          var categoryIndex = 0;
-          
-          function processNextCategory() {
-            if (categoryIndex >= processCategories.length) {
-              var endTime = Date.now();
-              var duration = endTime - startTime;
-              
-              var summary = {
-                total: totalTests,
-                passed: passedTests,
-                failed: totalTests - passedTests
-              };
+      // Show error message
+      function showError(message) {
+        const errorContainer = document.getElementById('errorContainer');
+        errorContainer.innerHTML = `
+          <div class="error-message">
+            <h3>Unable to fetch test results</h3>
+            <p>${message}</p>
+            <p>This could be due to:</p>
+            <ul>
+              <li>GitHub API rate limiting</li>
+              <li>No recent workflow runs</li>
+              <li>Repository access restrictions</li>
+            </ul>
+            <p>Try refreshing the page or check the <a href="https://github.com/${GITHUB_REPO.owner}/${GITHUB_REPO.repo}/actions" target="_blank">GitHub Actions page</a> directly.</p>
+          </div>
+        `;
+        errorContainer.style.display = 'block';
+      }
 
-              updateSummary(summary);
-              displayResults(results);
-              
-              executionTime.textContent = 'Tests completed in ' + duration + 'ms';
-              runButton.disabled = false;
-              runButton.textContent = 'Run Tests Again';
-              resolve();
-              return;
-            }
-            
-            var suiteName = processCategories[categoryIndex];
-            var suiteCategories = testSuites[suiteName];
-            var categories = Object.keys(suiteCategories);
-            var subCategoryIndex = 0;
-            
-            function processNextSubCategory() {
-              if (subCategoryIndex >= categories.length) {
-                categoryIndex++;
-                setTimeout(processNextCategory, 10);
-                return;
-              }
-              
-              var categoryName = categories[subCategoryIndex];
-              var tests = suiteCategories[categoryName];
-              var fullCategoryName = suiteName + ' - ' + categoryName;
-              results[fullCategoryName] = [];
-              
-              var testIndex = 0;
-              
-              function processNextTest() {
-                if (testIndex >= tests.length) {
-                  subCategoryIndex++;
-                  setTimeout(processNextSubCategory, 10);
-                  return;
-                }
-                
-                var testObj = tests[testIndex];
-                totalTests++;
-                currentTestIndex++;
-                var testResult = false;
-                var errorMessage = null;
-                
-                try {
-                  setupTestEnvironment(suiteName);
-                  
-                  // Execute the test function
-                  if (typeof testObj.test === 'function') {
-                    testObj.test();
-                  } else {
-                    // If it's a string function, create a function from it
-                    try {
-                      var testFunction = new Function(testObj.test);
-                      testFunction();
-                    } catch (syntaxError) {
-                      throw new Error('Syntax error in test "' + testObj.name + '": ' + syntaxError.message + '\nTest code: ' + testObj.test);
-                    }
-                  }
-                  testResult = true;
-                } catch (error) {
-                  testResult = false;
-                  errorMessage = error.message;
-                } finally {
-                  // Always clean up after each test to prevent UI interference
-                  cleanupTestEnvironment();
-                }
-                
-                results[fullCategoryName].push({
-                  name: testObj.name,
-                  passed: testResult,
-                  error: errorMessage
-                });
-                if (testResult) passedTests++;
-                
-                // Update progress
-                var progress = (currentTestIndex / totalTestCount) * 100;
-                updateProgressBar(progress);
-                
-                testIndex++;
-                setTimeout(processNextTest, 30);
-              }
-              
-              processNextTest();
-            }
-            
-            processNextSubCategory();
-          }
+      // Main function to load and display test results
+      async function loadTestResults() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const executionTime = document.getElementById('executionTime');
+        
+        try {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = 'Loading...';
+          executionTime.textContent = 'Fetching latest test results from GitHub Actions...';
           
-          processNextCategory();
-        });
+          // Hide any previous errors
+          document.getElementById('errorContainer').style.display = 'none';
+          
+          const latestRun = await fetchLatestTestRun();
+          const testResults = await fetchTestResults(latestRun);
+          
+          currentTestData = testResults;
+          updateUI(testResults);
+          
+        } catch (error) {
+          console.error('Error loading test results:', error);
+          showError(error.message);
+          
+          // Reset UI to show error state
+          document.getElementById('totalTests').textContent = '--';
+          document.getElementById('passedTests').textContent = '--';
+          document.getElementById('failedTests').textContent = '--';
+          document.getElementById('testCategories').innerHTML = '<div class="loading">Failed to load test results</div>';
+          
+        } finally {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = 'Refresh Results';
+        }
       }
 
       // Event listeners
-      document.getElementById('runTestsBtn').addEventListener('click', runTests);
+      document.getElementById('refreshBtn').addEventListener('click', loadTestResults);
 
-      // Auto-run tests on page load
+      // Auto-load results on page load
       window.addEventListener('load', function() {
-        setTimeout(runTests, 500);
+        setTimeout(loadTestResults, 500);
       });
+
+      // Auto-refresh every 2 minutes
+      setInterval(loadTestResults, 120000);
     </script>
   </body>
 </html>
