@@ -646,8 +646,12 @@
                     testObj.test();
                   } else {
                     // If it's a string function, create a function from it
-                    var testFunction = new Function(testObj.test);
-                    testFunction();
+                    try {
+                      var testFunction = new Function(testObj.test);
+                      testFunction();
+                    } catch (syntaxError) {
+                      throw new Error('Syntax error in test "' + testObj.name + '": ' + syntaxError.message + '\nTest code: ' + testObj.test);
+                    }
                   }
                   testResult = true;
                 } catch (error) {

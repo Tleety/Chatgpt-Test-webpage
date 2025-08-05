@@ -71,13 +71,13 @@ var testSuites = {
       },
       {
         "name": "should not place food on snake body",
-        "test": "// Create a long snake\ngame.snake = [\n{ x: 100, y: 100 },\n{ x: 80, y: 100 },\n{ x: 60, y: 100 },\n{ x: 40, y: 100 },\n{ x: 20, y: 100 }\n];\nvar food = game.placeFood();\n// Food should not be on any snake segment\nexpect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);"
+        "test": "// Create a long snake\ngame.snake = [\n{ x: 100, y: 100 },\n{ x: 80, y: 100 },\n{ x: 60, y: 100 },\n{ x: 40, y: 100 },\n{ x: 20, y: 100 }\n];\nvar food = game.placeFood();\n// Food should not be on any snake segment\nexpect(game.snake.some(function(seg) { return seg.x === food.x && seg.y === food.y; })).toBe(false);"
       }
     ],
     "Game State": [
       {
         "name": "should return complete game state",
-        "test": "const state = game.getGameState();\nexpect(state).toHaveProperty('snake');\nexpect(state).toHaveProperty('food');\nexpect(state).toHaveProperty('direction');\nexpect(state).toHaveProperty('score');\nexpect(state).toHaveProperty('gameWidth');\nexpect(state).toHaveProperty('gameHeight');\nexpect(state.snake).toHaveLength(game.snake.length);\nexpect(state.score).toBe(game.score);"
+        "test": "var state = game.getGameState();\nexpect(state).toHaveProperty('snake');\nexpect(state).toHaveProperty('food');\nexpect(state).toHaveProperty('direction');\nexpect(state).toHaveProperty('score');\nexpect(state).toHaveProperty('gameWidth');\nexpect(state).toHaveProperty('gameHeight');\nexpect(state.snake).toHaveLength(game.snake.length);\nexpect(state.score).toBe(game.score);"
       },
       {
         "name": "should reset game state correctly",
@@ -87,26 +87,26 @@ var testSuites = {
     "Edge Cases": [
       {
         "name": "should handle very small game area",
-        "test": "const smallGame = new SnakeGameLogic(40, 40);\nexpect(smallGame.snake).toHaveLength(1);\nexpect(smallGame.food).toBeDefined();"
+        "test": "var smallGame = new SnakeGameLogic(40, 40);\nexpect(smallGame.snake).toHaveLength(1);\nexpect(smallGame.food).toBeDefined();"
       },
       {
         "name": "should handle food placement when most spaces are occupied",
-        "test": "// Fill most of the game area with snake\nconst segments = [];\nfor (var y = 0; y < 300; y += 20) {\nfor (var x = 0; x < 380; x += 20) { // leave some space\nsegments.push({ x, y });\n}\n}\ngame.snake = segments;\nvar food = game.placeFood();\nexpect(food).toBeDefined();\nexpect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);"
+        "test": "// Fill most of the game area with snake\nvar segments = [];\nfor (var y = 0; y < 300; y += 20) {\nfor (var x = 0; x < 380; x += 20) { // leave some space\nsegments.push({ x: x, y: y });\n}\n}\ngame.snake = segments;\nvar food = game.placeFood();\nexpect(food).toBeDefined();\nexpect(game.snake.some(function(seg) { return seg.x === food.x && seg.y === food.y; })).toBe(false);"
       }
     ],
     "High Score Management": [],
     "getHighScores": [
       {
         "name": "should return empty array when no scores exist",
-        "test": "const scores = game.getHighScores();\nexpect(scores).toEqual([]);"
+        "test": "var scores = game.getHighScores();\nexpect(scores).toEqual([]);"
       },
       {
         "name": "should return parsed scores from localStorage",
-        "test": "var testScores = [\n{ name: 'Alice', score: 10 },\n{ name: 'Bob', score: 5 }\n];\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nconst scores = game.getHighScores();\nexpect(scores).toEqual(testScores);"
+        "test": "var testScores = [\n{ name: 'Alice', score: 10 },\n{ name: 'Bob', score: 5 }\n];\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nvar scores = game.getHighScores();\nexpect(scores).toEqual(testScores);"
       },
       {
         "name": "should handle corrupted localStorage data",
-        "test": "localStorage.setItem('snakeGameHighScores', 'invalid json');\nconst scores = game.getHighScores();\nexpect(scores).toEqual([]);"
+        "test": "localStorage.setItem('snakeGameHighScores', 'invalid json');\nvar scores = game.getHighScores();\nexpect(scores).toEqual([]);"
       }
     ],
     "isHighScore": [
@@ -124,11 +124,11 @@ var testSuites = {
       },
       {
         "name": "should return true when score beats lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: `Player${i}`, score: i });\n}\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(2)).toBe(true);\nexpect(game.isHighScore(11)).toBe(true);"
+        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + i, score: i });\n}\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(2)).toBe(true);\nexpect(game.isHighScore(11)).toBe(true);"
       },
       {
         "name": "should return false when score does not beat lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: `Player${i}`, score: i });\n}\n// Sort the test scores properly\ntestScores.sort((a, b) => b.score - a.score);\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(1)).toBe(false);"
+        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + i, score: i });\n}\n// Sort the test scores properly\ntestScores.sort(function(a, b) { return b.score - a.score; });\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(1)).toBe(false);"
       }
     ],
     "addHighScore": [
@@ -138,23 +138,23 @@ var testSuites = {
       },
       {
         "name": "should add score and maintain sort order",
-        "test": "game.addHighScore('Bob', 5);\ngame.addHighScore('Alice', 10);\ngame.addHighScore('Charlie', 7);\nconst scores = game.getHighScores();\nexpect(scores).toEqual([\n{ name: 'Alice', score: 10 },\n{ name: 'Charlie', score: 7 },\n{ name: 'Bob', score: 5 }\n]);"
+        "test": "game.addHighScore('Bob', 5);\ngame.addHighScore('Alice', 10);\ngame.addHighScore('Charlie', 7);\nvar scores = game.getHighScores();\nexpect(scores).toEqual([\n{ name: 'Alice', score: 10 },\n{ name: 'Charlie', score: 7 },\n{ name: 'Bob', score: 5 }\n]);"
       },
       {
         "name": "should limit to top 10 scores",
-        "test": "// Add 11 scores\nfor (var i = 1; i <= 11; i++) {\ngame.addHighScore(`Player${i}`, i);\n}\nconst scores = game.getHighScores();\nexpect(scores).toHaveLength(10);\nexpect(scores[0].score).toBe(11);\nexpect(scores[9].score).toBe(2);"
+        "test": "// Add 11 scores\nfor (var i = 1; i <= 11; i++) {\ngame.addHighScore(\"Player\" + i, i);\n}\nvar scores = game.getHighScores();\nexpect(scores).toHaveLength(10);\nexpect(scores[0].score).toBe(11);\nexpect(scores[9].score).toBe(2);"
       },
       {
         "name": "should not add score that does not qualify",
-        "test": "// Fill with 10 scores (1-10)\nfor (var i = 1; i <= 10; i++) {\ngame.addHighScore(`Player${i}`, i);\n}\nvar result = game.addHighScore('LowScore', 0);\nexpect(result).toBe(false);\nexpect(game.getHighScores()).toHaveLength(10);\nexpect(game.getHighScores()[9].score).toBe(1);"
+        "test": "// Fill with 10 scores (1-10)\nfor (var i = 1; i <= 10; i++) {\ngame.addHighScore(\"Player\" + i, i);\n}\nvar result = game.addHighScore('LowScore', 0);\nexpect(result).toBe(false);\nexpect(game.getHighScores()).toHaveLength(10);\nexpect(game.getHighScores()[9].score).toBe(1);"
       },
       {
         "name": "should handle empty name by using Anonymous",
-        "test": "game.addHighScore('', 10);\ngame.addHighScore('   ', 5);\nconst scores = game.getHighScores();\nexpect(scores[0].name).toBe('Anonymous');\nexpect(scores[1].name).toBe('Anonymous');"
+        "test": "game.addHighScore('', 10);\ngame.addHighScore('   ', 5);\nvar scores = game.getHighScores();\nexpect(scores[0].name).toBe('Anonymous');\nexpect(scores[1].name).toBe('Anonymous');"
       },
       {
         "name": "should trim whitespace from names",
-        "test": "game.addHighScore('  Alice  ', 10);\nconst scores = game.getHighScores();\nexpect(scores[0].name).toBe('Alice');"
+        "test": "game.addHighScore('  Alice  ', 10);\nvar scores = game.getHighScores();\nexpect(scores[0].name).toBe('Alice');"
       }
     ],
     "clearHighScores": [
@@ -196,7 +196,7 @@ var testSuites = {
       },
       {
         "name": "should load tasks from localStorage when available",
-        "test": "const savedTasks = [\n{ id: 1, text: 'Test task', completed: false }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\nvar loadedTasks = todoList.loadTasks();\nexpect(loadedTasks).toEqual(savedTasks);\nexpect(localStorageMock.getItem).toHaveBeenCalledWith('todoTasks');"
+        "test": "var savedTasks = [\n{ id: 1, text: 'Test task', completed: false }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\nvar loadedTasks = todoList.loadTasks();\nexpect(loadedTasks).toEqual(savedTasks);\nexpect(localStorageMock.getItem).toHaveBeenCalledWith('todoTasks');"
       },
       {
         "name": "should return empty array when no saved tasks exist",
@@ -204,7 +204,7 @@ var testSuites = {
       },
       {
         "name": "should initialize with tasks from storage",
-        "test": "const savedTasks = [\n{ id: 1, text: 'Existing task', completed: true }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\ntodoList.initialize();\nexpect(todoList.tasks).toEqual(savedTasks);"
+        "test": "var savedTasks = [\n{ id: 1, text: 'Existing task', completed: true }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\ntodoList.initialize();\nexpect(todoList.tasks).toEqual(savedTasks);"
       }
     ],
     "Adding Tasks": [
@@ -268,7 +268,7 @@ var testSuites = {
       },
       {
         "name": "should return pending tasks only",
-        "test": "var pendingTasks = todoList.getPendingTasks();\nexpect(pendingTasks).toHaveLength(2);\nexpect(pendingTasks.every(task => !task.completed)).toBe(true);"
+        "test": "var pendingTasks = todoList.getPendingTasks();\nexpect(pendingTasks).toHaveLength(2);\nexpect(pendingTasks.every(function(task) { return !task.completed; })).toBe(true);"
       },
       {
         "name": "should find task by ID",
@@ -282,11 +282,11 @@ var testSuites = {
     "Task Statistics": [
       {
         "name": "should return correct stats for empty list",
-        "test": "const stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 0,\ncompleted: 0,\npending: 0\n});"
+        "test": "var stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 0,\ncompleted: 0,\npending: 0\n});"
       },
       {
         "name": "should return correct stats with mixed tasks",
-        "test": "todoList.addTask('Task 1');\ntodoList.addTask('Task 2');\ntodoList.addTask('Task 3');\ntodoList.toggleTask(todoList.tasks[0].id);\ntodoList.toggleTask(todoList.tasks[1].id);\nconst stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 3,\ncompleted: 2,\npending: 1\n});"
+        "test": "todoList.addTask('Task 1');\ntodoList.addTask('Task 2');\ntodoList.addTask('Task 3');\ntodoList.toggleTask(todoList.tasks[0].id);\ntodoList.toggleTask(todoList.tasks[1].id);\nvar stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 3,\ncompleted: 2,\npending: 1\n});"
       }
     ],
     "Updating Tasks": [
@@ -346,7 +346,7 @@ var testSuites = {
       },
       {
         "name": "should handle multiple rapid additions",
-        "test": "for (var i = 0; i < 100; i++) {\ntodoList.addTask(`Task ${i}`);\n}\nexpect(todoList.tasks).toHaveLength(100);\nexpect(new Set(todoList.tasks.map(t => t.id)).size).toBe(100); // All IDs should be unique"
+        "test": "for (var i = 0; i < 100; i++) {\ntodoList.addTask(\"Task \" + i);\n}\nexpect(todoList.tasks).toHaveLength(100);\nexpect(new Set(todoList.tasks.map(function(t) { return t.id; })).size).toBe(100); // All IDs should be unique"
       },
       {
         "name": "should preserve task order",
