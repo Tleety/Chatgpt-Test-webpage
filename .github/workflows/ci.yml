@@ -1,0 +1,143 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run unit tests
+      run: npm test
+      
+    - name: Generate test report
+      run: npm test -- --verbose --coverage
+      if: always()
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Project
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup Go for WASM build
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build Go WASM module
+      run: |
+        cd go-wasm-game
+        GOOS=js GOARCH=wasm go build -o game.wasm
+        
+    - name: Setup Ruby for Jekyll
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: true
+        working-directory: ./jekyll-site
+        
+    - name: Build Jekyll site
+      run: |
+        cd jekyll-site
+        gem install bundler jekyll
+        bundle install
+        bundle exec jekyll build
+        
+    - name: Validate HTML structure
+      run: |
+        # Basic validation that HTML files are well-formed
+        find . -name "*.html" -not -path "./node_modules/*" -not -path "./_site/*" -not -path "./jekyll-site/vendor/*" | xargs -I {} sh -c 'echo "Checking {}" && grep -q "</html>" "{}"'
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to GitHub Pages
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup Go for WASM build
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build Go WASM module
+      run: |
+        cd go-wasm-game
+        GOOS=js GOARCH=wasm go build -o game.wasm
+        
+    - name: Setup Ruby for Jekyll
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: true
+        working-directory: ./jekyll-site
+        
+    - name: Build Jekyll site
+      run: |
+        cd jekyll-site
+        gem install bundler jekyll
+        bundle install
+        bundle exec jekyll build
+        
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: '.'
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false

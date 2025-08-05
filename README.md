@@ -39,7 +39,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 
 ## Testing
 
-Unit tests are available for multiple projects:
+Unit tests are available for multiple projects and are **required to pass** for all deployments and merges:
 
 ```bash
 # Install test dependencies
@@ -47,13 +47,30 @@ npm install
 
 # Run tests
 npm test
+
+# Run tests with coverage
+npm test -- --coverage
 ```
 
 **Current Test Coverage:**
 - **Snake Game Logic**: Comprehensive tests for game mechanics, collision detection, and state management
 - **Todo List Logic**: Full test suite for task management, data persistence, and input validation
+- **Snake Game UI**: Tests for user interface interactions and keyboard handling
+- **Top Bar Component**: Tests for navigation and UI consistency
+
+**Total: 66 tests across 4 test suites**
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
+
+### CI/CD Pipeline
+
+This repository includes automated testing and deployment via GitHub Actions:
+
+- **All pull requests** must pass unit tests before merging
+- **Main branch pushes** trigger full build and deployment to GitHub Pages
+- **Test failures** prevent deployment and require fixes before merge
+
+See [CI/CD Setup Instructions](.github/CI_SETUP.md) for configuration details.
 
 ## Coding Guidelines
 
@@ -141,6 +158,32 @@ To maintain visual and functional consistency across all project pages:
 - Maintain responsive design principles across all pages
 - Apply consistent button styles and interactive elements
 - Use standard fonts (Segoe UI stack) throughout the project
+
+### CI/CD and Deployment Guidelines
+
+Our development workflow enforces quality through automated testing and deployment:
+
+#### Required Testing
+- **All unit tests must pass** before code can be merged to main branch
+- Tests are automatically run on every pull request and push to main
+- Failed tests prevent deployment and require immediate fixes
+- Local testing is recommended before pushing: `npm test`
+
+#### GitHub Actions Workflows
+- **Test Suite**: Fast unit test execution for quick feedback on PRs
+- **CI/CD Pipeline**: Complete build, test, and deployment process
+- **Deployment**: Automatic deployment to GitHub Pages on successful main branch builds
+
+#### Branch Protection
+- Main branch is protected and requires passing status checks
+- Pull requests must be up to date with main before merging
+- All contributors (including administrators) must follow the same rules
+
+#### Pre-commit Best Practices
+- Run tests locally before committing: `npm test`
+- Ensure all builds complete successfully
+- Verify Go WASM builds work: `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
+- Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
 
 ### Test Visualization
 
