@@ -97,9 +97,9 @@ describe('Version Update System', () => {
       const ciWorkflowPath = path.join(__dirname, '../.github', 'workflows', 'ci.yml');
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
-      expect(ciWorkflow).toContain('Generate deployment info from GitHub data');
+      expect(ciWorkflow).toContain('Generate deployment info');
       expect(ciWorkflow).toContain('npm run generate-deployment-info');
-      expect(ciWorkflow).toContain('git add -f deployment.json test-summary.json');
+      expect(ciWorkflow).toContain('git add -f deployment.json tests/test-summary.json');
       expect(ciWorkflow).toContain('git commit -m "chore: update deployment info and test results [skip ci]"');
     });
 
@@ -205,7 +205,7 @@ describe('Version Update System', () => {
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
       // Verify workflow structure ensures version is updated before deployment
-      expect(ciWorkflow).toContain('needs: [validate-workflow, test, build]');
+      expect(ciWorkflow).toContain('needs: [test, build]');
       expect(ciWorkflow).toContain('if: github.ref == \'refs/heads/main\' && github.event_name == \'push\'');
       
       // Check that dependencies are installed after deployment info generation

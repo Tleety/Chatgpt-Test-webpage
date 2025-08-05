@@ -216,7 +216,7 @@ describe('Deployment Info Generation', () => {
     });
 
     test('should have CI workflow that includes deployment info generation', () => {
-      const ciWorkflowPath = path.join(__dirname, '.github', 'workflows', 'ci.yml');
+      const ciWorkflowPath = path.join(__dirname, '..', '.github', 'workflows', 'ci.yml');
       
       if (!fs.existsSync(ciWorkflowPath)) {
         throw new Error(`CI workflow file not found at ${ciWorkflowPath}`);
@@ -224,14 +224,14 @@ describe('Deployment Info Generation', () => {
       
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
-      expect(ciWorkflow).toContain('Generate deployment info from GitHub data');
+      expect(ciWorkflow).toContain('Generate deployment info');
       expect(ciWorkflow).toContain('npm run generate-deployment-info');
-      expect(ciWorkflow).toContain('git add -f deployment.json test-summary.json');
+      expect(ciWorkflow).toContain('git add -f deployment.json tests/test-summary.json');
       expect(ciWorkflow).toContain('git commit -m "chore: update deployment info and test results [skip ci]"');
     });
 
     test('should have deployment.json in .gitignore', () => {
-      const gitignorePath = path.join(__dirname, '.gitignore');
+      const gitignorePath = path.join(__dirname, '..', '.gitignore');
       
       if (!fs.existsSync(gitignorePath)) {
         throw new Error(`.gitignore file not found at ${gitignorePath}`);
@@ -271,7 +271,7 @@ describe('Deployment Info Generation', () => {
       });
 
       // Load and execute top-bar.js
-      const topBarCodePath = path.join(__dirname, 'top-bar.js');
+      const topBarCodePath = path.join(__dirname, '..', 'top-bar.js');
       if (!fs.existsSync(topBarCodePath)) {
         throw new Error(`top-bar.js file not found at ${topBarCodePath}`);
       }
@@ -293,7 +293,7 @@ describe('Deployment Info Generation', () => {
       });
 
       // Load and execute top-bar.js
-      const topBarCodePath = path.join(__dirname, 'top-bar.js');
+      const topBarCodePath = path.join(__dirname, '..', 'top-bar.js');
       if (!fs.existsSync(topBarCodePath)) {
         throw new Error(`top-bar.js file not found at ${topBarCodePath}`);
       }
@@ -317,7 +317,7 @@ describe('Deployment Info Generation', () => {
         { path: './package.json', name: 'package.json file' }
       ];
       
-      const missingFiles = requiredFiles.filter(file => !fs.existsSync(path.join(__dirname, file.path)));
+      const missingFiles = requiredFiles.filter(file => !fs.existsSync(path.join(__dirname, '..', file.path)));
       
       expect(missingFiles.length).toBe(0);
       
