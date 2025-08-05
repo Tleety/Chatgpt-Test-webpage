@@ -13,13 +13,46 @@ async function getVersion() {
     return cachedVersion;
   }
   
+  // Get repository info from current URL or fallback to known repo
+  const repoOwner = 'Tleety';
+  const repoName = 'Chatgpt-Test-webpage';
+  
   try {
-    // Try different paths for deployment.json based on current location
+    // First try to get the latest release from GitHub API
+    const releaseResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+    if (releaseResponse.ok) {
+      const releaseData = await releaseResponse.json();
+      if (releaseData.tag_name) {
+        cachedVersion = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
+        return cachedVersion;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load version from GitHub releases:', error);
+  }
+  
+  try {
+    // If no releases, try to get latest commit info
+    const commitResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits/main`);
+    if (commitResponse.ok) {
+      const commitData = await commitResponse.json();
+      if (commitData.sha) {
+        const shortSha = commitData.sha.substring(0, 7);
+        cachedVersion = `commit-${shortSha}`;
+        return cachedVersion;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load version from GitHub commits:', error);
+  }
+  
+  try {
+    // Fallback: try local deployment.json if it exists (for local development)
     const possiblePaths = [
-      'deployment.json',           // Current directory
-      '../deployment.json',        // One level up
-      '../../deployment.json',     // Two levels up (for deeply nested pages)
-      '/Chatgpt-Test-webpage/deployment.json'  // Absolute path for GitHub Pages
+      'deployment.json',
+      '../deployment.json', 
+      '../../deployment.json',
+      '/Chatgpt-Test-webpage/deployment.json'
     ];
     
     for (const path of possiblePaths) {
@@ -27,42 +60,15 @@ async function getVersion() {
         const response = await fetch(path);
         if (response.ok) {
           const deploymentInfo = await response.json();
-          // Use the deployment number as the primary version
           cachedVersion = `v${deploymentInfo.version}`;
           return cachedVersion;
         }
       } catch (e) {
-        // Continue to next path
         continue;
       }
     }
   } catch (error) {
     console.warn('Could not load version from deployment.json:', error);
-  }
-  
-  // Fallback: try package.json as backup
-  try {
-    const possiblePaths = [
-      'package.json',
-      '../package.json',
-      '../../package.json',
-      '/Chatgpt-Test-webpage/package.json'
-    ];
-    
-    for (const path of possiblePaths) {
-      try {
-        const response = await fetch(path);
-        if (response.ok) {
-          const packageJson = await response.json();
-          cachedVersion = `v${packageJson.version}`;
-          return cachedVersion;
-        }
-      } catch (e) {
-        continue;
-      }
-    }
-  } catch (error) {
-    console.warn('Could not load version from package.json:', error);
   }
   
   // Final fallback to default version

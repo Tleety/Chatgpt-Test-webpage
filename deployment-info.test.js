@@ -219,18 +219,9 @@ describe('Deployment Info Generation', () => {
       expect(topBarHTML).toContain('vdeploy-55');
     });
 
-    test('should fallback to package.json when deployment.json is not available', async () => {
-      // Mock failed fetch for deployment.json but successful for package.json
+    test('should fallback to default version when GitHub API and deployment.json fail', async () => {
+      // Mock failed fetch for GitHub API and deployment.json
       global.fetch.mockImplementation((url) => {
-        if (url.includes('deployment.json')) {
-          return Promise.reject(new Error('Not found'));
-        }
-        if (url.includes('package.json')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ version: '1.0.2' })
-          });
-        }
         return Promise.reject(new Error('Not found'));
       });
 
@@ -240,7 +231,7 @@ describe('Deployment Info Generation', () => {
 
       const topBarHTML = await createTopBar();
       
-      expect(topBarHTML).toContain('v1.0.2');
+      expect(topBarHTML).toContain('v1.0.0'); // Default fallback version
     });
   });
 });
