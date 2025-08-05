@@ -5,6 +5,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:summary": "node scripts/generate-test-summary.js",
     "bump-version": "node scripts/bump-version.js",
     "generate-deployment-info": "node scripts/generate-deployment-info.js"
   },

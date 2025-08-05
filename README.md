@@ -58,7 +58,7 @@ npm test -- --coverage
 - **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
 
-**Total: 84 tests across 4 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 148 tests across 6 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
