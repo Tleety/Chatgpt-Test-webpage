@@ -2,18 +2,39 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Go WASM Game</title>
+    <title>Go WASM Game - My GitHub Page</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../style.css">
     <style>
+      main {
+        text-align: center;
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
       canvas {
-        border: 1px solid #000;
+        border: 2px solid #333;
+        background: #f9f9f9;
+      }
+      .game-instructions {
+        max-width: 500px;
+        color: #666;
+        font-size: 1.1em;
+        line-height: 1.6;
       }
     </style>
   </head>
   <body>
-    <h1>Go WASM Square</h1>
-    <p>Use arrow keys to move the square.</p>
-    <canvas id="game" width="300" height="300"></canvas>
+    <script src="../top-bar.js"></script>
+    <main>
+      <section class="hero">
+        <h1>Go WASM Square</h1>
+        <p class="game-instructions">Use arrow keys to move the square around the canvas. This is a WebAssembly demo written in Go!</p>
+      </section>
+      <canvas id="game" width="300" height="300"></canvas>
+    </main>
     <script src="wasm_exec.js"></script>
     <script>
       const go = new Go();
