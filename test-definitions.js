@@ -420,7 +420,14 @@ for (var suiteName in testSuites) {
     for (var i = 0; i < testSuites[suiteName][categoryName].length; i++) {
       var test = testSuites[suiteName][categoryName][i];
       if (typeof test.test === 'string') {
-        test.test = new Function(test.test);
+        try {
+          test.test = new Function(test.test);
+        } catch (syntaxError) {
+          // If there's a syntax error, create a failing test
+          test.test = function() {
+            throw new Error('Test conversion failed: ' + syntaxError.message);
+          };
+        }
       }
     }
   }
