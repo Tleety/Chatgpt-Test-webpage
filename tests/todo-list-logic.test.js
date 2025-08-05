@@ -2,7 +2,7 @@
  * Unit tests for TodoList Logic
  */
 
-const TodoListLogic = require('./todo-list-logic');
+const TodoListLogic = require('../todo-list-logic');
 
 // Mock localStorage for testing
 const localStorageMock = (() => {

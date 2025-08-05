@@ -17,8 +17,12 @@
   "jest": {
     "testEnvironment": "jsdom",
     "testMatch": [
-      "**/__tests__/**/*.js",
+      "**/tests/**/*.js",
       "**/?(*.)+(spec|test).js"
+    ],
+    "roots": [
+      "<rootDir>/tests",
+      "<rootDir>"
     ]
   }
 }

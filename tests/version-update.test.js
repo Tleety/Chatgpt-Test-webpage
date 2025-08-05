@@ -14,7 +14,7 @@ describe('Version Update System', () => {
   let packageJsonPath;
   
   beforeAll(() => {
-    packageJsonPath = path.join(__dirname, 'package.json');
+    packageJsonPath = path.join(__dirname, '../package.json');
     originalPackageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   });
   
@@ -25,7 +25,7 @@ describe('Version Update System', () => {
 
   describe('Bump Version Script', () => {
     test('should increment patch version correctly', () => {
-      const { bumpVersion } = require('./scripts/bump-version');
+      const { bumpVersion } = require('../scripts/bump-version');
       
       // Create a temporary package.json for testing
       const testPackageJson = { version: '1.2.3' };
@@ -61,7 +61,7 @@ describe('Version Update System', () => {
     });
 
     test('should handle invalid version format', () => {
-      const { bumpVersion } = require('./scripts/bump-version');
+      const { bumpVersion } = require('../scripts/bump-version');
       
       const originalReadFileSync = fs.readFileSync;
       const originalConsoleError = console.error;
@@ -94,7 +94,7 @@ describe('Version Update System', () => {
     });
 
     test('should have CI workflow that includes deployment info generation', () => {
-      const ciWorkflowPath = path.join(__dirname, '.github', 'workflows', 'ci.yml');
+      const ciWorkflowPath = path.join(__dirname, '../.github', 'workflows', 'ci.yml');
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
       expect(ciWorkflow).toContain('Generate deployment info from GitHub data');
@@ -104,7 +104,7 @@ describe('Version Update System', () => {
     });
 
     test('should have deployment info generation before build artifacts are created', () => {
-      const ciWorkflowPath = path.join(__dirname, '.github', 'workflows', 'ci.yml');
+      const ciWorkflowPath = path.join(__dirname, '../.github', 'workflows', 'ci.yml');
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
       // Check that deployment info generation happens before Upload artifact
@@ -141,7 +141,7 @@ describe('Version Update System', () => {
       });
 
       // Load and execute top-bar.js
-      const topBarCode = fs.readFileSync(path.join(__dirname, 'top-bar.js'), 'utf8');
+      const topBarCode = fs.readFileSync(path.join(__dirname, '../top-bar.js'), 'utf8');
       eval(topBarCode);
 
       // Test createTopBar function
@@ -156,7 +156,7 @@ describe('Version Update System', () => {
       global.fetch.mockRejectedValue(new Error('Not found'));
 
       // Load and execute top-bar.js
-      const topBarCode = fs.readFileSync(path.join(__dirname, 'top-bar.js'), 'utf8');
+      const topBarCode = fs.readFileSync(path.join(__dirname, '../top-bar.js'), 'utf8');
       eval(topBarCode);
 
       // Test createTopBar function
@@ -177,7 +177,7 @@ describe('Version Update System', () => {
         });
 
       // Load and execute top-bar.js
-      const topBarCode = fs.readFileSync(path.join(__dirname, 'top-bar.js'), 'utf8');
+      const topBarCode = fs.readFileSync(path.join(__dirname, '../top-bar.js'), 'utf8');
       eval(topBarCode);
 
       const topBarHTML = await createTopBar();
@@ -189,7 +189,7 @@ describe('Version Update System', () => {
 
   describe('End-to-End Deployment Info Validation', () => {
     test('should validate that deployment info generation script exists and is executable', () => {
-      const deploymentScriptPath = path.join(__dirname, 'scripts', 'generate-deployment-info.js');
+      const deploymentScriptPath = path.join(__dirname, '../scripts', 'generate-deployment-info.js');
       
       // Check that the file exists
       expect(fs.existsSync(deploymentScriptPath)).toBe(true);
@@ -201,7 +201,7 @@ describe('Version Update System', () => {
     });
 
     test('should validate that CI workflow deploys updated deployment info', () => {
-      const ciWorkflowPath = path.join(__dirname, '.github', 'workflows', 'ci.yml');
+      const ciWorkflowPath = path.join(__dirname, '../.github', 'workflows', 'ci.yml');
       const ciWorkflow = fs.readFileSync(ciWorkflowPath, 'utf8');
       
       // Verify workflow structure ensures version is updated before deployment

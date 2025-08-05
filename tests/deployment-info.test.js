@@ -16,11 +16,11 @@ describe('Deployment Info Generation', () => {
   beforeAll(() => {
     // Validate critical dependencies exist
     const requiredFiles = [
-      { path: './scripts/generate-deployment-info.js', name: 'generate-deployment-info script' },
-      { path: './.github/workflows/ci.yml', name: 'CI workflow' },
-      { path: './.gitignore', name: '.gitignore file' },
-      { path: './top-bar.js', name: 'top-bar.js file' },
-      { path: './package.json', name: 'package.json file' }
+      { path: '../scripts/generate-deployment-info.js', name: 'generate-deployment-info script' },
+      { path: '../.github/workflows/ci.yml', name: 'CI workflow' },
+      { path: '../.gitignore', name: '.gitignore file' },
+      { path: '../top-bar.js', name: 'top-bar.js file' },
+      { path: '../package.json', name: 'package.json file' }
     ];
     
     const missingFiles = requiredFiles.filter(file => !fs.existsSync(path.join(__dirname, file.path)));
@@ -32,7 +32,7 @@ describe('Deployment Info Generation', () => {
     
     // Save original environment
     originalEnv = { ...process.env };
-    packageJsonPath = path.join(__dirname, 'package.json');
+    packageJsonPath = path.join(__dirname, '../package.json');
   });
   
   afterAll(() => {
@@ -40,7 +40,7 @@ describe('Deployment Info Generation', () => {
     process.env = originalEnv;
     
     // Clean up any test deployment.json files
-    const deploymentJsonPath = path.join(__dirname, 'deployment.json');
+    const deploymentJsonPath = path.join(__dirname, '../deployment.json');
     if (fs.existsSync(deploymentJsonPath)) {
       fs.unlinkSync(deploymentJsonPath);
     }
@@ -62,7 +62,7 @@ describe('Deployment Info Generation', () => {
     test('should create deployment info with correct structure', () => {
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -86,7 +86,7 @@ describe('Deployment Info Generation', () => {
     test('should generate correct version format from GitHub run number', () => {
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -105,7 +105,7 @@ describe('Deployment Info Generation', () => {
       
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -126,7 +126,7 @@ describe('Deployment Info Generation', () => {
       
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -143,13 +143,13 @@ describe('Deployment Info Generation', () => {
     test('should create deployment.json file with correct content', () => {
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
       
       // Remove any existing deployment.json
-      const deploymentJsonPath = path.join(__dirname, 'deployment.json');
+      const deploymentJsonPath = path.join(__dirname, '../deployment.json');
       if (fs.existsSync(deploymentJsonPath)) {
         fs.unlinkSync(deploymentJsonPath);
       }
@@ -174,7 +174,7 @@ describe('Deployment Info Generation', () => {
     test('should include timestamp and deployment time', () => {
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -196,7 +196,7 @@ describe('Deployment Info Generation', () => {
       
       let generateDeploymentInfo;
       try {
-        ({ generateDeploymentInfo } = require('./scripts/generate-deployment-info'));
+        ({ generateDeploymentInfo } = require('../scripts/generate-deployment-info'));
       } catch (error) {
         throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
       }
@@ -323,7 +323,7 @@ describe('Deployment Info Generation', () => {
       
       // Additional validation that the generate-deployment-info script can be required
       expect(() => {
-        require('./scripts/generate-deployment-info');
+        require('../scripts/generate-deployment-info');
       }).not.toThrow();
     });
     
@@ -331,7 +331,7 @@ describe('Deployment Info Generation', () => {
       // Test that our improved error handling would catch missing dependencies
       expect(() => {
         try {
-          const { generateDeploymentInfo } = require('./scripts/nonexistent-script');
+          const { generateDeploymentInfo } = require('../scripts/nonexistent-script');
         } catch (error) {
           throw new Error(`Failed to require generate-deployment-info script: ${error.message}`);
         }
