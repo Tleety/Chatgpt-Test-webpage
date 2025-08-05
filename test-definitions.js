@@ -1,5 +1,5 @@
 // Auto-generated test definitions from Jest files
-// Generated on: 2025-08-05T14:59:10.826Z
+// Generated on: 2025-08-05T18:10:39.359Z
 // DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
 
 var testSuites = {
@@ -532,7 +532,7 @@ var testSuites = {
     "createTopBar function": [
       {
         "name": "should include version information in the top bar",
-        "test": "var topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v1.0.0');"
+        "test": "var topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('vdeploy-55');"
       },
       {
         "name": "should maintain existing structure with logo, title, and navigation",
@@ -543,18 +543,22 @@ var testSuites = {
         "test": "var topBarHTML = createTopBar({ pathToRoot: '../' });\nexpect(topBarHTML).toContain('src=\"../favicon.svg\"');\nexpect(topBarHTML).toContain('href=\"../index.html#hero\"');\nexpect(topBarHTML).toContain('href=\"../test-results.html\"');"
       },
       {
-        "name": "should use fallback version when package.json fails to load",
-        "test": "// Mock fetch to fail\nglobal.fetch.mockImplementation(() => Promise.reject(new Error('Failed to load')));\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v1.0.0'); // fallback version"
+        "name": "should use fallback version when deployment.json and package.json fail to load",
+        "test": "// Mock fetch to fail for both deployment.json and package.json\nglobal.fetch.mockImplementation(() => Promise.reject(new Error('Failed to load')));\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v1.0.0'); // fallback version"
       },
       {
-        "name": "should use version from package.json when available",
-        "test": "// Mock fetch to return different version\nglobal.fetch.mockImplementation(function(url) { return  ; }{\nif (url.includes('package.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: '2.5.1' })\n});\n}\nreturn Promise.reject(new Error('Not found'));\n});\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v2.5.1');"
+        "name": "should prefer deployment.json over package.json when both are available",
+        "test": "// Mock fetch to return both deployment.json and package.json\nglobal.fetch.mockImplementation(function(url) { return  ; }{\nif (url.includes('deployment.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: 'deploy-123' })\n});\n}\nif (url.includes('package.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: '2.5.1' })\n});\n}\nreturn Promise.reject(new Error('Not found'));\n});\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('vdeploy-123'); // Should use deployment.json"
+      },
+      {
+        "name": "should fallback to package.json when deployment.json is not available",
+        "test": "// Mock fetch to fail for deployment.json but succeed for package.json\nglobal.fetch.mockImplementation(function(url) { return  ; }{\nif (url.includes('deployment.json')) {\nreturn Promise.reject(new Error('Not found'));\n}\nif (url.includes('package.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: '2.5.1' })\n});\n}\nreturn Promise.reject(new Error('Not found'));\n});\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v2.5.1');"
       }
     ],
     "insertTopBar function": [
       {
         "name": "should insert top bar as first element in body",
-        "test": "// Add some existing content\ndocument.body.innerHTML = '<main>Existing content</main>';\ninsertTopBar();\nvar topBar = document.querySelector('.top-bar');\nexpect(topBar).toBeTruthy();\nexpect(document.body.firstElementChild).toBe(topBar);\n// Check that version is included\nvar version = topBar.querySelector('.version');\nexpect(version).toBeTruthy();\nexpect(version.textContent.trim()).toBe('v1.0.0');"
+        "test": "// Add some existing content\ndocument.body.innerHTML = '<main>Existing content</main>';\ninsertTopBar();\nvar topBar = document.querySelector('.top-bar');\nexpect(topBar).toBeTruthy();\nexpect(document.body.firstElementChild).toBe(topBar);\n// Check that version is included (should use deployment.json)\nvar version = topBar.querySelector('.version');\nexpect(version).toBeTruthy();\nexpect(version.textContent.trim()).toBe('vdeploy-55');"
       },
       {
         "name": "should not insert duplicate top bar",
