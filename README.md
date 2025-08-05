@@ -6,7 +6,6 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 ## Projects
 
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
-- **Simple Phaser Game** – Phaser 3 example with a bouncing logo.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 
 ## Running locally
@@ -24,13 +23,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    Requires a Ruby environment with Jekyll installed.
 
-3. **Run the Phaser demo**
-   ```
-   open phaser-game/index.html
-   ```
-   It loads Phaser from a CDN, so no build step is necessary.
-
-4. **Build the Go WASM demo**
+3. **Build the Go WASM demo**
    ```
    cd go-wasm-game
    GOOS=js GOARCH=wasm go build -o game.wasm
@@ -53,12 +46,10 @@ npm test -- --coverage
 ```
 
 **Current Test Coverage:**
-- **Snake Game Logic**: Comprehensive tests for game mechanics, collision detection, and state management
 - **Todo List Logic**: Full test suite for task management, data persistence, and input validation
-- **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
 
-**Total: 148 tests across 6 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 46 tests across 4 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
@@ -95,9 +86,8 @@ See [CI/CD Setup Instructions](.github/CI_SETUP.md) for configuration details.
 
 This project uses a diverse set of technologies to demonstrate different web development approaches:
 
-- **HTML/CSS/JavaScript** - Core web technologies for the main landing page and Snake game
+- **HTML/CSS/JavaScript** - Core web technologies for the main landing page
 - **Jekyll** - Ruby-based static site generator for the todo list project
-- **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
 - **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
 - **Jest** - JavaScript testing framework with jsdom environment for unit testing
 - **GitHub Pages** - Static site hosting and deployment
@@ -117,12 +107,6 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - Use frontmatter consistently for page metadata
 - Organize content in logical directory structures
 - Leverage Jekyll's built-in features (layouts, includes) for DRY principles
-
-#### Phaser 3
-- Load Phaser from CDN for simplicity in demo projects
-- Structure game code with clear initialization, update, and render phases
-- Use Phaser's built-in systems (scenes, sprites, physics) appropriately
-- Keep game logic modular and testable where possible
 
 #### Go + WebAssembly
 - Use standard Go project structure
