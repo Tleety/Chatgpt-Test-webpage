@@ -352,8 +352,48 @@
       // The testSuites object is loaded from test-definitions.js
       // DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
 
+      // Clean up DOM elements that might interfere with the test visualizer
+      function cleanupTestEnvironment() {
+        // Remove specific game-related overlay elements that might cover the UI
+        var gameOverElements = document.querySelectorAll('#gameOver');
+        gameOverElements.forEach(function(element) {
+          element.remove();
+        });
+        
+        // Remove game container elements created by tests
+        var gameContainers = document.querySelectorAll('#gameContainer');
+        gameContainers.forEach(function(element) {
+          element.remove();
+        });
+        
+        // Remove any elements with "Game Over" text that have high z-index
+        var allElements = document.querySelectorAll('*');
+        allElements.forEach(function(element) {
+          if (element.textContent && element.textContent.indexOf('Game Over') !== -1) {
+            var styles = window.getComputedStyle(element);
+            var zIndex = parseInt(styles.zIndex);
+            // Remove elements with high z-index that contain "Game Over" text
+            if (zIndex >= 100 && 
+                !element.closest('.test-results-container') && 
+                !element.closest('main')) {
+              element.remove();
+            }
+          }
+        });
+        
+        // Clean up any temporary DOM changes that don't belong to the test interface
+        // but be more conservative to avoid breaking the main UI
+        if (document.body.innerHTML.indexOf('test-results-container') === -1) {
+          // Only reload if the main interface was completely destroyed
+          location.reload();
+        }
+      }
+
       // Handle beforeEach setup for test suites
       function setupTestEnvironment(suiteName) {
+        // Clean up any leftover DOM elements first
+        cleanupTestEnvironment();
+        
         if (suiteName === 'SnakeGameLogic') {
           // Use smaller game area for easier testing
           window.game = new SnakeGameLogic(400, 300);
@@ -448,55 +488,12 @@
           }
         };
       }
-      function runTestSuite() {
-        var results = {};
-        var totalTests = 0;
-        var passedTests = 0;
-
-        for (var suiteName in testSuites) {
-          var suiteCategories = testSuites[suiteName];
-          for (var categoryName in suiteCategories) {
-            var tests = suiteCategories[categoryName];
-            var fullCategoryName = suiteName + ' - ' + categoryName;
-            results[fullCategoryName] = [];
-            
-            for (var i = 0; i < tests.length; i++) {
-              var testObj = tests[i];
-              totalTests++;
-              var testResult = false;
-              var errorMessage = null;
-              
-              try {
-                testObj.test();
-                testResult = true;
-              } catch (error) {
-                testResult = false;
-                errorMessage = error.message;
-              }
-              
-              results[fullCategoryName].push({
-                name: testObj.name,
-                passed: testResult,
-                error: errorMessage
-              });
-              
-              if (testResult) passedTests++;
-            }
-          }
-        }
-
-        return {
-          results: results,
-          summary: {
-            total: totalTests,
-            passed: passedTests,
-            failed: totalTests - passedTests
-          }
-        };
-      }
 
       function updateProgressBar(progress) {
-        document.getElementById('progressFill').style.width = progress + '%';
+        var progressFill = document.getElementById('progressFill');
+        if (progressFill) {
+          progressFill.style.width = progress + '%';
+        }
       }
 
       function updateSummary(summary) {
@@ -657,6 +654,9 @@
                 } catch (error) {
                   testResult = false;
                   errorMessage = error.message;
+                } finally {
+                  // Always clean up after each test to prevent UI interference
+                  cleanupTestEnvironment();
                 }
                 
                 results[fullCategoryName].push({
