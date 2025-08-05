@@ -7,6 +7,44 @@ on:
     branches: [ main ]
 
 jobs:
+  validate-workflow:
+    runs-on: ubuntu-latest
+    name: Validate Workflow Configuration
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate GitHub Pages deployment configuration
+      run: |
+        echo "Validating GitHub Pages deployment configuration..."
+        
+        # Check if deploy job has environment configuration
+        if ! grep -A 10 "deploy:" .github/workflows/ci.yml | grep -q "environment:"; then
+          echo "❌ ERROR: Deploy job missing environment configuration"
+          echo "GitHub Pages deployment requires environment.name to be set to 'github-pages'"
+          exit 1
+        fi
+        
+        # Check if environment name is correctly set
+        if ! grep -A 15 "deploy:" .github/workflows/ci.yml | grep -q "name: github-pages"; then
+          echo "❌ ERROR: Deploy job environment name must be 'github-pages'"
+          exit 1
+        fi
+        
+        # Check if required permissions are set
+        if ! grep -q "pages: write" .github/workflows/ci.yml; then
+          echo "❌ ERROR: Missing 'pages: write' permission"
+          exit 1
+        fi
+        
+        if ! grep -q "id-token: write" .github/workflows/ci.yml; then
+          echo "❌ ERROR: Missing 'id-token: write' permission"
+          exit 1
+        fi
+        
+        echo "✅ GitHub Pages deployment configuration is valid"
+
   test:
     runs-on: ubuntu-latest
     name: Run Tests
@@ -34,7 +72,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Project
-    needs: test
+    needs: [validate-workflow, test]
     
     steps:
     - name: Checkout code
@@ -81,8 +119,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to GitHub Pages
-    needs: [test, build]
+    needs: [validate-workflow, test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout code
