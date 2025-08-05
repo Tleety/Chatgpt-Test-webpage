@@ -17,6 +17,7 @@ class SnakeGameLogic {
     this.snake = [];
     this.direction = { x: CELL_SIZE, y: 0 };
     this.score = 0;
+    this.obstacles = [];
     // Note: experience persists between games
     
     // Initialize snake in the center
@@ -24,6 +25,7 @@ class SnakeGameLogic {
     const startY = Math.floor(this.gameHeight / 2 / CELL_SIZE) * CELL_SIZE;
     this.snake.push({ x: startX, y: startY });
     
+    this.generateObstacles();
     this.food = this.placeFood();
   }
 
@@ -63,6 +65,11 @@ class SnakeGameLogic {
 
     // Check self collision
     if (this.isSelfCollision(newX, newY)) {
+      return { collision: true, ateFood: false, newScore: this.score };
+    }
+
+    // Check obstacle collision
+    if (this.isObstacleCollision(newX, newY)) {
       return { collision: true, ateFood: false, newScore: this.score };
     }
 
@@ -107,8 +114,73 @@ class SnakeGameLogic {
   }
 
   /**
-   * Places food at random valid position
+   * Checks if position collides with obstacles
    */
+  isObstacleCollision(x, y) {
+    return this.obstacles.some(obstacle => obstacle.x === x && obstacle.y === y);
+  }
+
+  /**
+   * Generates obstacles based on current level
+   * More obstacles appear as player reaches higher levels
+   */
+  generateObstacles() {
+    this.obstacles = [];
+    const currentLevel = this.getLevel();
+    
+    // Calculate number of obstacles based on level
+    // Start adding obstacles at level 3, then add more every 2 levels
+    let numObstacles = 0;
+    if (currentLevel >= 3) {
+      numObstacles = Math.floor((currentLevel - 2) / 2) + 1;
+      // Cap at reasonable number to keep game playable
+      numObstacles = Math.min(numObstacles, 15);
+    }
+    
+    // Generate obstacles
+    for (let i = 0; i < numObstacles; i++) {
+      const obstacle = this.placeObstacle();
+      if (obstacle) {
+        this.obstacles.push(obstacle);
+      }
+    }
+  }
+
+  /**
+   * Places a single obstacle at a random valid position
+   */
+  placeObstacle() {
+    let x, y;
+    let attempts = 0;
+    const maxAttempts = 1000; // Prevent infinite loop
+    
+    // Define safe zone around snake starting position
+    const safeZoneSize = 3; // 3 cells in each direction from center
+    const centerX = Math.floor(this.gameWidth / 2 / CELL_SIZE) * CELL_SIZE;
+    const centerY = Math.floor(this.gameHeight / 2 / CELL_SIZE) * CELL_SIZE;
+    const safeZoneMinX = centerX - safeZoneSize * CELL_SIZE;
+    const safeZoneMaxX = centerX + safeZoneSize * CELL_SIZE;
+    const safeZoneMinY = centerY - safeZoneSize * CELL_SIZE;
+    const safeZoneMaxY = centerY + safeZoneSize * CELL_SIZE;
+    
+    do {
+      x = Math.floor(Math.random() * this.gameWidth / CELL_SIZE) * CELL_SIZE;
+      y = Math.floor(Math.random() * this.gameHeight / CELL_SIZE) * CELL_SIZE;
+      attempts++;
+      
+      // Check if position is valid (not on snake, not on existing obstacles, not in safe zone)
+      const onSnake = this.snake.some(seg => seg.x === x && seg.y === y);
+      const onObstacle = this.obstacles.some(obs => obs.x === x && obs.y === y);
+      const inSafeZone = x >= safeZoneMinX && x <= safeZoneMaxX && 
+                        y >= safeZoneMinY && y <= safeZoneMaxY;
+      
+      if (!onSnake && !onObstacle && !inSafeZone) {
+        return { x, y };
+      }
+    } while (attempts < maxAttempts);
+
+    return null; // Failed to find valid position
+  }
   placeFood() {
     let x, y;
     let attempts = 0;
@@ -118,13 +190,23 @@ class SnakeGameLogic {
       x = Math.floor(Math.random() * this.gameWidth / CELL_SIZE) * CELL_SIZE;
       y = Math.floor(Math.random() * this.gameHeight / CELL_SIZE) * CELL_SIZE;
       attempts++;
-    } while (this.snake.some(seg => seg.x === x && seg.y === y) && attempts < maxAttempts);
+      
+      // Check if position is valid (not on snake, not on obstacles)
+      const onSnake = this.snake.some(seg => seg.x === x && seg.y === y);
+      const onObstacle = this.obstacles.some(obs => obs.x === x && obs.y === y);
+      
+      if (!onSnake && !onObstacle) {
+        return { x, y };
+      }
+    } while (attempts < maxAttempts);
 
     if (attempts >= maxAttempts) {
       // Fallback: find first available position
       for (let testY = 0; testY < this.gameHeight; testY += CELL_SIZE) {
         for (let testX = 0; testX < this.gameWidth; testX += CELL_SIZE) {
-          if (!this.snake.some(seg => seg.x === testX && seg.y === testY)) {
+          const onSnake = this.snake.some(seg => seg.x === testX && seg.y === testY);
+          const onObstacle = this.obstacles.some(obs => obs.x === testX && obs.y === testY);
+          if (!onSnake && !onObstacle) {
             return { x: testX, y: testY };
           }
         }
@@ -141,6 +223,7 @@ class SnakeGameLogic {
     return {
       snake: [...this.snake],
       food: { ...this.food },
+      obstacles: [...this.obstacles],
       direction: { ...this.direction },
       score: this.score,
       experience: this.getExperience(),
