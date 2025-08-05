@@ -2,7 +2,7 @@
  * Unit tests for Snake Game Logic
  */
 
-const SnakeGameLogic = require('./snake-game-logic');
+const SnakeGameLogic = require('../snake-game-logic');
 
 describe('SnakeGameLogic', () => {
   let game;

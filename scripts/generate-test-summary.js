@@ -70,8 +70,8 @@ function generateTestSummary() {
       });
     }
     
-    // Write to test-summary.json
-    const outputPath = path.join(process.cwd(), 'test-summary.json');
+    // Write to tests/test-summary.json
+    const outputPath = path.join(process.cwd(), 'tests', 'test-summary.json');
     fs.writeFileSync(outputPath, JSON.stringify(testSummary, null, 2));
     
     console.log(`Test summary written to: ${outputPath}`);
@@ -98,7 +98,7 @@ function generateTestSummary() {
       error: error.message
     };
     
-    const outputPath = path.join(process.cwd(), 'test-summary.json');
+    const outputPath = path.join(process.cwd(), 'tests', 'test-summary.json');
     fs.writeFileSync(outputPath, JSON.stringify(fallbackSummary, null, 2));
     
     console.log(`Fallback test summary written to: ${outputPath}`);

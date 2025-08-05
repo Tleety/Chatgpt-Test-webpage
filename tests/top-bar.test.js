@@ -38,7 +38,7 @@ describe('Top Bar Component', () => {
     });
     
     // Execute the top-bar.js code in the current JSDOM environment
-    const topBarCode = fs.readFileSync(path.join(__dirname, 'top-bar.js'), 'utf8');
+    const topBarCode = fs.readFileSync(path.join(__dirname, '../top-bar.js'), 'utf8');
     eval(topBarCode);
   });
 

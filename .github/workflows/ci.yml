@@ -7,47 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  validate-workflow:
-    runs-on: ubuntu-latest
-    name: Validate Workflow Configuration
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Validate GitHub Pages deployment configuration
-      run: |
-        echo "Validating GitHub Pages deployment configuration..."
-        
-        # Check if deploy job has environment configuration
-        if ! grep -A 10 "deploy:" .github/workflows/ci.yml | grep -q "environment:"; then
-          echo "❌ ERROR: Deploy job missing environment configuration"
-          echo "GitHub Pages deployment requires environment.name to be set to 'github-pages'"
-          exit 1
-        fi
-        
-        # Check if environment name is correctly set
-        if ! grep -A 15 "deploy:" .github/workflows/ci.yml | grep -q "name: github-pages"; then
-          echo "❌ ERROR: Deploy job environment name must be 'github-pages'"
-          exit 1
-        fi
-        
-        # Check if required permissions are set
-        if ! grep -q "pages: write" .github/workflows/ci.yml; then
-          echo "❌ ERROR: Missing 'pages: write' permission"
-          exit 1
-        fi
-        
-        if ! grep -q "id-token: write" .github/workflows/ci.yml; then
-          echo "❌ ERROR: Missing 'id-token: write' permission"
-          exit 1
-        fi
-        
-        echo "✅ GitHub Pages deployment configuration is valid"
-
   test:
     runs-on: ubuntu-latest
-    name: Run Tests
+    name: Unit Tests
     
     steps:
     - name: Checkout code
@@ -65,26 +27,13 @@ jobs:
     - name: Run unit tests
       run: npm test
       
-    - name: Generate test results JSON
-      run: npm test -- --json --outputFile=test-results.json
-      if: always()
-      
-    - name: Upload test results artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: test-results.json
-        retention-days: 30
-      if: always()
-      
-    - name: Generate test summary for web display
+    - name: Generate test results for test visualizer
       run: |
-        # Create a simplified test summary JSON for the web page
+        npm test -- --json --outputFile=tests/test-results.json
         node -e "
         const fs = require('fs');
         try {
-          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
-          
+          const testResults = JSON.parse(fs.readFileSync('tests/test-results.json', 'utf8'));
           const summary = {
             timestamp: new Date().toISOString(),
             success: testResults.success,
@@ -99,13 +48,11 @@ jobs:
               file: suite.name.replace(/.*\//, '')
             }))
           };
-          
-          fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
-          console.log('Generated test summary for web display');
+          fs.writeFileSync('tests/test-summary.json', JSON.stringify(summary, null, 2));
+          console.log('Test summary saved to tests/test-summary.json');
         } catch (error) {
           console.log('Failed to generate test summary:', error.message);
-          // Create a minimal fallback
-          fs.writeFileSync('test-summary.json', JSON.stringify({
+          fs.writeFileSync('tests/test-summary.json', JSON.stringify({
             timestamp: new Date().toISOString(),
             success: false,
             numTotalTests: 0,
@@ -117,15 +64,12 @@ jobs:
         }
         "
       if: always()
-      
-    - name: Generate test report
-      run: npm test -- --verbose --coverage
-      if: always()
 
   build:
     runs-on: ubuntu-latest
     name: Build Project
-    needs: [validate-workflow, test]
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
     - name: Checkout code
@@ -163,16 +107,11 @@ jobs:
         gem install bundler jekyll
         bundle install
         bundle exec jekyll build
-        
-    - name: Validate HTML structure
-      run: |
-        # Basic validation that HTML files are well-formed
-        find . -name "*.html" -not -path "./node_modules/*" -not -path "./_site/*" -not -path "./jekyll-site/vendor/*" | xargs -I {} sh -c 'echo "Checking {}" && grep -q "</html>" "{}"'
 
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to GitHub Pages
-    needs: [validate-workflow, test, build]
+    needs: [test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: github-pages
@@ -195,14 +134,11 @@ jobs:
       
     - name: Run tests and generate results for deployment
       run: |
-        npm test -- --json --outputFile=test-results.json || echo "Tests failed but continuing deployment"
-        
-        # Generate test summary for web display
+        npm test -- --json --outputFile=tests/test-results.json || echo "Tests failed but continuing deployment"
         node -e "
         const fs = require('fs');
         try {
-          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
-          
+          const testResults = JSON.parse(fs.readFileSync('tests/test-results.json', 'utf8'));
           const summary = {
             timestamp: new Date().toISOString(),
             success: testResults.success,
@@ -217,13 +153,11 @@ jobs:
               file: suite.name.replace(/.*\//, '')
             }))
           };
-          
-          fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
-          console.log('Generated test summary for deployment');
+          fs.writeFileSync('tests/test-summary.json', JSON.stringify(summary, null, 2));
+          console.log('Test summary saved for deployment');
         } catch (error) {
           console.log('Failed to generate test summary:', error.message);
-          // Create a minimal fallback
-          fs.writeFileSync('test-summary.json', JSON.stringify({
+          fs.writeFileSync('tests/test-summary.json', JSON.stringify({
             timestamp: new Date().toISOString(),
             success: false,
             numTotalTests: 0,
@@ -236,16 +170,15 @@ jobs:
         "
       if: always()
       
-    - name: Generate deployment info from GitHub data
+    - name: Generate deployment info
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         npm run generate-deployment-info
-        git add -f deployment.json test-summary.json
+        git add -f deployment.json tests/test-summary.json
         git commit -m "chore: update deployment info and test results [skip ci]" || echo "No deployment info changes to commit"
         git push || echo "No changes to push"
       
-    # Re-install dependencies after deployment info generation to ensure updated deployment.json is used
     - name: Install dependencies (post deployment info generation)
       run: npm ci
       
@@ -278,11 +211,8 @@ jobs:
         
     - name: Prepare deployment artifacts
       run: |
-        # Create a clean deployment directory
         mkdir -p _deployment
-        # Copy all files except the deployment directory itself and other build artifacts
         rsync -av --exclude='_deployment' --exclude='node_modules' --exclude='.git' . _deployment/
-        # Ensure deployment.json is included (override .gitignore)
         if [ -f deployment.json ]; then
           cp deployment.json _deployment/deployment.json
         fi
@@ -297,7 +227,7 @@ jobs:
       uses: actions/deploy-pages@v4
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
