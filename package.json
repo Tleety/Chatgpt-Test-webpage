@@ -4,7 +4,8 @@
   "description": "A GitHub Pages site with web projects including a Snake game",
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "build:test-definitions": "node build-test-definitions.js"
   },
   "devDependencies": {
     "jest": "^29.0.0",

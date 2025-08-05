@@ -58,7 +58,24 @@ npm test -- --coverage
 - **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
 
-**Total: 66 tests across 4 test suites**
+**Total: 84 tests across 4 test suites** (automatically synchronized with CI/CD pipeline)
+
+### Test Visualizer
+
+The [Test Visualizer](test-results.html) provides an interactive dashboard showing real-time test results that mirror the actual CI/CD pipeline execution. **All tests are automatically discovered** from Jest test files, ensuring the visualizer stays in sync with code changes.
+
+**Key Features:**
+- ✅ **Automatic Discovery**: New tests added to any `*.test.js` file are automatically included
+- ✅ **Real Test Logic**: Executes the same logic as `npm test` command  
+- ✅ **Browser Compatible**: Runs without Node.js dependencies
+- ✅ **Live Updates**: Regenerate with `npm run build:test-definitions`
+
+**Architecture:**
+```
+Jest Test Files (*.test.js) → build-test-definitions.js → test-definitions.js → test-results.html
+```
+
+See [TEST-INTEGRATION.md](TEST-INTEGRATION.md) for detailed information about automatic test discovery.
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
