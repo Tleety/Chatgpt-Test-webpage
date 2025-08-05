@@ -218,11 +218,8 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 	centerX := (mapWorldWidth - player.Width) / 2
 	centerY := (mapWorldHeight - player.Height) / 2
 	
-	player.X = centerX
-	player.Y = centerY
-	player.TargetX = centerX
-	player.TargetY = centerY
-	player.IsMoving = false
+	// Use the new SetPosition method instead of direct field assignment
+	player.SetPosition(centerX, centerY)
 	
 	// Reinitialize environment for new canvas size (keep existing trees/bushes)
 	// No need to regenerate since they're positioned in world coordinates

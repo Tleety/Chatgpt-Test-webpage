@@ -130,3 +130,12 @@ func (p *Player) Draw(ctx js.Value, cameraX, cameraY float64) {
 func (p *Player) GetPosition() (float64, float64) {
 	return p.X, p.Y
 }
+
+// SetPosition sets the player position and stops any ongoing movement
+func (p *Player) SetPosition(x, y float64) {
+	p.X = x
+	p.Y = y
+	p.TargetX = x
+	p.TargetY = y
+	p.IsMoving = false
+}
