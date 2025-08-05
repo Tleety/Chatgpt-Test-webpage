@@ -148,7 +148,7 @@ describe('Version Update System', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('vdeploy-55');
+      expect(topBarHTML).toContain('#55');
     });
 
     test('should fallback to default version when deployment.json is not available', async () => {
@@ -182,7 +182,7 @@ describe('Version Update System', () => {
 
       const topBarHTML = await createTopBar();
       
-      expect(topBarHTML).toContain('vdeploy-100');
+      expect(topBarHTML).toContain('#100');
       expect(global.fetch).toHaveBeenCalledTimes(3);
     });
   });

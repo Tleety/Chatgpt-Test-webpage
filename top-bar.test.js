@@ -54,7 +54,7 @@ describe('Top Bar Component', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('vdeploy-55');
+      expect(topBarHTML).toContain('#55');
     });
 
     test('should maintain existing structure with logo, title, and navigation', async () => {
@@ -105,7 +105,7 @@ describe('Top Bar Component', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('vdeploy-123'); // Should use deployment.json
+      expect(topBarHTML).toContain('#123'); // Should use deployment.json
     });
 
     test('should use version from GitHub releases API when available', async () => {
@@ -174,7 +174,7 @@ describe('Top Bar Component', () => {
       // Check that version is included (should use deployment.json)
       const version = topBar.querySelector('.version');
       expect(version).toBeTruthy();
-      expect(version.textContent.trim()).toBe('vdeploy-55');
+      expect(version.textContent.trim()).toBe('#55');
     });
 
     test('should not insert duplicate top bar', async () => {
