@@ -255,4 +255,154 @@ describe('SnakeGameLogic', () => {
       expect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);
     });
   });
+
+  describe('High Score Management', () => {
+    beforeEach(() => {
+      // Clear localStorage before each test
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('snakeGameHighScores');
+      }
+    });
+
+    describe('getHighScores', () => {
+      test('should return empty array when no scores exist', () => {
+        const scores = game.getHighScores();
+        expect(scores).toEqual([]);
+      });
+
+      test('should return parsed scores from localStorage', () => {
+        const testScores = [
+          { name: 'Alice', score: 10 },
+          { name: 'Bob', score: 5 }
+        ];
+        localStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));
+        
+        const scores = game.getHighScores();
+        expect(scores).toEqual(testScores);
+      });
+
+      test('should handle corrupted localStorage data', () => {
+        localStorage.setItem('snakeGameHighScores', 'invalid json');
+        
+        const scores = game.getHighScores();
+        expect(scores).toEqual([]);
+      });
+    });
+
+    describe('isHighScore', () => {
+      test('should return true when no scores exist', () => {
+        expect(game.isHighScore(1)).toBe(true);
+      });
+
+      test('should return true when less than 10 scores exist', () => {
+        const testScores = [
+          { name: 'Alice', score: 10 },
+          { name: 'Bob', score: 5 }
+        ];
+        localStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));
+        
+        expect(game.isHighScore(1)).toBe(true);
+        expect(game.isHighScore(15)).toBe(true);
+      });
+
+      test('should return true when score beats lowest of 10 scores', () => {
+        const testScores = [];
+        for (let i = 10; i >= 1; i--) {
+          testScores.push({ name: `Player${i}`, score: i });
+        }
+        localStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));
+        
+        expect(game.isHighScore(2)).toBe(true);
+        expect(game.isHighScore(11)).toBe(true);
+      });
+
+      test('should return false when score does not beat lowest of 10 scores', () => {
+        const testScores = [];
+        for (let i = 10; i >= 1; i--) {
+          testScores.push({ name: `Player${i}`, score: i });
+        }
+        // Sort the test scores properly
+        testScores.sort((a, b) => b.score - a.score);
+        localStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));
+        
+        expect(game.isHighScore(0)).toBe(false);
+        expect(game.isHighScore(1)).toBe(false);
+      });
+    });
+
+    describe('addHighScore', () => {
+      test('should add score when list is empty', () => {
+        const result = game.addHighScore('Alice', 10);
+        
+        expect(result).toBe(true);
+        expect(game.getHighScores()).toEqual([{ name: 'Alice', score: 10 }]);
+      });
+
+      test('should add score and maintain sort order', () => {
+        game.addHighScore('Bob', 5);
+        game.addHighScore('Alice', 10);
+        game.addHighScore('Charlie', 7);
+        
+        const scores = game.getHighScores();
+        expect(scores).toEqual([
+          { name: 'Alice', score: 10 },
+          { name: 'Charlie', score: 7 },
+          { name: 'Bob', score: 5 }
+        ]);
+      });
+
+      test('should limit to top 10 scores', () => {
+        // Add 11 scores
+        for (let i = 1; i <= 11; i++) {
+          game.addHighScore(`Player${i}`, i);
+        }
+        
+        const scores = game.getHighScores();
+        expect(scores).toHaveLength(10);
+        expect(scores[0].score).toBe(11);
+        expect(scores[9].score).toBe(2);
+      });
+
+      test('should not add score that does not qualify', () => {
+        // Fill with 10 scores (1-10)
+        for (let i = 1; i <= 10; i++) {
+          game.addHighScore(`Player${i}`, i);
+        }
+        
+        const result = game.addHighScore('LowScore', 0);
+        expect(result).toBe(false);
+        expect(game.getHighScores()).toHaveLength(10);
+        expect(game.getHighScores()[9].score).toBe(1);
+      });
+
+      test('should handle empty name by using Anonymous', () => {
+        game.addHighScore('', 10);
+        game.addHighScore('   ', 5);
+        
+        const scores = game.getHighScores();
+        expect(scores[0].name).toBe('Anonymous');
+        expect(scores[1].name).toBe('Anonymous');
+      });
+
+      test('should trim whitespace from names', () => {
+        game.addHighScore('  Alice  ', 10);
+        
+        const scores = game.getHighScores();
+        expect(scores[0].name).toBe('Alice');
+      });
+    });
+
+    describe('clearHighScores', () => {
+      test('should remove all high scores', () => {
+        game.addHighScore('Alice', 10);
+        game.addHighScore('Bob', 5);
+        
+        expect(game.getHighScores()).toHaveLength(2);
+        
+        game.clearHighScores();
+        
+        expect(game.getHighScores()).toEqual([]);
+      });
+    });
+  });
 });
