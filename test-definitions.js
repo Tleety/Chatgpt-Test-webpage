@@ -1,5 +1,5 @@
 // Auto-generated test definitions from Jest files
-// Generated on: 2025-08-05T10:34:32.347Z
+// Generated on: 2025-08-05T14:59:10.826Z
 // DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
 
 var testSuites = {
@@ -67,7 +67,7 @@ var testSuites = {
     "Food Placement": [
       {
         "name": "should place food in valid grid positions",
-        "test": "for (var i = 0; i < 10; i++) {\nvar food = game.placeFood();\nexpect(food.x % 20).toBe(0);\nexpect(food.y % 20).toBe(0);\nexpect(food.x).toBeGreaterThanOrEqual(0);\nexpect(food.x).toBeLessThan(400);\nexpect(food.y).toBeGreaterThanOrEqual(0);\nexpect(food.y).toBeLessThan(300);\n}"
+        "test": "for (var i = 0; i < 10; i++) {\nvar food = game.placeFood();\nexpect(food.x % 20).toBe(0);\nexpect(food.y % 20).toBe(0);\nexpect(food.x).toBeGreaterThanOrEqual(0);\nexpect(food.x).toBeLessThan(400);\nexpect(food.y).toBeGreaterThanOrEqual(0);\nexpect(food.y).toBeLessThan(300);\n"
       },
       {
         "name": "should not place food on snake body",
@@ -92,6 +92,166 @@ var testSuites = {
       {
         "name": "should handle food placement when most spaces are occupied",
         "test": "// Fill most of the game area with snake\nvar segments = [];\nfor (var y = 0; y < 300; y += 20) {\nfor (var x = 0; x < 380; x += 20) { // leave some space\nsegments.push({ x: x, y: y });\n}\n}\ngame.snake = segments;\nvar food = game.placeFood();\nexpect(food).toBeDefined();\nexpect(game.snake.some(function(seg) { return seg.x === food.x && seg.y === food.y; })).toBe(false);"
+      }
+    ],
+    "Experience and Level Management": [],
+    "getExperience": [
+      {
+        "name": "should return 0 when no experience exists",
+        "test": "expect(game.getExperience()).toBe(0);"
+      },
+      {
+        "name": "should return stored experience from localStorage",
+        "test": "localStorage.setItem('snakeGameExperience', '25');\nexpect(game.getExperience()).toBe(25);"
+      },
+      {
+        "name": "should handle corrupted localStorage data",
+        "test": "localStorage.setItem('snakeGameExperience', 'invalid');\nexpect(game.getExperience()).toBe(0);"
+      }
+    ],
+    "addExperience": [
+      {
+        "name": "should add experience points",
+        "test": "var result = game.addExperience(5);\nexpect(result).toBe(5);\nexpect(game.getExperience()).toBe(5);"
+      },
+      {
+        "name": "should accumulate experience points",
+        "test": "game.addExperience(3);\ngame.addExperience(2);\nexpect(game.getExperience()).toBe(5);"
+      },
+      {
+        "name": "should persist experience in localStorage",
+        "test": "game.addExperience(10);\n// Create new game instance to test persistence\nvar newGame = new SnakeGameLogic(400, 300);\nexpect(newGame.getExperience()).toBe(10);"
+      }
+    ],
+    "getExperienceRequiredForLevel": [
+      {
+        "name": "should return correct experience for level 1",
+        "test": "expect(game.getExperienceRequiredForLevel(1)).toBe(0);"
+      },
+      {
+        "name": "should return correct experience for early levels",
+        "test": "expect(game.getExperienceRequiredForLevel(2)).toBe(5);  // Base\nexpect(game.getExperienceRequiredForLevel(3)).toBe(6);  // 5 + 1\nexpect(game.getExperienceRequiredForLevel(4)).toBe(8);  // 6 + 2  \nexpect(game.getExperienceRequiredForLevel(5)).toBe(10); // 8 + 2\nexpect(game.getExperienceRequiredForLevel(6)).toBe(13); // 10 + 3\nexpect(game.getExperienceRequiredForLevel(7)).toBe(16); // 13 + 3\nexpect(game.getExperienceRequiredForLevel(8)).toBe(20); // 16 + 4\nexpect(game.getExperienceRequiredForLevel(9)).toBe(24); // 20 + 4"
+      },
+      {
+        "name": "should handle level 0 and negative levels",
+        "test": "expect(game.getExperienceRequiredForLevel(0)).toBe(0);\nexpect(game.getExperienceRequiredForLevel(-1)).toBe(0);"
+      }
+    ],
+    "getLevel": [
+      {
+        "name": "should return level 1 for 0-4 experience",
+        "test": "expect(game.getLevel()).toBe(1); // 0 exp\nlocalStorage.setItem('snakeGameExperience', '0');\nexpect(game.getLevel()).toBe(1);\nlocalStorage.setItem('snakeGameExperience', '4');\nexpect(game.getLevel()).toBe(1);"
+      },
+      {
+        "name": "should return correct level for various experience amounts",
+        "test": "localStorage.setItem('snakeGameExperience', '5');\nexpect(game.getLevel()).toBe(2);\nlocalStorage.setItem('snakeGameExperience', '6');\nexpect(game.getLevel()).toBe(3);\nlocalStorage.setItem('snakeGameExperience', '7');\nexpect(game.getLevel()).toBe(3);\nlocalStorage.setItem('snakeGameExperience', '8');\nexpect(game.getLevel()).toBe(4);\nlocalStorage.setItem('snakeGameExperience', '10');\nexpect(game.getLevel()).toBe(5);\nlocalStorage.setItem('snakeGameExperience', '13');\nexpect(game.getLevel()).toBe(6);"
+      },
+      {
+        "name": "should handle higher experience levels",
+        "test": "localStorage.setItem('snakeGameExperience', '50');\nexpect(game.getLevel()).toBeGreaterThanOrEqual(1);"
+      }
+    ],
+    "getExperienceToNextLevel": [
+      {
+        "name": "should return correct experience needed for next level",
+        "test": "localStorage.setItem('snakeGameExperience', '0');\nexpect(game.getExperienceToNextLevel()).toBe(5); // Need 5 for level 2\nlocalStorage.setItem('snakeGameExperience', '3');\nexpect(game.getExperienceToNextLevel()).toBe(2); // Need 2 more for level 2\nlocalStorage.setItem('snakeGameExperience', '5');\nexpect(game.getExperienceToNextLevel()).toBe(1); // Need 1 more for level 3\nlocalStorage.setItem('snakeGameExperience', '6');\nexpect(game.getExperienceToNextLevel()).toBe(2); // Need 2 more for level 4"
+      },
+      {
+        "name": "should return correct amount when at exact level threshold",
+        "test": "localStorage.setItem('snakeGameExperience', '5');\nexpect(game.getExperienceToNextLevel()).toBe(1); // At level 2, need 1 more for level 3"
+      }
+    ],
+    "clearExperience": [
+      {
+        "name": "should remove experience from localStorage",
+        "test": "game.addExperience(10);\nexpect(game.getExperience()).toBe(10);\ngame.clearExperience();\nexpect(game.getExperience()).toBe(0);"
+      }
+    ],
+    "experience integration with game mechanics": [
+      {
+        "name": "should award experience when eating food based on current level",
+        "test": "// Clear experience first\ngame.clearExperience();\n// Place food right in front of snake\nvar headX = game.snake[0].x;\nvar headY = game.snake[0].y;\ngame.food = { x: headX + 20, y: headY };\nvar initialExp = game.getExperience();\nvar currentLevel = game.getLevel();\nvar result = game.moveSnake();\nexpect(result.ateFood).toBe(true);\nexpect(game.getExperience()).toBe(initialExp + currentLevel);"
+      },
+      {
+        "name": "should award exponentially more experience at higher levels",
+        "test": "// Test experience gain at level 1 (should get 1 exp)\ngame.clearExperience();\nexpect(game.getLevel()).toBe(1);\nvar headX = game.snake[0].x;\nvar headY = game.snake[0].y;\ngame.food = { x: headX + 20, y: headY };\ngame.moveSnake();\nexpect(game.getExperience()).toBe(1); // Level 1 = 1 exp per food\n// Manually set experience to level 2 threshold and test again\ngame.clearExperience();\ngame.addExperience(5); // Level 2 threshold\nexpect(game.getLevel()).toBe(2);\n// Reset snake and food for another test\ngame.reset();\nvar newHeadX = game.snake[0].x;\nvar newHeadY = game.snake[0].y;\ngame.food = { x: newHeadX + 20, y: newHeadY };\nvar expBefore = game.getExperience();\ngame.moveSnake();\nexpect(game.getExperience()).toBe(expBefore + 2); // Level 2 = 2 exp per food\n// Test level 3\ngame.clearExperience();\ngame.addExperience(6); // Level 3 threshold  \nexpect(game.getLevel()).toBe(3);\ngame.reset();\nvar head3X = game.snake[0].x;\nvar head3Y = game.snake[0].y;\ngame.food = { x: head3X + 20, y: head3Y };\nvar exp3Before = game.getExperience();\ngame.moveSnake();\nexpect(game.getExperience()).toBe(exp3Before + 3); // Level 3 = 3 exp per food"
+      },
+      {
+        "name": "should not award experience when not eating food",
+        "test": "game.clearExperience();\nvar initialExp = game.getExperience();\nvar result = game.moveSnake();\nexpect(result.ateFood).toBe(false);\nexpect(game.getExperience()).toBe(initialExp);"
+      },
+      {
+        "name": "should preserve experience when game resets",
+        "test": "game.clearExperience();\ngame.addExperience(10);\ngame.reset();\nexpect(game.getExperience()).toBe(10);\nexpect(game.score).toBe(0); // Score should reset"
+      },
+      {
+        "name": "should include experience and level in game state",
+        "test": "game.clearExperience();\ngame.addExperience(7);\nvar state = game.getGameState();\nexpect(state.experience).toBe(7);\nexpect(state.level).toBe(3); // 7 exp = level 3 (6 exp needed for level 3, 8 exp needed for level 4)\nexpect(state.experienceToNextLevel).toBe(1); // Need 1 more for level 4"
+      }
+    ],
+    "Obstacle Management": [],
+    "generateObstacles": [
+      {
+        "name": "should generate no obstacles at level 1 and 2",
+        "test": "game.clearExperience();\nexpect(game.getLevel()).toBe(1);\ngame.generateObstacles();\nexpect(game.obstacles).toHaveLength(0);\ngame.addExperience(5); // Level 2\nexpect(game.getLevel()).toBe(2);\ngame.generateObstacles();\nexpect(game.obstacles).toHaveLength(0);"
+      },
+      {
+        "name": "should generate obstacles starting at level 3",
+        "test": "game.clearExperience();\ngame.addExperience(6); // Level 3\nexpect(game.getLevel()).toBe(3);\ngame.generateObstacles();\nexpect(game.obstacles.length).toBeGreaterThan(0);"
+      },
+      {
+        "name": "should generate more obstacles at higher levels",
+        "test": "game.clearExperience();\n// Level 3: should have 1 obstacle\ngame.addExperience(6);\nexpect(game.getLevel()).toBe(3);\ngame.generateObstacles();\nvar level3Obstacles = game.obstacles.length;\nexpect(level3Obstacles).toBe(1);\n// Level 5: should have 2 obstacles\ngame.clearExperience();\ngame.addExperience(10);\nexpect(game.getLevel()).toBe(5);\ngame.generateObstacles();\nvar level5Obstacles = game.obstacles.length;\nexpect(level5Obstacles).toBe(2);\n// Level 7: should have 3 obstacles\ngame.clearExperience();\ngame.addExperience(16);\nexpect(game.getLevel()).toBe(7);\ngame.generateObstacles();\nvar level7Obstacles = game.obstacles.length;\nexpect(level7Obstacles).toBe(3);"
+      },
+      {
+        "name": "should cap obstacles at reasonable number",
+        "test": "game.clearExperience();\ngame.addExperience(1000); // Very high level\ngame.generateObstacles();\nexpect(game.obstacles.length).toBeLessThanOrEqual(15);"
+      }
+    ],
+    "placeObstacle": [
+      {
+        "name": "should place obstacles in valid grid positions",
+        "test": "game.clearExperience();\ngame.addExperience(6); // Level 3\ngame.generateObstacles();\ngame.obstacles.forEach(function(obstacle) { return  ; }{\nexpect(obstacle.x % 20).toBe(0);\nexpect(obstacle.y % 20).toBe(0);\nexpect(obstacle.x).toBeGreaterThanOrEqual(0);\nexpect(obstacle.x).toBeLessThan(400);\nexpect(obstacle.y).toBeGreaterThanOrEqual(0);\nexpect(obstacle.y).toBeLessThan(300);\n});"
+      },
+      {
+        "name": "should not place obstacles on snake or in safe zone",
+        "test": "game.clearExperience();\ngame.addExperience(6); // Level 3\n// Snake is at center (200, 140)\nvar centerX = 200;\nvar centerY = 140;\nvar safeZoneSize = 3 * 20; // 3 cells * 20 pixels\ngame.generateObstacles();\ngame.obstacles.forEach(function(obstacle) { return  ; }{\n// Should not be on snake\nexpect(game.snake.some(function(seg) { return seg.x === obstacle.x && seg.y === obstacle.y; })).toBe(false);\n// Should not be in safe zone around snake start\nvar inSafeZone = obstacle.x >= (centerX - safeZoneSize) && \nobstacle.x <= (centerX + safeZoneSize) &&\nobstacle.y >= (centerY - safeZoneSize) && \nobstacle.y <= (centerY + safeZoneSize);\nexpect(inSafeZone).toBe(false);\n});"
+      }
+    ],
+    "isObstacleCollision": [
+      {
+        "name": "should detect collision with obstacles",
+        "test": "game.obstacles = [\n{ x: 100, y: 100 },\n{ x: 120, y: 100 }\n];\nexpect(game.isObstacleCollision(100, 100)).toBe(true);\nexpect(game.isObstacleCollision(120, 100)).toBe(true);\nexpect(game.isObstacleCollision(140, 100)).toBe(false);"
+      },
+      {
+        "name": "should return false when no obstacles exist",
+        "test": "game.obstacles = [];\nexpect(game.isObstacleCollision(100, 100)).toBe(false);"
+      }
+    ],
+    "food placement with obstacles": [
+      {
+        "name": "should not place food on obstacles",
+        "test": "game.obstacles = [\n{ x: 100, y: 100 },\n{ x: 120, y: 100 },\n{ x: 140, y: 100 }\n];\nvar food = game.placeFood();\n// Food should not be on any obstacle\nexpect(game.obstacles.some(function(obs) { return obs.x === food.x && obs.y === food.y; })).toBe(false);\n// Food should not be on snake\nexpect(game.snake.some(function(seg) { return seg.x === food.x && seg.y === food.y; })).toBe(false);"
+      }
+    ],
+    "collision detection integration": [
+      {
+        "name": "should detect collision with obstacles during movement",
+        "test": "// Place obstacle in front of snake\nvar headX = game.snake[0].x;\nvar headY = game.snake[0].y;\ngame.obstacles = [{ x: headX + 20, y: headY }]; // Right in front\nvar result = game.moveSnake();\nexpect(result.collision).toBe(true);\nexpect(result.ateFood).toBe(false);"
+      },
+      {
+        "name": "should allow movement when no obstacle collision",
+        "test": "// Place obstacle away from snake path\ngame.obstacles = [{ x: 100, y: 100 }];\nvar result = game.moveSnake();\nexpect(result.collision).toBe(false);"
+      }
+    ],
+    "game state with obstacles": [
+      {
+        "name": "should include obstacles in game state",
+        "test": "game.obstacles = [\n{ x: 100, y: 100 },\n{ x: 120, y: 120 }\n];\nvar state = game.getGameState();\nexpect(state).toHaveProperty('obstacles');\nexpect(state.obstacles).toHaveLength(2);\nexpect(state.obstacles[0]).toEqual({ x: 100, y: 100 });\nexpect(state.obstacles[1]).toEqual({ x: 120, y: 120 });"
+      },
+      {
+        "name": "should reset obstacles when game resets",
+        "test": "game.clearExperience();\ngame.addExperience(10); // Level 5, should generate obstacles\ngame.reset();\nvar state = game.getGameState();\nexpect(state.obstacles).toBeDefined();\n// Should regenerate obstacles based on current level\nexpect(state.obstacles.length).toBe(2); // Level 5 = 2 obstacles"
       }
     ],
     "High Score Management": [],
@@ -124,11 +284,11 @@ var testSuites = {
       },
       {
         "name": "should return true when score beats lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + i, score: i });\n}\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(2)).toBe(true);\nexpect(game.isHighScore(11)).toBe(true);"
+        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + (i) + \"\", score: i });\n}\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(2)).toBe(true);\nexpect(game.isHighScore(11)).toBe(true);"
       },
       {
         "name": "should return false when score does not beat lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + i, score: i });\n}\n// Sort the test scores properly\ntestScores.sort(function(a, b) { return b.score - a.score; });\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(1)).toBe(false);"
+        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: \"Player\" + (i) + \"\", score: i });\n}\n// Sort the test scores properly\ntestScores.sort(function(a, b) { return b.score - a.score; });\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(1)).toBe(false);"
       }
     ],
     "addHighScore": [
@@ -142,11 +302,11 @@ var testSuites = {
       },
       {
         "name": "should limit to top 10 scores",
-        "test": "// Add 11 scores\nfor (var i = 1; i <= 11; i++) {\ngame.addHighScore(\"Player\" + i, i);\n}\nvar scores = game.getHighScores();\nexpect(scores).toHaveLength(10);\nexpect(scores[0].score).toBe(11);\nexpect(scores[9].score).toBe(2);"
+        "test": "// Add 11 scores\nfor (var i = 1; i <= 11; i++) {\ngame.addHighScore(\"Player\" + (i) + \"\", i);\n}\nvar scores = game.getHighScores();\nexpect(scores).toHaveLength(10);\nexpect(scores[0].score).toBe(11);\nexpect(scores[9].score).toBe(2);"
       },
       {
         "name": "should not add score that does not qualify",
-        "test": "// Fill with 10 scores (1-10)\nfor (var i = 1; i <= 10; i++) {\ngame.addHighScore(\"Player\" + i, i);\n}\nvar result = game.addHighScore('LowScore', 0);\nexpect(result).toBe(false);\nexpect(game.getHighScores()).toHaveLength(10);\nexpect(game.getHighScores()[9].score).toBe(1);"
+        "test": "// Fill with 10 scores (1-10)\nfor (var i = 1; i <= 10; i++) {\ngame.addHighScore(\"Player\" + (i) + \"\", i);\n}\nvar result = game.addHighScore('LowScore', 0);\nexpect(result).toBe(false);\nexpect(game.getHighScores()).toHaveLength(10);\nexpect(game.getHighScores()[9].score).toBe(1);"
       },
       {
         "name": "should handle empty name by using Anonymous",
@@ -168,23 +328,27 @@ var testSuites = {
     "Snake Game UI": [
       {
         "name": "should prevent default behavior for arrow keys",
-        "test": "// Simulate the keydown event handler from the game\nvar keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test each arrow key\nvar arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];\narrowKeys.forEach(function(keyCode) {\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);\nmockPreventDefault.called = false;\n});"
+        "test": "// Simulate the keydown event handler from the game\nvar keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) { return  ; }{\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test each arrow key\nvar arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];\narrowKeys.forEach(function(keyCode) { return  ; }{\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);\nmockPreventDefault.called = false;\n});"
       },
       {
         "name": "should not prevent default for non-arrow keys",
-        "test": "var keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test non-arrow keys\nvar nonArrowKeys = ['KeyA', 'KeyW', 'KeyS', 'KeyD', 'Enter', 'Escape'];\nnonArrowKeys.forEach(function(keyCode) {\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;\n});"
+        "test": "var keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) { return  ; }{\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test non-arrow keys\nvar nonArrowKeys = ['KeyA', 'KeyW', 'KeyS', 'KeyD', 'Enter', 'Escape'];\nnonArrowKeys.forEach(function(keyCode) { return  ; }{\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;\n});"
       },
       {
         "name": "should prevent default for Space key when game is not running",
-        "test": "var keys = {};\nvar gameRunning = false; // Game over state\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);"
+        "test": "var keys = {};\nvar gameRunning = false; // Game over state\nvar keydownHandler = function(e) { return  ; }{\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);"
       },
       {
         "name": "should not prevent default for Space key when game is running",
-        "test": "var keys = {};\nvar gameRunning = true; // Game is active\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;"
+        "test": "var keys = {};\nvar gameRunning = true; // Game is active\nvar keydownHandler = function(e) { return  ; }{\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;"
       },
       {
         "name": "should verify game over overlay positioning when displayed",
-        "test": "// Set up DOM with game container and game over element\ndocument.body.innerHTML = `\n<div id=\"gameContainer\" style=\"position: relative;\">\n<canvas id=\"gameCanvas\" width=\"800\" height=\"600\"></canvas>\n<div id=\"gameOver\" style=\"\nposition: absolute;\ntop: 50%;\nleft: 50%;\ntransform: translate(-50%, -50%);\nz-index: 100;\ndisplay: block;\n\">Game Over! Press SPACE to restart</div>\n</div>\n`;\nvar gameOverElement = document.getElementById('gameOver');\nvar gameContainer = document.getElementById('gameContainer');\n// Verify the game over element exists and has correct positioning\nexpect(gameOverElement).toBeTruthy();\nexpect(gameContainer).toBeTruthy();\n// Get computed styles to verify positioning\nvar gameOverStyles = window.getComputedStyle(gameOverElement);\nvar containerStyles = window.getComputedStyle(gameContainer);\n// Verify the overlay is positioned absolutely\nexpect(gameOverStyles.position).toBe('absolute');\n// Verify the container has relative positioning\nexpect(containerStyles.position).toBe('relative');\n// Verify centering styles\nexpect(gameOverStyles.top).toBe('50%');\nexpect(gameOverStyles.left).toBe('50%');\nexpect(gameOverStyles.transform).toContain('translate(-50%, -50%)');\n// Verify z-index for overlay effect\nexpect(gameOverStyles.zIndex).toBe('100');"
+        "test": "// Create a temporary container for the test to avoid destroying the test interface\nvar testContainer = document.createElement('div');\ntestContainer.innerHTML = `\n<div id=\"gameContainer\" style=\"position: relative;\">\n<canvas id=\"gameCanvas\" width=\"800\" height=\"600\"></canvas>\n<div id=\"gameOver\" style=\"\nposition: absolute;\ntop: 50%;\nleft: 50%;\ntransform: translate(-50%, -50%);\nz-index: 100;\ndisplay: block;\n\">Game Over! Press SPACE to restart</div>\n</div>\n`;\n// Temporarily append to body for testing\ndocument.body.appendChild(testContainer);\ntry {\nvar gameOverElement = testContainer.querySelector('#gameOver');\nvar gameContainer = testContainer.querySelector('#gameContainer');\n// Verify the game over element exists and has correct positioning\nexpect(gameOverElement).toBeTruthy();\nexpect(gameContainer).toBeTruthy();\n// Get computed styles to verify positioning\nvar gameOverStyles = window.getComputedStyle(gameOverElement);\nvar containerStyles = window.getComputedStyle(gameContainer);\n// Verify the overlay is positioned absolutely\nexpect(gameOverStyles.position).toBe('absolute');\n// Verify the container has relative positioning\nexpect(containerStyles.position).toBe('relative');\n// Verify centering styles\nexpect(gameOverStyles.top).toBe('50%');\nexpect(gameOverStyles.left).toBe('50%');\nexpect(gameOverStyles.transform).toContain('translate(-50%, -50%)');\n// Verify z-index for overlay effect\nexpect(gameOverStyles.zIndex).toBe('100');\n} finally {\n// Always clean up the test container\ndocument.body.removeChild(testContainer);\n"
+      },
+      {
+        "name": "should display level and experience information in UI",
+        "test": "// Create a temporary container for the test to avoid destroying the test interface\nvar testContainer = document.createElement('div');\ntestContainer.innerHTML = `\n<div id=\"gameStats\">\n<div id=\"score\">Score: 0</div>\n<div id=\"level\">Level: 1</div>\n<div id=\"experience\">Experience: 0/5</div>\n</div>\n<canvas id=\"gameCanvas\" width=\"800\" height=\"600\"></canvas>\n`;\n// Temporarily append to body for testing\ndocument.body.appendChild(testContainer);\ntry {\nvar scoreElement = testContainer.querySelector('#score');\nvar levelElement = testContainer.querySelector('#level');\nvar experienceElement = testContainer.querySelector('#experience');\nvar gameStatsElement = testContainer.querySelector('#gameStats');\n// Verify all elements exist\nexpect(scoreElement).toBeTruthy();\nexpect(levelElement).toBeTruthy();\nexpect(experienceElement).toBeTruthy();\nexpect(gameStatsElement).toBeTruthy();\n// Verify initial content\nexpect(scoreElement.textContent).toBe('Score: 0');\nexpect(levelElement.textContent).toBe('Level: 1');\nexpect(experienceElement.textContent).toBe('Experience: 0/5');\n// Test updating the display (simulating game state update)\nscoreElement.textContent = 'Score: 3';\nlevelElement.textContent = 'Level: 2';\nexperienceElement.textContent = 'Experience: 5/6';\nexpect(scoreElement.textContent).toBe('Score: 3');\nexpect(levelElement.textContent).toBe('Level: 2');\nexpect(experienceElement.textContent).toBe('Experience: 5/6');\n} finally {\n// Always clean up the test container\ndocument.body.removeChild(testContainer);\n"
       }
     ]
   },
@@ -346,7 +510,7 @@ var testSuites = {
       },
       {
         "name": "should handle multiple rapid additions",
-        "test": "for (var i = 0; i < 100; i++) {\ntodoList.addTask(\"Task \" + i);\n}\nexpect(todoList.tasks).toHaveLength(100);\nexpect(new Set(todoList.tasks.map(function(t) { return t.id; })).size).toBe(100); // All IDs should be unique"
+        "test": "for (var i = 0; i < 100; i++) {\ntodoList.addTask(\"Task \" + (i) + \"\");\n}\nexpect(todoList.tasks).toHaveLength(100);\nexpect(new Set(todoList.tasks.map(function(t) { return t.id; })).size).toBe(100); // All IDs should be unique"
       },
       {
         "name": "should preserve task order",
@@ -384,7 +548,7 @@ var testSuites = {
       },
       {
         "name": "should use version from package.json when available",
-        "test": "// Mock fetch to return different version\nglobal.fetch.mockImplementation(function(url) {\nif (url.includes('package.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: '2.5.1' })\n});\n}\nreturn Promise.reject(new Error('Not found'));\n});\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v2.5.1');"
+        "test": "// Mock fetch to return different version\nglobal.fetch.mockImplementation(function(url) { return  ; }{\nif (url.includes('package.json')) {\nreturn Promise.resolve({\nok: true,\njson: () => Promise.resolve({ version: '2.5.1' })\n});\n}\nreturn Promise.reject(new Error('Not found'));\n});\nvar topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v2.5.1');"
       }
     ],
     "insertTopBar function": [
@@ -420,14 +584,7 @@ for (var suiteName in testSuites) {
     for (var i = 0; i < testSuites[suiteName][categoryName].length; i++) {
       var test = testSuites[suiteName][categoryName][i];
       if (typeof test.test === 'string') {
-        try {
-          test.test = new Function(test.test);
-        } catch (syntaxError) {
-          // If there's a syntax error, create a failing test
-          test.test = function() {
-            throw new Error('Test conversion failed: ' + syntaxError.message);
-          };
-        }
+        test.test = new Function(test.test);
       }
     }
   }
