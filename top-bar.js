@@ -43,6 +43,9 @@ function getBasePath() {
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
   
+  // Debug logging for troubleshooting
+  console.log('getBasePath debug:', { hostname, pathname });
+  
   // If running locally, use relative paths
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     // Calculate relative path based on current directory depth
@@ -55,6 +58,7 @@ function getBasePath() {
     }
     
     const relativePath = pathSegments.length > 0 ? '../'.repeat(pathSegments.length) : '';
+    console.log('Local development basePath:', relativePath);
     return relativePath;
   }
   
@@ -63,14 +67,18 @@ function getBasePath() {
   if (hostname.includes('github.io')) {
     // Extract repository name from the path
     const segments = pathname.split('/').filter(segment => segment.length > 0);
+    console.log('GitHub Pages segments:', segments);
     if (segments.length > 0) {
       const repoName = segments[0];
       const absolutePath = `/${repoName}/`;
+      console.log('GitHub Pages basePath:', absolutePath);
       return absolutePath;
     }
+    console.log('GitHub Pages: No segments found, using root');
   }
   
   // Default to root-relative paths
+  console.log('Using default basePath: /');
   return '/';
 }
 
