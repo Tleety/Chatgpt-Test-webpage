@@ -6,3 +6,5 @@ jekyll-site/.sass-cache/
 jekyll-site/.jekyll-cache/
 jekyll-site/.jekyll-metadata
 deployment.json
+test-results.json
+test-summary.json
