@@ -265,6 +265,26 @@
             }
           },
           toEqual: function(expected) {
+            // Handle object comparison better
+            if (typeof actual === 'object' && typeof expected === 'object' && actual !== null && expected !== null) {
+              var actualKeys = Object.keys(actual).sort();
+              var expectedKeys = Object.keys(expected).sort();
+              
+              if (actualKeys.length !== expectedKeys.length) {
+                throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+              }
+              
+              for (var i = 0; i < actualKeys.length; i++) {
+                if (actualKeys[i] !== expectedKeys[i]) {
+                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+                }
+                if (actual[actualKeys[i]] !== expected[expectedKeys[i]]) {
+                  throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
+                }
+              }
+              return;
+            }
+            
             if (JSON.stringify(actual) !== JSON.stringify(expected)) {
               throw new Error('Expected ' + JSON.stringify(expected) + ', but got ' + JSON.stringify(actual));
             }
@@ -584,7 +604,7 @@
               test: function() {
                 var game = new SnakeGameLogic(400, 300);
                 if (typeof localStorage !== 'undefined') {
-                  localStorage.removeItem('snakeHighScores');
+                  localStorage.removeItem('snakeGameHighScores');
                 }
                 var scores = game.getHighScores();
                 expect(scores).toEqual([]);
@@ -595,9 +615,9 @@
               test: function() {
                 var game = new SnakeGameLogic(400, 300);
                 if (typeof localStorage !== 'undefined') {
-                  localStorage.removeItem('snakeHighScores');
+                  localStorage.removeItem('snakeGameHighScores');
                 }
-                game.addHighScore(100, 'Player1');
+                game.addHighScore('Player1', 100);
                 var scores = game.getHighScores();
                 expect(scores).toHaveLength(1);
                 expect(scores[0]).toEqual({ score: 100, name: 'Player1' });
