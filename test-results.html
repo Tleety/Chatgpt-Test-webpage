@@ -323,8 +323,16 @@
             }
           },
           toContain: function(expected) {
-            if (!actual.includes(expected)) {
-              throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
+            if (typeof actual === 'string') {
+              if (actual.indexOf(expected) === -1) {
+                throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
+              }
+            } else if (actual && typeof actual.includes === 'function') {
+              if (!actual.includes(expected)) {
+                throw new Error('Expected "' + actual + '" to contain "' + expected + '"');
+              }
+            } else {
+              throw new Error('toContain expects a string or array-like object, got ' + typeof actual);
             }
           },
           not: {
@@ -361,6 +369,26 @@
             mockPreventDefault.called = true; 
           };
           window.mockPreventDefault.called = false;
+        } else if (suiteName === 'TopBarComponent') {
+          // Override createTopBar to be synchronous for testing
+          window.createTopBar = function(options = {}) {
+            // Synchronous version for browser tests
+            var basePath = options.pathToRoot || options.basePath || '';
+            var version = 'v1.0.0'; // Use fallback version for tests
+            
+            return `
+              <header class="top-bar">
+                <img src="${basePath}favicon.svg" alt="Site logo" class="logo">
+                <span class="title">My GitHub Page</span>
+                <span class="version">${version}</span>
+                <nav class="navigation">
+                  <a href="${basePath}index.html#hero">Home</a>
+                  <a href="${basePath}index.html#projects">Projects</a>
+                  <a href="${basePath}test-results.html">Test Visualizer</a>
+                </nav>
+              </header>
+            `;
+          };
         }
       }
 

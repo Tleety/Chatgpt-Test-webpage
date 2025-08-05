@@ -120,23 +120,36 @@ function extractTestDefinitions(filePath) {
         let testBody = '';
         let testBraceCount = 0;
         let foundStart = false;
+        let inString = false;
+        let stringChar = '';
         
         for (let j = i; j < lines.length; j++) {
           const testLine = lines[j];
           testBody += testLine + '\n';
           
-          if (testLine.includes('{')) {
-            foundStart = true;
+          // More robust brace counting that handles strings
+          for (let k = 0; k < testLine.length; k++) {
+            const char = testLine[k];
+            const prevChar = k > 0 ? testLine[k-1] : '';
+            
+            if (!inString && (char === '"' || char === "'" || char === '`')) {
+              inString = true;
+              stringChar = char;
+            } else if (inString && char === stringChar && prevChar !== '\\') {
+              inString = false;
+              stringChar = '';
+            } else if (!inString) {
+              if (char === '{') {
+                foundStart = true;
+                testBraceCount++;
+              } else if (char === '}') {
+                testBraceCount--;
+              }
+            }
           }
           
-          if (foundStart) {
-            const openBraces = (testLine.match(/{/g) || []).length;
-            const closeBraces = (testLine.match(/}/g) || []).length;
-            testBraceCount += openBraces - closeBraces;
-            
-            if (testBraceCount <= 0) {
-              break;
-            }
+          if (foundStart && testBraceCount <= 0) {
+            break;
           }
         }
         
@@ -153,7 +166,12 @@ function extractTestDefinitions(filePath) {
 
 function convertToFunctionBody(testBody, moduleName) {
   // Extract the test function body from Jest test() call
-  const testMatch = testBody.match(/test\(['"`][^'"`]+['"`],\s*\(\)\s*=>\s*{\s*([\s\S]*?)\s*}\);?$/);
+  // Use non-greedy matching and handle nested braces properly
+  let testMatch = testBody.match(/test\(['"`][^'"`]+['"`],\s*(?:async\s+)?\(\)\s*=>\s*{([\s\S]*?)}\s*\)\s*;?\s*$/);
+  if (!testMatch) {
+    // Try alternative pattern
+    testMatch = testBody.match(/test\(['"`][^'"`]+['"`],\s*(?:async\s+)?\(\)\s*=>\s*{\s*([\s\S]*?)\s*}\)\s*;?\s*$/);
+  }
   if (!testMatch) {
     return testBody; // Return as-is if pattern doesn't match
   }
@@ -162,14 +180,17 @@ function convertToFunctionBody(testBody, moduleName) {
   
   // Convert Jest syntax to browser-compatible code
   testLogic = testLogic
-    // Convert const/let to var for broader compatibility
-    .replace(/\b(?:const|let)\b/g, 'var')
+    // Convert const/let to var for broader compatibility - but preserve 'let's' in comments
+    .replace(/\b(?:const|let)\s+(?![s'])/g, 'var ')
     // Convert arrow functions to regular functions
     .replace(/(\w+)\s*=>\s*{/g, 'function($1) {')
     .replace(/\(\s*(\w+)\s*\)\s*=>\s*{/g, 'function($1) {')
     // Handle forEach with arrow functions
     .replace(/\.forEach\(\s*(\w+)\s*=>\s*{/g, '.forEach(function($1) {')
     .replace(/\.forEach\(\s*\(\s*(\w+)\s*\)\s*=>\s*{/g, '.forEach(function($1) {')
+    // Convert async/await for TopBar tests - make them synchronous for browser
+    .replace(/await\s+createTopBar\(\)/g, 'createTopBar()')
+    .replace(/await\s+/g, '')
     // Convert Jest mock patterns
     .replace(/jest\.fn\([^)]*\)/g, 'function() {}')
     .replace(/\.mockClear\(\)/g, '')
