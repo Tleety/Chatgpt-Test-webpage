@@ -22,8 +22,7 @@ type Bush struct {
 var (
 	ctx          js.Value
 	canvas       js.Value
-	x            float64
-	y            float64
+	player       *Player
 	canvasWidth  float64
 	canvasHeight float64
 	trees        []Tree
@@ -35,6 +34,7 @@ var (
 
 var drawFunc js.Func
 var recenterFunc js.Func
+var clickFunc js.Func
 
 // drawTreeAt renders a tree at screen coordinates
 func drawTreeAt(tree Tree) {
@@ -143,28 +143,23 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
 	
-	// Keep square within world bounds (map bounds)
+	// Update player (handles movement animations)
+	player.Update()
+	
+	// Keep player within world bounds (map bounds)
+	player.ClampToMapBounds(gameMap)
+	
+	// Get player position
+	playerX, playerY := player.GetPosition()
+	
+	// Update camera to follow player (center player on screen)
+	cameraX = playerX - canvasWidth/2 + player.Width/2
+	cameraY = playerY - canvasHeight/2 + player.Height/2
+	
+	// Clamp camera to map bounds
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
 	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
 	
-	if x < 0 {
-		x = 0
-	}
-	if y < 0 {
-		y = 0
-	}
-	if x > mapWorldWidth-20 {
-		x = mapWorldWidth - 20
-	}
-	if y > mapWorldHeight-20 {
-		y = mapWorldHeight - 20
-	}
-	
-	// Update camera to follow player (center player on screen)
-	cameraX = x - canvasWidth/2 + 10 // +10 to center the 20px square
-	cameraY = y - canvasHeight/2 + 10
-	
-	// Clamp camera to map bounds
 	if cameraX < 0 {
 		cameraX = 0
 	}
@@ -204,11 +199,8 @@ func draw(this js.Value, args []js.Value) interface{} {
 		}
 	}
 	
-	// Draw player relative to camera
-	playerScreenX := x - cameraX
-	playerScreenY := y - cameraY
-	ctx.Set("fillStyle", "green")
-	ctx.Call("fillRect", playerScreenX, playerScreenY, 20, 20)
+	// Draw player
+	player.Draw(ctx, cameraX, cameraY)
 	
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
@@ -223,8 +215,14 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
 	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
 	
-	x = (mapWorldWidth - 20) / 2
-	y = (mapWorldHeight - 20) / 2
+	centerX := (mapWorldWidth - player.Width) / 2
+	centerY := (mapWorldHeight - player.Height) / 2
+	
+	player.X = centerX
+	player.Y = centerY
+	player.TargetX = centerX
+	player.TargetY = centerY
+	player.IsMoving = false
 	
 	// Reinitialize environment for new canvas size (keep existing trees/bushes)
 	// No need to regenerate since they're positioned in world coordinates
@@ -233,16 +231,31 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 
 func keydown(this js.Value, args []js.Value) interface{} {
 	key := args[0].Get("key").String()
-	switch key {
-	case "ArrowUp", "w", "W":
-		y -= 5
-	case "ArrowDown", "s", "S":
-		y += 5
-	case "ArrowLeft", "a", "A":
-		x -= 5
-	case "ArrowRight", "d", "D":
-		x += 5
+	player.MoveByKeyboard(key)
+	return nil
+}
+
+func click(this js.Value, args []js.Value) interface{} {
+	// Get mouse click coordinates relative to canvas
+	event := args[0]
+	canvasRect := canvas.Call("getBoundingClientRect")
+	
+	mouseX := event.Get("clientX").Float() - canvasRect.Get("left").Float()
+	mouseY := event.Get("clientY").Float() - canvasRect.Get("top").Float()
+	
+	// Convert screen coordinates to world coordinates
+	worldX := mouseX + cameraX
+	worldY := mouseY + cameraY
+	
+	// Convert world coordinates to tile coordinates
+	tileX, tileY := gameMap.WorldToGrid(worldX, worldY)
+	
+	// Check if the tile is within map bounds
+	if tileX >= 0 && tileX < gameMap.Width && tileY >= 0 && tileY < gameMap.Height {
+		// Move player to the clicked tile
+		player.MoveToTile(gameMap, tileX, tileY)
 	}
+	
 	return nil
 }
 
@@ -258,22 +271,29 @@ func main() {
 	// Initialize the map (200x200 tiles, 32px per tile)
 	gameMap = NewMap(200, 200, 32.0)
 	
-	// Calculate world dimensions
+	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
 	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
 
-	// Center the player box in the world map
-	x = (mapWorldWidth - 20) / 2
-	y = (mapWorldHeight - 20) / 2
+	// Create player at center of map
+	centerX := (mapWorldWidth - 20) / 2
+	centerY := (mapWorldHeight - 20) / 2
+	player = NewPlayer(centerX, centerY)
 
 	// Initialize environment (trees and bushes positioned in world coordinates)
 	initializeEnvironment()
 
+	// Add event listeners
 	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
+	canvas.Call("addEventListener", "click", js.FuncOf(click))
 
 	// Expose recenter function to JavaScript
 	recenterFunc = js.FuncOf(recenterSquare)
 	js.Global().Set("recenterSquare", recenterFunc)
+	
+	// Expose click function to JavaScript (for potential external use)
+	clickFunc = js.FuncOf(click)
+	js.Global().Set("gameClick", clickFunc)
 	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)
