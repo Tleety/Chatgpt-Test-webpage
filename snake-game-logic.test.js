@@ -290,7 +290,12 @@ describe('SnakeGameLogic', () => {
     });
 
     describe('isHighScore', () => {
-      test('should return true when no scores exist', () => {
+      test('should return false for zero or negative scores', () => {
+        expect(game.isHighScore(0)).toBe(false);
+        expect(game.isHighScore(-1)).toBe(false);
+      });
+
+      test('should return true when no scores exist and score is positive', () => {
         expect(game.isHighScore(1)).toBe(true);
       });
 

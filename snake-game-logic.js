@@ -165,6 +165,7 @@ class SnakeGameLogic {
    * Checks if a score qualifies for the high score list (top 10)
    */
   isHighScore(score) {
+    if (score <= 0) return false; // Don't allow zero or negative scores
     const highScores = this.getHighScores();
     return highScores.length < 10 || score > highScores[highScores.length - 1].score;
   }
