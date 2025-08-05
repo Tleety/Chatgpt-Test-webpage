@@ -28,13 +28,16 @@ var (
 	canvasHeight float64
 	trees        []Tree
 	bushes       []Bush
+	gameMap      *Map
+	cameraX      float64
+	cameraY      float64
 )
 
 var drawFunc js.Func
 var recenterFunc js.Func
 
-// drawTree renders a tree with brown trunk and green canopy
-func drawTree(tree Tree) {
+// drawTreeAt renders a tree at screen coordinates
+func drawTreeAt(tree Tree) {
 	// Draw trunk
 	ctx.Set("fillStyle", "#8B4513")
 	ctx.Call("fillRect", tree.x-tree.trunkWidth/2, tree.y-tree.trunkHeight, tree.trunkWidth, tree.trunkHeight)
@@ -46,26 +49,35 @@ func drawTree(tree Tree) {
 	ctx.Call("fill")
 }
 
-// drawBush renders a bush as a green circle
-func drawBush(bush Bush) {
+// drawBushAt renders a bush at screen coordinates
+func drawBushAt(bush Bush) {
 	ctx.Set("fillStyle", "#32CD32")
 	ctx.Call("beginPath")
 	ctx.Call("arc", bush.x, bush.y, bush.radius, 0, 2*math.Pi)
 	ctx.Call("fill")
 }
 
-// initializeEnvironment creates trees and bushes on the canvas
+// drawTree renders a tree with brown trunk and green canopy (legacy function, kept for compatibility)
+func drawTree(tree Tree) {
+	drawTreeAt(tree)
+}
+
+// drawBush renders a bush as a green circle (legacy function, kept for compatibility)
+func drawBush(bush Bush) {
+	drawBushAt(bush)
+}
+
+// initializeEnvironment creates trees and bushes in world coordinates
 func initializeEnvironment() {
 	// Clear existing environment
 	trees = []Tree{}
 	bushes = []Bush{}
 	
-	// Define world area - make it larger than canvas for future world map expansion
-	worldWidth := math.Max(canvasWidth * 2, 1600)  // At least 1600px wide, or 2x canvas width
-	worldHeight := math.Max(canvasHeight * 2, 1200) // At least 1200px tall, or 2x canvas height
+	// Use the map world dimensions for environment placement
+	worldWidth := float64(gameMap.Width) * gameMap.TileSize
+	worldHeight := float64(gameMap.Height) * gameMap.TileSize
 	
-	// Generate trees across the larger world area
-	// Use a simple pseudo-random approach for consistent placement
+	// Generate trees across the world area
 	treePositions := []struct{ x, y float64 }{
 		{worldWidth * 0.1, worldHeight * 0.15},   // Top-left area
 		{worldWidth * 0.3, worldHeight * 0.2},    // Top area
@@ -96,7 +108,7 @@ func initializeEnvironment() {
 		})
 	}
 	
-	// Generate bushes across the larger world area
+	// Generate bushes across the world area
 	bushPositions := []struct{ x, y float64 }{
 		{worldWidth * 0.15, worldHeight * 0.25},  // Upper area
 		{worldWidth * 0.25, worldHeight * 0.3},   
@@ -131,34 +143,73 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
 	
-	// Keep square within bounds
+	// Keep square within world bounds (map bounds)
+	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
+	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
+	
 	if x < 0 {
 		x = 0
 	}
 	if y < 0 {
 		y = 0
 	}
-	if x > canvasWidth-20 {
-		x = canvasWidth - 20
+	if x > mapWorldWidth-20 {
+		x = mapWorldWidth - 20
 	}
-	if y > canvasHeight-20 {
-		y = canvasHeight - 20
+	if y > mapWorldHeight-20 {
+		y = mapWorldHeight - 20
 	}
 	
-	// Clear and draw
+	// Update camera to follow player (center player on screen)
+	cameraX = x - canvasWidth/2 + 10 // +10 to center the 20px square
+	cameraY = y - canvasHeight/2 + 10
+	
+	// Clamp camera to map bounds
+	if cameraX < 0 {
+		cameraX = 0
+	}
+	if cameraY < 0 {
+		cameraY = 0
+	}
+	if cameraX > mapWorldWidth-canvasWidth {
+		cameraX = mapWorldWidth - canvasWidth
+	}
+	if cameraY > mapWorldHeight-canvasHeight {
+		cameraY = mapWorldHeight - canvasHeight
+	}
+	
+	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	
-	// Draw environment first (trees and bushes)
+	// Draw map first (background)
+	gameMap.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+	
+	// Draw environment objects (trees and bushes) relative to camera
 	for _, tree := range trees {
-		drawTree(tree)
+		screenX := tree.x - cameraX
+		screenY := tree.y - cameraY
+		
+		// Only draw if on screen
+		if screenX > -50 && screenX < canvasWidth+50 && screenY > -50 && screenY < canvasHeight+50 {
+			drawTreeAt(Tree{x: screenX, y: screenY, trunkWidth: tree.trunkWidth, trunkHeight: tree.trunkHeight, canopyRadius: tree.canopyRadius})
+		}
 	}
 	for _, bush := range bushes {
-		drawBush(bush)
+		screenX := bush.x - cameraX
+		screenY := bush.y - cameraY
+		
+		// Only draw if on screen
+		if screenX > -30 && screenX < canvasWidth+30 && screenY > -30 && screenY < canvasHeight+30 {
+			drawBushAt(Bush{x: screenX, y: screenY, radius: bush.radius})
+		}
 	}
 	
-	// Draw player on top
+	// Draw player relative to camera
+	playerScreenX := x - cameraX
+	playerScreenY := y - cameraY
 	ctx.Set("fillStyle", "green")
-	ctx.Call("fillRect", x, y, 20, 20)
+	ctx.Call("fillRect", playerScreenX, playerScreenY, 20, 20)
+	
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
 }
@@ -168,12 +219,15 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
 	
-	// Center the player box on the canvas
-	x = (canvasWidth - 20) / 2
-	y = (canvasHeight - 20) / 2
+	// Center the player box in the world map
+	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
+	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
 	
-	// Reinitialize environment for new canvas size
-	initializeEnvironment()
+	x = (mapWorldWidth - 20) / 2
+	y = (mapWorldHeight - 20) / 2
+	
+	// Reinitialize environment for new canvas size (keep existing trees/bushes)
+	// No need to regenerate since they're positioned in world coordinates
 	return nil
 }
 
@@ -201,12 +255,18 @@ func main() {
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
 
-	// Center the player box on the canvas
-	// Box size is 20x20, so position it at center minus half the box size
-	x = (canvasWidth - 20) / 2
-	y = (canvasHeight - 20) / 2
+	// Initialize the map (200x200 tiles, 32px per tile)
+	gameMap = NewMap(200, 200, 32.0)
+	
+	// Calculate world dimensions
+	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
+	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
 
-	// Initialize environment
+	// Center the player box in the world map
+	x = (mapWorldWidth - 20) / 2
+	y = (mapWorldHeight - 20) / 2
+
+	// Initialize environment (trees and bushes positioned in world coordinates)
 	initializeEnvironment()
 
 	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
