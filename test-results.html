@@ -577,6 +577,32 @@
                 expect(isOnSnake).toBe(false);
               }
             }
+          ],
+          'High Score Management': [
+            {
+              name: 'getHighScores should return empty array when no scores exist',
+              test: function() {
+                var game = new SnakeGameLogic(400, 300);
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.removeItem('snakeHighScores');
+                }
+                var scores = game.getHighScores();
+                expect(scores).toEqual([]);
+              }
+            },
+            {
+              name: 'addHighScore should add score when list is empty',
+              test: function() {
+                var game = new SnakeGameLogic(400, 300);
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.removeItem('snakeHighScores');
+                }
+                game.addHighScore(100, 'Player1');
+                var scores = game.getHighScores();
+                expect(scores).toHaveLength(1);
+                expect(scores[0]).toEqual({ score: 100, name: 'Player1' });
+              }
+            }
           ]
         },
         'TodoListLogic': {
