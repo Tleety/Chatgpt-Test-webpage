@@ -14,6 +14,7 @@ function createTopBar(options = {}) {
     <header class="top-bar">
       <img src="${pathToRoot}favicon.svg" alt="Site logo" class="logo">
       <span class="title">My GitHub Page</span>
+      <span class="version">v1.0.0</span>
       <nav class="navigation">
         <a href="${pathToRoot}index.html#hero">Home</a>
         <a href="${pathToRoot}index.html#projects">Projects</a>
