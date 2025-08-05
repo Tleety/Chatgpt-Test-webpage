@@ -5,15 +5,37 @@ import (
 )
 
 var (
-	ctx js.Value
-	x   float64 = 50
-	y   float64 = 50
+	ctx          js.Value
+	canvas       js.Value
+	x            float64 = 50
+	y            float64 = 50
+	canvasWidth  float64
+	canvasHeight float64
 )
 
 var drawFunc js.Func
 
 func draw(this js.Value, args []js.Value) interface{} {
-	ctx.Call("clearRect", 0, 0, 300, 300)
+	// Get current canvas dimensions
+	canvasWidth = canvas.Get("width").Float()
+	canvasHeight = canvas.Get("height").Float()
+	
+	// Keep square within bounds
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+	if x > canvasWidth-20 {
+		x = canvasWidth - 20
+	}
+	if y > canvasHeight-20 {
+		y = canvasHeight - 20
+	}
+	
+	// Clear and draw
+	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	ctx.Set("fillStyle", "green")
 	ctx.Call("fillRect", x, y, 20, 20)
 	js.Global().Call("requestAnimationFrame", drawFunc)
@@ -23,13 +45,13 @@ func draw(this js.Value, args []js.Value) interface{} {
 func keydown(this js.Value, args []js.Value) interface{} {
 	key := args[0].Get("key").String()
 	switch key {
-	case "ArrowUp":
+	case "ArrowUp", "w", "W":
 		y -= 5
-	case "ArrowDown":
+	case "ArrowDown", "s", "S":
 		y += 5
-	case "ArrowLeft":
+	case "ArrowLeft", "a", "A":
 		x -= 5
-	case "ArrowRight":
+	case "ArrowRight", "d", "D":
 		x += 5
 	}
 	return nil
@@ -37,8 +59,12 @@ func keydown(this js.Value, args []js.Value) interface{} {
 
 func main() {
 	doc := js.Global().Get("document")
-	canvas := doc.Call("getElementById", "game")
+	canvas = doc.Call("getElementById", "game")
 	ctx = canvas.Call("getContext", "2d")
+
+	// Get initial canvas dimensions
+	canvasWidth = canvas.Get("width").Float()
+	canvasHeight = canvas.Get("height").Float()
 
 	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
 
