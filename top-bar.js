@@ -42,9 +42,7 @@ function getBasePath() {
   // Detect if we're on GitHub Pages or local development
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
-  
-  // Debug logging for troubleshooting
-  console.log('getBasePath debug:', { hostname, pathname });
+  const href = window.location.href;
   
   // If running locally, use relative paths
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -58,27 +56,36 @@ function getBasePath() {
     }
     
     const relativePath = pathSegments.length > 0 ? '../'.repeat(pathSegments.length) : '';
-    console.log('Local development basePath:', relativePath);
     return relativePath;
   }
   
   // For GitHub Pages, use absolute paths with repository base
-  // GitHub Pages serves repositories at: username.github.io/repository-name/
   if (hostname.includes('github.io')) {
-    // Extract repository name from the path
+    // Method 1: Extract repository name from pathname
     const segments = pathname.split('/').filter(segment => segment.length > 0);
-    console.log('GitHub Pages segments:', segments);
+    
     if (segments.length > 0) {
       const repoName = segments[0];
       const absolutePath = `/${repoName}/`;
-      console.log('GitHub Pages basePath:', absolutePath);
       return absolutePath;
     }
-    console.log('GitHub Pages: No segments found, using root');
+    
+    // Method 2: Extract repository name from full URL as backup
+    // Pattern: https://username.github.io/repository-name/
+    const urlMatch = href.match(/https?:\/\/[^\/]+\.github\.io\/([^\/]+)/);
+    if (urlMatch && urlMatch[1]) {
+      const repoName = urlMatch[1];
+      const absolutePath = `/${repoName}/`;
+      return absolutePath;
+    }
+    
+    // Method 3: Check if we know this is the Chatgpt-Test-webpage repository
+    if (href.includes('Chatgpt-Test-webpage')) {
+      return '/Chatgpt-Test-webpage/';
+    }
   }
   
   // Default to root-relative paths
-  console.log('Using default basePath: /');
   return '/';
 }
 
