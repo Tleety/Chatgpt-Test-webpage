@@ -89,12 +89,34 @@ function getBasePath() {
   return '/';
 }
 
+function updateFaviconPath(basePath) {
+  // Find the favicon link element
+  const faviconLink = document.querySelector('link[rel="icon"]');
+  if (faviconLink) {
+    // Update the href to use the correct base path
+    faviconLink.href = basePath + 'favicon.svg';
+  }
+}
+
 function insertTopBar(options = {}) {
   // Check if top bar already exists
   if (document.querySelector('.top-bar')) {
     console.log('Top bar already exists, skipping insertion');
     return;
   }
+  
+  // Get the base path for consistent path handling
+  let basePath;
+  if (options.pathToRoot !== undefined) {
+    basePath = options.pathToRoot;
+  } else if (options.basePath !== undefined) {
+    basePath = options.basePath;
+  } else {
+    basePath = getBasePath();
+  }
+  
+  // Update favicon link to use correct base path
+  updateFaviconPath(basePath);
   
   // Create and insert the top bar at the beginning of the body
   const topBarElement = document.createElement('div');
@@ -117,6 +139,7 @@ function autoInsertTopBar() {
 window.createTopBar = createTopBar;
 window.insertTopBar = insertTopBar;
 window.autoInsertTopBar = autoInsertTopBar;
+window.updateFaviconPath = updateFaviconPath;
 
 // Auto-insert when DOM is ready if not prevented
 document.addEventListener('DOMContentLoaded', () => {

@@ -70,4 +70,46 @@ describe('Top Bar Component', () => {
       expect(topBars.length).toBe(1);
     });
   });
+
+  describe('updateFaviconPath function', () => {
+    test('should update favicon href with correct base path', () => {
+      // Set up a favicon link element
+      document.head.innerHTML = '<link rel="icon" href="favicon.svg" type="image/svg+xml">';
+      
+      updateFaviconPath('/Chatgpt-Test-webpage/');
+      
+      const faviconLink = document.querySelector('link[rel="icon"]');
+      expect(faviconLink.href).toBe('http://localhost/Chatgpt-Test-webpage/favicon.svg');
+    });
+
+    test('should handle missing favicon gracefully', () => {
+      // No favicon link element
+      document.head.innerHTML = '';
+      
+      // Should not throw an error
+      expect(() => {
+        updateFaviconPath('/Chatgpt-Test-webpage/');
+      }).not.toThrow();
+    });
+
+    test('should update favicon when inserting top bar', () => {
+      // Set up a favicon link element
+      document.head.innerHTML = '<link rel="icon" href="favicon.svg" type="image/svg+xml">';
+      
+      // Mock GitHub Pages environment
+      Object.defineProperty(window, 'location', {
+        value: {
+          hostname: 'tleety.github.io',
+          pathname: '/Chatgpt-Test-webpage/index.html',
+          href: 'https://tleety.github.io/Chatgpt-Test-webpage/index.html'
+        },
+        writable: true
+      });
+      
+      insertTopBar();
+      
+      const faviconLink = document.querySelector('link[rel="icon"]');
+      expect(faviconLink.href).toBe('http://localhost/Chatgpt-Test-webpage/favicon.svg');
+    });
+  });
 });
