@@ -266,7 +266,7 @@
       <div id="rightPanel">
         <div id="gameInfoSection">
           <h2>Snake Game</h2>
-          <p>Use the arrow keys to move the snake and eat the red squares. Don't run into the walls or yourself!</p>
+          <p>Use the arrow keys to move the snake and eat the red squares. Don't run into the walls, yourself, or the brown obstacles! As you level up, more obstacles will appear to increase the challenge.</p>
         </div>
         <div id="highScoreSection">
           <h3>🏆 High Scores</h3>
@@ -413,6 +413,12 @@
       // Draw food
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(state.food.x, state.food.y, game.CELL_SIZE, game.CELL_SIZE);
+      
+      // Draw obstacles
+      ctx.fillStyle = '#8B4513'; // Brown color for obstacles
+      state.obstacles.forEach(obstacle => {
+        ctx.fillRect(obstacle.x, obstacle.y, game.CELL_SIZE, game.CELL_SIZE);
+      });
       
       // Update score, level, and experience display
       scoreElement.textContent = `Score: ${state.score}`;

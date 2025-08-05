@@ -484,6 +484,198 @@ describe('SnakeGameLogic', () => {
     });
   });
 
+  describe('Obstacle Management', () => {
+    beforeEach(() => {
+      // Clear localStorage before each test
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('snakeGameExperience');
+      }
+    });
+
+    describe('generateObstacles', () => {
+      test('should generate no obstacles at level 1 and 2', () => {
+        game.clearExperience();
+        expect(game.getLevel()).toBe(1);
+        game.generateObstacles();
+        expect(game.obstacles).toHaveLength(0);
+
+        game.addExperience(5); // Level 2
+        expect(game.getLevel()).toBe(2);
+        game.generateObstacles();
+        expect(game.obstacles).toHaveLength(0);
+      });
+
+      test('should generate obstacles starting at level 3', () => {
+        game.clearExperience();
+        game.addExperience(6); // Level 3
+        expect(game.getLevel()).toBe(3);
+        game.generateObstacles();
+        expect(game.obstacles.length).toBeGreaterThan(0);
+      });
+
+      test('should generate more obstacles at higher levels', () => {
+        game.clearExperience();
+        
+        // Level 3: should have 1 obstacle
+        game.addExperience(6);
+        expect(game.getLevel()).toBe(3);
+        game.generateObstacles();
+        const level3Obstacles = game.obstacles.length;
+        expect(level3Obstacles).toBe(1);
+
+        // Level 5: should have 2 obstacles
+        game.clearExperience();
+        game.addExperience(10);
+        expect(game.getLevel()).toBe(5);
+        game.generateObstacles();
+        const level5Obstacles = game.obstacles.length;
+        expect(level5Obstacles).toBe(2);
+
+        // Level 7: should have 3 obstacles
+        game.clearExperience();
+        game.addExperience(16);
+        expect(game.getLevel()).toBe(7);
+        game.generateObstacles();
+        const level7Obstacles = game.obstacles.length;
+        expect(level7Obstacles).toBe(3);
+      });
+
+      test('should cap obstacles at reasonable number', () => {
+        game.clearExperience();
+        game.addExperience(1000); // Very high level
+        game.generateObstacles();
+        expect(game.obstacles.length).toBeLessThanOrEqual(15);
+      });
+    });
+
+    describe('placeObstacle', () => {
+      test('should place obstacles in valid grid positions', () => {
+        game.clearExperience();
+        game.addExperience(6); // Level 3
+        game.generateObstacles();
+        
+        game.obstacles.forEach(obstacle => {
+          expect(obstacle.x % 20).toBe(0);
+          expect(obstacle.y % 20).toBe(0);
+          expect(obstacle.x).toBeGreaterThanOrEqual(0);
+          expect(obstacle.x).toBeLessThan(400);
+          expect(obstacle.y).toBeGreaterThanOrEqual(0);
+          expect(obstacle.y).toBeLessThan(300);
+        });
+      });
+
+      test('should not place obstacles on snake or in safe zone', () => {
+        game.clearExperience();
+        game.addExperience(6); // Level 3
+        
+        // Snake is at center (200, 140)
+        const centerX = 200;
+        const centerY = 140;
+        const safeZoneSize = 3 * 20; // 3 cells * 20 pixels
+        
+        game.generateObstacles();
+        
+        game.obstacles.forEach(obstacle => {
+          // Should not be on snake
+          expect(game.snake.some(seg => seg.x === obstacle.x && seg.y === obstacle.y)).toBe(false);
+          
+          // Should not be in safe zone around snake start
+          const inSafeZone = obstacle.x >= (centerX - safeZoneSize) && 
+                            obstacle.x <= (centerX + safeZoneSize) &&
+                            obstacle.y >= (centerY - safeZoneSize) && 
+                            obstacle.y <= (centerY + safeZoneSize);
+          expect(inSafeZone).toBe(false);
+        });
+      });
+    });
+
+    describe('isObstacleCollision', () => {
+      test('should detect collision with obstacles', () => {
+        game.obstacles = [
+          { x: 100, y: 100 },
+          { x: 120, y: 100 }
+        ];
+        
+        expect(game.isObstacleCollision(100, 100)).toBe(true);
+        expect(game.isObstacleCollision(120, 100)).toBe(true);
+        expect(game.isObstacleCollision(140, 100)).toBe(false);
+      });
+
+      test('should return false when no obstacles exist', () => {
+        game.obstacles = [];
+        expect(game.isObstacleCollision(100, 100)).toBe(false);
+      });
+    });
+
+    describe('food placement with obstacles', () => {
+      test('should not place food on obstacles', () => {
+        game.obstacles = [
+          { x: 100, y: 100 },
+          { x: 120, y: 100 },
+          { x: 140, y: 100 }
+        ];
+        
+        const food = game.placeFood();
+        
+        // Food should not be on any obstacle
+        expect(game.obstacles.some(obs => obs.x === food.x && obs.y === food.y)).toBe(false);
+        // Food should not be on snake
+        expect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);
+      });
+    });
+
+    describe('collision detection integration', () => {
+      test('should detect collision with obstacles during movement', () => {
+        // Place obstacle in front of snake
+        const headX = game.snake[0].x;
+        const headY = game.snake[0].y;
+        game.obstacles = [{ x: headX + 20, y: headY }]; // Right in front
+        
+        const result = game.moveSnake();
+        
+        expect(result.collision).toBe(true);
+        expect(result.ateFood).toBe(false);
+      });
+
+      test('should allow movement when no obstacle collision', () => {
+        // Place obstacle away from snake path
+        game.obstacles = [{ x: 100, y: 100 }];
+        
+        const result = game.moveSnake();
+        
+        expect(result.collision).toBe(false);
+      });
+    });
+
+    describe('game state with obstacles', () => {
+      test('should include obstacles in game state', () => {
+        game.obstacles = [
+          { x: 100, y: 100 },
+          { x: 120, y: 120 }
+        ];
+        
+        const state = game.getGameState();
+        
+        expect(state).toHaveProperty('obstacles');
+        expect(state.obstacles).toHaveLength(2);
+        expect(state.obstacles[0]).toEqual({ x: 100, y: 100 });
+        expect(state.obstacles[1]).toEqual({ x: 120, y: 120 });
+      });
+
+      test('should reset obstacles when game resets', () => {
+        game.clearExperience();
+        game.addExperience(10); // Level 5, should generate obstacles
+        
+        game.reset();
+        
+        const state = game.getGameState();
+        expect(state.obstacles).toBeDefined();
+        // Should regenerate obstacles based on current level
+        expect(state.obstacles.length).toBe(2); // Level 5 = 2 obstacles
+      });
+    });
+  });
+
   describe('High Score Management', () => {
     beforeEach(() => {
       // Clear localStorage before each test
