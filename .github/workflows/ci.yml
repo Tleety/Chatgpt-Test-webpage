@@ -192,10 +192,21 @@ jobs:
         bundle install
         bundle exec jekyll build
         
+    - name: Prepare deployment artifacts
+      run: |
+        # Create a clean deployment directory
+        mkdir -p _deployment
+        # Copy all files except the deployment directory itself and other build artifacts
+        rsync -av --exclude='_deployment' --exclude='node_modules' --exclude='.git' . _deployment/
+        # Ensure deployment.json is included (override .gitignore)
+        if [ -f deployment.json ]; then
+          cp deployment.json _deployment/deployment.json
+        fi
+        
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: '.'
+        path: '_deployment'
         
     - name: Deploy to GitHub Pages
       id: deployment
