@@ -149,8 +149,9 @@ describe('Snake Game UI', () => {
   });
 
   test('should verify game over overlay positioning when displayed', () => {
-    // Set up DOM with game container and game over element
-    document.body.innerHTML = `
+    // Create a temporary container for the test to avoid destroying the test interface
+    const testContainer = document.createElement('div');
+    testContainer.innerHTML = `
       <div id="gameContainer" style="position: relative;">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="gameOver" style="
@@ -164,35 +165,44 @@ describe('Snake Game UI', () => {
       </div>
     `;
     
-    const gameOverElement = document.getElementById('gameOver');
-    const gameContainer = document.getElementById('gameContainer');
+    // Temporarily append to body for testing
+    document.body.appendChild(testContainer);
     
-    // Verify the game over element exists and has correct positioning
-    expect(gameOverElement).toBeTruthy();
-    expect(gameContainer).toBeTruthy();
-    
-    // Get computed styles to verify positioning
-    const gameOverStyles = window.getComputedStyle(gameOverElement);
-    const containerStyles = window.getComputedStyle(gameContainer);
-    
-    // Verify the overlay is positioned absolutely
-    expect(gameOverStyles.position).toBe('absolute');
-    
-    // Verify the container has relative positioning
-    expect(containerStyles.position).toBe('relative');
-    
-    // Verify centering styles
-    expect(gameOverStyles.top).toBe('50%');
-    expect(gameOverStyles.left).toBe('50%');
-    expect(gameOverStyles.transform).toContain('translate(-50%, -50%)');
-    
-    // Verify z-index for overlay effect
-    expect(gameOverStyles.zIndex).toBe('100');
+    try {
+      const gameOverElement = testContainer.querySelector('#gameOver');
+      const gameContainer = testContainer.querySelector('#gameContainer');
+      
+      // Verify the game over element exists and has correct positioning
+      expect(gameOverElement).toBeTruthy();
+      expect(gameContainer).toBeTruthy();
+      
+      // Get computed styles to verify positioning
+      const gameOverStyles = window.getComputedStyle(gameOverElement);
+      const containerStyles = window.getComputedStyle(gameContainer);
+      
+      // Verify the overlay is positioned absolutely
+      expect(gameOverStyles.position).toBe('absolute');
+      
+      // Verify the container has relative positioning
+      expect(containerStyles.position).toBe('relative');
+      
+      // Verify centering styles
+      expect(gameOverStyles.top).toBe('50%');
+      expect(gameOverStyles.left).toBe('50%');
+      expect(gameOverStyles.transform).toContain('translate(-50%, -50%)');
+      
+      // Verify z-index for overlay effect
+      expect(gameOverStyles.zIndex).toBe('100');
+    } finally {
+      // Always clean up the test container
+      document.body.removeChild(testContainer);
+    }
   });
 
   test('should display level and experience information in UI', () => {
-    // Set up DOM with new level and experience elements
-    document.body.innerHTML = `
+    // Create a temporary container for the test to avoid destroying the test interface
+    const testContainer = document.createElement('div');
+    testContainer.innerHTML = `
       <div id="gameStats">
         <div id="score">Score: 0</div>
         <div id="level">Level: 1</div>
@@ -201,29 +211,37 @@ describe('Snake Game UI', () => {
       <canvas id="gameCanvas" width="800" height="600"></canvas>
     `;
     
-    const scoreElement = document.getElementById('score');
-    const levelElement = document.getElementById('level');
-    const experienceElement = document.getElementById('experience');
-    const gameStatsElement = document.getElementById('gameStats');
+    // Temporarily append to body for testing
+    document.body.appendChild(testContainer);
     
-    // Verify all elements exist
-    expect(scoreElement).toBeTruthy();
-    expect(levelElement).toBeTruthy();
-    expect(experienceElement).toBeTruthy();
-    expect(gameStatsElement).toBeTruthy();
-    
-    // Verify initial content
-    expect(scoreElement.textContent).toBe('Score: 0');
-    expect(levelElement.textContent).toBe('Level: 1');
-    expect(experienceElement.textContent).toBe('Experience: 0/5');
-    
-    // Test updating the display (simulating game state update)
-    scoreElement.textContent = 'Score: 3';
-    levelElement.textContent = 'Level: 2';
-    experienceElement.textContent = 'Experience: 5/6';
-    
-    expect(scoreElement.textContent).toBe('Score: 3');
-    expect(levelElement.textContent).toBe('Level: 2');
-    expect(experienceElement.textContent).toBe('Experience: 5/6');
+    try {
+      const scoreElement = testContainer.querySelector('#score');
+      const levelElement = testContainer.querySelector('#level');
+      const experienceElement = testContainer.querySelector('#experience');
+      const gameStatsElement = testContainer.querySelector('#gameStats');
+      
+      // Verify all elements exist
+      expect(scoreElement).toBeTruthy();
+      expect(levelElement).toBeTruthy();
+      expect(experienceElement).toBeTruthy();
+      expect(gameStatsElement).toBeTruthy();
+      
+      // Verify initial content
+      expect(scoreElement.textContent).toBe('Score: 0');
+      expect(levelElement.textContent).toBe('Level: 1');
+      expect(experienceElement.textContent).toBe('Experience: 0/5');
+      
+      // Test updating the display (simulating game state update)
+      scoreElement.textContent = 'Score: 3';
+      levelElement.textContent = 'Level: 2';
+      experienceElement.textContent = 'Experience: 5/6';
+      
+      expect(scoreElement.textContent).toBe('Score: 3');
+      expect(levelElement.textContent).toBe('Level: 2');
+      expect(experienceElement.textContent).toBe('Experience: 5/6');
+    } finally {
+      // Always clean up the test container
+      document.body.removeChild(testContainer);
+    }
   });
 });

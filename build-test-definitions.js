@@ -181,8 +181,23 @@ function convertToFunctionBody(testBody, moduleName) {
   // Convert Jest syntax to browser-compatible code
   testLogic = testLogic
     // Convert const/let to var for broader compatibility - but preserve 'let's' in comments
-    .replace(/\b(?:const|let)\s+(?![s'])/g, 'var ')
-    // Convert arrow functions to regular functions
+    .replace(/\bconst\s+/g, 'var ')
+    .replace(/\blet\s+/g, 'var ')
+    // Convert template literals to string concatenation
+    .replace(/`([^`]*\$\{[^}]+\}[^`]*)`/g, function(match, content) {
+      // Convert template literal to string concatenation
+      return '"' + content.replace(/\$\{([^}]+)\}/g, '" + ($1) + "') + '"';
+    })
+    // Convert ES6 object shorthand to full syntax
+    .replace(/{\s*(\w+)\s*,\s*(\w+)\s*}/g, '{ $1: $1, $2: $2 }')
+    .replace(/{\s*(\w+)\s*}/g, '{ $1: $1 }')
+    // Convert arrow functions in array methods - handle expressions first
+    .replace(/\.(sort|some|every|filter|map)\(\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)\s*=>\s*([^{;)]+)\)/g, '.$1(function($2, $3) { return $4; })')
+    .replace(/\.(sort|some|every|filter|map)\(\s*(\w+)\s*=>\s*([^{;)]+)\)/g, '.$1(function($2) { return $3; })')
+    // Convert arrow functions to regular functions - handle simple expressions first
+    .replace(/(\w+)\s*=>\s*([^{;]+);?/g, 'function($1) { return $2; }')
+    .replace(/\(\s*(\w+)\s*\)\s*=>\s*([^{;]+);?/g, 'function($1) { return $2; }')
+    // Convert arrow functions with blocks
     .replace(/(\w+)\s*=>\s*{/g, 'function($1) {')
     .replace(/\(\s*(\w+)\s*\)\s*=>\s*{/g, 'function($1) {')
     // Handle forEach with arrow functions
