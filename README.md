@@ -51,6 +51,115 @@ npm test
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
+## Coding Guidelines
+
+### Technologies Used
+
+This project uses a diverse set of technologies to demonstrate different web development approaches:
+
+- **HTML/CSS/JavaScript** - Core web technologies for the main landing page and Snake game
+- **Jekyll** - Ruby-based static site generator for the todo list project
+- **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
+- **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
+- **Jest** - JavaScript testing framework with jsdom environment for unit testing
+- **GitHub Pages** - Static site hosting and deployment
+
+### Coding Best Practices
+
+#### HTML/CSS/JavaScript
+- Use semantic HTML5 elements (`<header>`, `<main>`, `<section>`)
+- Maintain consistent class naming conventions (kebab-case)
+- Keep CSS organized with logical grouping and consistent indentation
+- Use modern JavaScript features (ES6+) where appropriate
+- Separate concerns: structure (HTML), presentation (CSS), behavior (JavaScript)
+- Include proper meta tags and accessibility attributes
+
+#### Jekyll
+- Follow Jekyll's convention-over-configuration approach
+- Use frontmatter consistently for page metadata
+- Organize content in logical directory structures
+- Leverage Jekyll's built-in features (layouts, includes) for DRY principles
+
+#### Phaser 3
+- Load Phaser from CDN for simplicity in demo projects
+- Structure game code with clear initialization, update, and render phases
+- Use Phaser's built-in systems (scenes, sprites, physics) appropriately
+- Keep game logic modular and testable where possible
+
+#### Go + WebAssembly
+- Use standard Go project structure
+- Keep WASM modules focused and lightweight
+- Provide clear build instructions with proper GOOS/GOARCH flags
+- Include necessary runtime files (`wasm_exec.js`)
+
+### Unit Testing Guidelines
+
+Our testing approach emphasizes comprehensive coverage and maintainable test code:
+
+#### Test Structure
+- Use Jest as the primary testing framework
+- Configure jsdom environment for browser API compatibility
+- Organize tests with clear `describe` blocks and descriptive test names
+- Use `beforeEach` for consistent test setup
+
+#### Test Coverage Areas
+- **Initialization**: Verify proper setup and default states
+- **Core Logic**: Test all business logic functions thoroughly
+- **Edge Cases**: Handle boundary conditions and error states
+- **State Management**: Validate state transitions and persistence
+- **UI Interactions**: Test user interface behavior and responses
+
+#### Best Practices
+- Write tests before or alongside implementation (TDD approach)
+- Keep tests focused and atomic (one assertion per concept)
+- Use descriptive test names that explain the expected behavior
+- Mock external dependencies and browser APIs when necessary
+- Maintain test independence (no shared state between tests)
+
+### Design Coherence Guidelines
+
+To maintain visual and functional consistency across all project pages:
+
+#### Shared Styling
+- Use the common `style.css` for consistent typography and color schemes
+- Maintain the standard header structure with logo, title, and navigation
+- Apply consistent spacing and layout patterns
+- Use the established color palette: dark header (#333), light background (#f0f0f0)
+
+#### Navigation Consistency
+- Include standard navigation links in the top bar
+- Link to the main page, projects section, and test visualizer
+- Use consistent hover effects and interaction patterns
+- Ensure all pages can navigate back to the main landing page
+
+#### Component Design
+- Use project cards with consistent icon and layout structure
+- Maintain responsive design principles across all pages
+- Apply consistent button styles and interactive elements
+- Use standard fonts (Segoe UI stack) throughout the project
+
+### Test Visualization
+
+Our test visualization system provides comprehensive insight into test execution:
+
+#### Test Results Page
+- Displays real-time test execution results in a visual format
+- Shows test suite summary with pass/fail statistics
+- Provides detailed test case breakdown with timing information
+- Includes interactive features for exploring test details
+
+#### Integration with CI/CD
+- Tests are automatically executed and results updated
+- Visual indicators show test status at a glance
+- Historical test data helps track project health over time
+- Failed tests are highlighted with detailed error information
+
+#### Accessing Test Results
+- Navigate to the test visualizer via the main page navigation
+- Direct link available at `test-results.html`
+- Results are updated after each test run
+- Mobile-friendly responsive design for viewing on any device
+
 ## License
 
 The Go runtime file `wasm_exec.js` is licensed under the BSD-style license from the Go authors.
