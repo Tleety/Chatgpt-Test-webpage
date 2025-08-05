@@ -36,6 +36,16 @@ body {
   text-decoration: underline;
 }
 
+.top-bar .version-tag {
+  background: #555;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 15px;
+  border: 1px solid #777;
+}
+
 .hero {
   text-align: center;
   padding: 40px 20px 10px;
