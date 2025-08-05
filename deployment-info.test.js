@@ -169,7 +169,7 @@ describe('Deployment Info Generation', () => {
       
       expect(ciWorkflow).toContain('Generate deployment info from GitHub data');
       expect(ciWorkflow).toContain('npm run generate-deployment-info');
-      expect(ciWorkflow).toContain('git add deployment.json');
+      expect(ciWorkflow).toContain('git add -f deployment.json');
       expect(ciWorkflow).toContain('git commit -m "chore: update deployment info [skip ci]"');
     });
 
