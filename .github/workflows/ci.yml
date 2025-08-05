@@ -77,6 +77,47 @@ jobs:
         retention-days: 30
       if: always()
       
+    - name: Generate test summary for web display
+      run: |
+        # Create a simplified test summary JSON for the web page
+        node -e "
+        const fs = require('fs');
+        try {
+          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+          
+          const summary = {
+            timestamp: new Date().toISOString(),
+            success: testResults.success,
+            numTotalTests: testResults.numTotalTests,
+            numPassedTests: testResults.numPassedTests,
+            numFailedTests: testResults.numFailedTests,
+            testSuites: testResults.testResults.map(suite => ({
+              name: suite.name.replace(/.*\//, '').replace('.test.js', ''),
+              status: suite.status,
+              numPassingTests: suite.numPassingTests,
+              numFailingTests: suite.numFailingTests,
+              file: suite.name.replace(/.*\//, '')
+            }))
+          };
+          
+          fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
+          console.log('Generated test summary for web display');
+        } catch (error) {
+          console.log('Failed to generate test summary:', error.message);
+          // Create a minimal fallback
+          fs.writeFileSync('test-summary.json', JSON.stringify({
+            timestamp: new Date().toISOString(),
+            success: false,
+            numTotalTests: 0,
+            numPassedTests: 0,
+            numFailedTests: 0,
+            testSuites: [],
+            error: 'Failed to parse test results'
+          }, null, 2));
+        }
+        "
+      if: always()
+      
     - name: Generate test report
       run: npm test -- --verbose --coverage
       if: always()
@@ -152,13 +193,56 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Run tests and generate results for deployment
+      run: |
+        npm test -- --json --outputFile=test-results.json || echo "Tests failed but continuing deployment"
+        
+        # Generate test summary for web display
+        node -e "
+        const fs = require('fs');
+        try {
+          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+          
+          const summary = {
+            timestamp: new Date().toISOString(),
+            success: testResults.success,
+            numTotalTests: testResults.numTotalTests,
+            numPassedTests: testResults.numPassedTests,
+            numFailedTests: testResults.numFailedTests,
+            testSuites: testResults.testResults.map(suite => ({
+              name: suite.name.replace(/.*\//, '').replace('.test.js', ''),
+              status: suite.status,
+              numPassingTests: suite.numPassingTests,
+              numFailingTests: suite.numFailingTests,
+              file: suite.name.replace(/.*\//, '')
+            }))
+          };
+          
+          fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
+          console.log('Generated test summary for deployment');
+        } catch (error) {
+          console.log('Failed to generate test summary:', error.message);
+          // Create a minimal fallback
+          fs.writeFileSync('test-summary.json', JSON.stringify({
+            timestamp: new Date().toISOString(),
+            success: false,
+            numTotalTests: 0,
+            numPassedTests: 0,
+            numFailedTests: 0,
+            testSuites: [],
+            error: 'Failed to parse test results'
+          }, null, 2));
+        }
+        "
+      if: always()
+      
     - name: Generate deployment info from GitHub data
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         npm run generate-deployment-info
-        git add -f deployment.json
-        git commit -m "chore: update deployment info [skip ci]" || echo "No deployment info changes to commit"
+        git add -f deployment.json test-summary.json
+        git commit -m "chore: update deployment info and test results [skip ci]" || echo "No deployment info changes to commit"
         git push || echo "No changes to push"
       
     # Re-install dependencies after deployment info generation to ensure updated deployment.json is used
