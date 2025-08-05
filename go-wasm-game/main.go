@@ -14,6 +14,7 @@ var (
 )
 
 var drawFunc js.Func
+var recenterFunc js.Func
 
 func draw(this js.Value, args []js.Value) interface{} {
 	// Get current canvas dimensions
@@ -39,6 +40,17 @@ func draw(this js.Value, args []js.Value) interface{} {
 	ctx.Set("fillStyle", "green")
 	ctx.Call("fillRect", x, y, 20, 20)
 	js.Global().Call("requestAnimationFrame", drawFunc)
+	return nil
+}
+
+func recenterSquare(this js.Value, args []js.Value) interface{} {
+	// Update canvas dimensions
+	canvasWidth = canvas.Get("width").Float()
+	canvasHeight = canvas.Get("height").Float()
+	
+	// Center the player box on the canvas
+	x = (canvasWidth - 20) / 2
+	y = (canvasHeight - 20) / 2
 	return nil
 }
 
@@ -72,6 +84,13 @@ func main() {
 	y = (canvasHeight - 20) / 2
 
 	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
+
+	// Expose recenter function to JavaScript
+	recenterFunc = js.FuncOf(recenterSquare)
+	js.Global().Set("recenterSquare", recenterFunc)
+	
+	// Set flag to indicate WASM is loaded
+	js.Global().Set("wasmLoaded", true)
 
 	drawFunc = js.FuncOf(draw)
 	js.Global().Call("requestAnimationFrame", drawFunc)
