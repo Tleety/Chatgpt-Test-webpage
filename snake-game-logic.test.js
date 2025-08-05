@@ -392,7 +392,7 @@ describe('SnakeGameLogic', () => {
     });
 
     describe('experience integration with game mechanics', () => {
-      test('should award experience when eating food', () => {
+      test('should award experience when eating food based on current level', () => {
         // Clear experience first
         game.clearExperience();
         
@@ -402,10 +402,53 @@ describe('SnakeGameLogic', () => {
         game.food = { x: headX + 20, y: headY };
         
         const initialExp = game.getExperience();
+        const currentLevel = game.getLevel();
         const result = game.moveSnake();
         
         expect(result.ateFood).toBe(true);
-        expect(game.getExperience()).toBe(initialExp + 1);
+        expect(game.getExperience()).toBe(initialExp + currentLevel);
+      });
+
+      test('should award exponentially more experience at higher levels', () => {
+        // Test experience gain at level 1 (should get 1 exp)
+        game.clearExperience();
+        expect(game.getLevel()).toBe(1);
+        
+        const headX = game.snake[0].x;
+        const headY = game.snake[0].y;
+        game.food = { x: headX + 20, y: headY };
+        
+        game.moveSnake();
+        expect(game.getExperience()).toBe(1); // Level 1 = 1 exp per food
+        
+        // Manually set experience to level 2 threshold and test again
+        game.clearExperience();
+        game.addExperience(5); // Level 2 threshold
+        expect(game.getLevel()).toBe(2);
+        
+        // Reset snake and food for another test
+        game.reset();
+        const newHeadX = game.snake[0].x;
+        const newHeadY = game.snake[0].y;
+        game.food = { x: newHeadX + 20, y: newHeadY };
+        
+        const expBefore = game.getExperience();
+        game.moveSnake();
+        expect(game.getExperience()).toBe(expBefore + 2); // Level 2 = 2 exp per food
+        
+        // Test level 3
+        game.clearExperience();
+        game.addExperience(6); // Level 3 threshold  
+        expect(game.getLevel()).toBe(3);
+        
+        game.reset();
+        const head3X = game.snake[0].x;
+        const head3Y = game.snake[0].y;
+        game.food = { x: head3X + 20, y: head3Y };
+        
+        const exp3Before = game.getExperience();
+        game.moveSnake();
+        expect(game.getExperience()).toBe(exp3Before + 3); // Level 3 = 3 exp per food
       });
 
       test('should not award experience when not eating food', () => {
