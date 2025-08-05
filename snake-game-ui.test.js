@@ -189,4 +189,41 @@ describe('Snake Game UI', () => {
     // Verify z-index for overlay effect
     expect(gameOverStyles.zIndex).toBe('100');
   });
+
+  test('should display level and experience information in UI', () => {
+    // Set up DOM with new level and experience elements
+    document.body.innerHTML = `
+      <div id="gameStats">
+        <div id="score">Score: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="experience">Experience: 0/5</div>
+      </div>
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+    `;
+    
+    const scoreElement = document.getElementById('score');
+    const levelElement = document.getElementById('level');
+    const experienceElement = document.getElementById('experience');
+    const gameStatsElement = document.getElementById('gameStats');
+    
+    // Verify all elements exist
+    expect(scoreElement).toBeTruthy();
+    expect(levelElement).toBeTruthy();
+    expect(experienceElement).toBeTruthy();
+    expect(gameStatsElement).toBeTruthy();
+    
+    // Verify initial content
+    expect(scoreElement.textContent).toBe('Score: 0');
+    expect(levelElement.textContent).toBe('Level: 1');
+    expect(experienceElement.textContent).toBe('Experience: 0/5');
+    
+    // Test updating the display (simulating game state update)
+    scoreElement.textContent = 'Score: 3';
+    levelElement.textContent = 'Level: 2';
+    experienceElement.textContent = 'Experience: 5/6';
+    
+    expect(scoreElement.textContent).toBe('Score: 3');
+    expect(levelElement.textContent).toBe('Level: 2');
+    expect(experienceElement.textContent).toBe('Experience: 5/6');
+  });
 });

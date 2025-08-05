@@ -256,11 +256,197 @@ describe('SnakeGameLogic', () => {
     });
   });
 
+  describe('Experience and Level Management', () => {
+    beforeEach(() => {
+      // Clear localStorage before each test
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('snakeGameExperience');
+      }
+    });
+
+    describe('getExperience', () => {
+      test('should return 0 when no experience exists', () => {
+        expect(game.getExperience()).toBe(0);
+      });
+
+      test('should return stored experience from localStorage', () => {
+        localStorage.setItem('snakeGameExperience', '25');
+        expect(game.getExperience()).toBe(25);
+      });
+
+      test('should handle corrupted localStorage data', () => {
+        localStorage.setItem('snakeGameExperience', 'invalid');
+        expect(game.getExperience()).toBe(0);
+      });
+    });
+
+    describe('addExperience', () => {
+      test('should add experience points', () => {
+        const result = game.addExperience(5);
+        expect(result).toBe(5);
+        expect(game.getExperience()).toBe(5);
+      });
+
+      test('should accumulate experience points', () => {
+        game.addExperience(3);
+        game.addExperience(2);
+        expect(game.getExperience()).toBe(5);
+      });
+
+      test('should persist experience in localStorage', () => {
+        game.addExperience(10);
+        // Create new game instance to test persistence
+        const newGame = new SnakeGameLogic(400, 300);
+        expect(newGame.getExperience()).toBe(10);
+      });
+    });
+
+    describe('getExperienceRequiredForLevel', () => {
+      test('should return correct experience for level 1', () => {
+        expect(game.getExperienceRequiredForLevel(1)).toBe(0);
+      });
+
+      test('should return correct experience for early levels', () => {
+        expect(game.getExperienceRequiredForLevel(2)).toBe(5);  // Base
+        expect(game.getExperienceRequiredForLevel(3)).toBe(6);  // 5 + 1
+        expect(game.getExperienceRequiredForLevel(4)).toBe(8);  // 6 + 2  
+        expect(game.getExperienceRequiredForLevel(5)).toBe(10); // 8 + 2
+        expect(game.getExperienceRequiredForLevel(6)).toBe(13); // 10 + 3
+        expect(game.getExperienceRequiredForLevel(7)).toBe(16); // 13 + 3
+        expect(game.getExperienceRequiredForLevel(8)).toBe(20); // 16 + 4
+        expect(game.getExperienceRequiredForLevel(9)).toBe(24); // 20 + 4
+      });
+
+      test('should handle level 0 and negative levels', () => {
+        expect(game.getExperienceRequiredForLevel(0)).toBe(0);
+        expect(game.getExperienceRequiredForLevel(-1)).toBe(0);
+      });
+    });
+
+    describe('getLevel', () => {
+      test('should return level 1 for 0-4 experience', () => {
+        expect(game.getLevel()).toBe(1); // 0 exp
+        
+        localStorage.setItem('snakeGameExperience', '0');
+        expect(game.getLevel()).toBe(1);
+        
+        localStorage.setItem('snakeGameExperience', '4');
+        expect(game.getLevel()).toBe(1);
+      });
+
+      test('should return correct level for various experience amounts', () => {
+        localStorage.setItem('snakeGameExperience', '5');
+        expect(game.getLevel()).toBe(2);
+
+        localStorage.setItem('snakeGameExperience', '6');
+        expect(game.getLevel()).toBe(3);
+
+        localStorage.setItem('snakeGameExperience', '7');
+        expect(game.getLevel()).toBe(3);
+
+        localStorage.setItem('snakeGameExperience', '8');
+        expect(game.getLevel()).toBe(4);
+
+        localStorage.setItem('snakeGameExperience', '10');
+        expect(game.getLevel()).toBe(5);
+
+        localStorage.setItem('snakeGameExperience', '13');
+        expect(game.getLevel()).toBe(6);
+      });
+
+      test('should handle higher experience levels', () => {
+        localStorage.setItem('snakeGameExperience', '50');
+        expect(game.getLevel()).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    describe('getExperienceToNextLevel', () => {
+      test('should return correct experience needed for next level', () => {
+        localStorage.setItem('snakeGameExperience', '0');
+        expect(game.getExperienceToNextLevel()).toBe(5); // Need 5 for level 2
+
+        localStorage.setItem('snakeGameExperience', '3');
+        expect(game.getExperienceToNextLevel()).toBe(2); // Need 2 more for level 2
+
+        localStorage.setItem('snakeGameExperience', '5');
+        expect(game.getExperienceToNextLevel()).toBe(1); // Need 1 more for level 3
+
+        localStorage.setItem('snakeGameExperience', '6');
+        expect(game.getExperienceToNextLevel()).toBe(2); // Need 2 more for level 4
+      });
+
+      test('should return correct amount when at exact level threshold', () => {
+        localStorage.setItem('snakeGameExperience', '5');
+        expect(game.getExperienceToNextLevel()).toBe(1); // At level 2, need 1 more for level 3
+      });
+    });
+
+    describe('clearExperience', () => {
+      test('should remove experience from localStorage', () => {
+        game.addExperience(10);
+        expect(game.getExperience()).toBe(10);
+        
+        game.clearExperience();
+        expect(game.getExperience()).toBe(0);
+      });
+    });
+
+    describe('experience integration with game mechanics', () => {
+      test('should award experience when eating food', () => {
+        // Clear experience first
+        game.clearExperience();
+        
+        // Place food right in front of snake
+        const headX = game.snake[0].x;
+        const headY = game.snake[0].y;
+        game.food = { x: headX + 20, y: headY };
+        
+        const initialExp = game.getExperience();
+        const result = game.moveSnake();
+        
+        expect(result.ateFood).toBe(true);
+        expect(game.getExperience()).toBe(initialExp + 1);
+      });
+
+      test('should not award experience when not eating food', () => {
+        game.clearExperience();
+        
+        const initialExp = game.getExperience();
+        const result = game.moveSnake();
+        
+        expect(result.ateFood).toBe(false);
+        expect(game.getExperience()).toBe(initialExp);
+      });
+
+      test('should preserve experience when game resets', () => {
+        game.clearExperience();
+        game.addExperience(10);
+        
+        game.reset();
+        
+        expect(game.getExperience()).toBe(10);
+        expect(game.score).toBe(0); // Score should reset
+      });
+
+      test('should include experience and level in game state', () => {
+        game.clearExperience();
+        game.addExperience(7);
+        
+        const state = game.getGameState();
+        
+        expect(state.experience).toBe(7);
+        expect(state.level).toBe(3); // 7 exp = level 3 (6 exp needed for level 3, 8 exp needed for level 4)
+        expect(state.experienceToNextLevel).toBe(1); // Need 1 more for level 4
+      });
+    });
+  });
+
   describe('High Score Management', () => {
     beforeEach(() => {
       // Clear localStorage before each test
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem('snakeGameHighScores');
+        localStorage.removeItem('snakeGameExperience');
       }
     });
 

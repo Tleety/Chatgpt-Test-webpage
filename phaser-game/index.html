@@ -28,10 +28,20 @@
       background: #000;
       display: block;
     }
-    #score {
-      font-size: 24px;
+    #gameStats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+    #score, #level, #experience {
+      font-size: 18px;
       font-weight: bold;
       color: #333;
+      background: #f9f9f9;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
     }
     #gameOver {
       position: absolute;
@@ -245,7 +255,11 @@
   <main>
     <div id="gameLayout">
       <div id="gameContainer">
-        <div id="score">Score: 0</div>
+        <div id="gameStats">
+          <div id="score">Score: 0</div>
+          <div id="level">Level: 1</div>
+          <div id="experience">Experience: 0/5</div>
+        </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="gameOver" style="display: none;">Game Over! Press SPACE to restart</div>
       </div>
@@ -282,6 +296,8 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreElement = document.getElementById('score');
+    const levelElement = document.getElementById('level');
+    const experienceElement = document.getElementById('experience');
     const gameOverElement = document.getElementById('gameOver');
     const highScoreListElement = document.getElementById('highScoreList');
     const highScoreModal = document.getElementById('highScoreModal');
@@ -398,8 +414,12 @@
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(state.food.x, state.food.y, game.CELL_SIZE, game.CELL_SIZE);
       
-      // Update score
+      // Update score, level, and experience display
       scoreElement.textContent = `Score: ${state.score}`;
+      levelElement.textContent = `Level: ${state.level}`;
+      
+      const nextLevelExp = game.getExperienceRequiredForLevel(state.level + 1);
+      experienceElement.textContent = `Experience: ${state.experience}/${nextLevelExp}`;
     }
     
     function gameLoop(currentTime) {
@@ -441,7 +461,7 @@
     
     // Initialize the game
     updateHighScoreDisplay();
-    render();
+    render(); // This will update the display with current level/experience
     requestAnimationFrame(gameLoop);
   </script>
 </body>

@@ -17,6 +17,7 @@ class SnakeGameLogic {
     this.snake = [];
     this.direction = { x: CELL_SIZE, y: 0 };
     this.score = 0;
+    // Note: experience persists between games
     
     // Initialize snake in the center
     const startX = Math.floor(this.gameWidth / 2 / CELL_SIZE) * CELL_SIZE;
@@ -72,6 +73,7 @@ class SnakeGameLogic {
     const ateFood = this.isFoodCollision(newX, newY);
     if (ateFood) {
       this.score += 1;
+      this.addExperience(1); // Award 1 experience point per food
       this.food = this.placeFood();
     } else {
       // Remove tail if no food eaten
@@ -139,9 +141,105 @@ class SnakeGameLogic {
       food: { ...this.food },
       direction: { ...this.direction },
       score: this.score,
+      experience: this.getExperience(),
+      level: this.getLevel(),
+      experienceToNextLevel: this.getExperienceToNextLevel(),
       gameWidth: this.gameWidth,
       gameHeight: this.gameHeight
     };
+  }
+
+  /**
+   * Experience and Level Management
+   */
+
+  /**
+   * Gets current experience from localStorage
+   */
+  getExperience() {
+    try {
+      const stored = localStorage.getItem('snakeGameExperience');
+      const parsed = stored ? parseInt(stored, 10) : 0;
+      return isNaN(parsed) ? 0 : parsed;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /**
+   * Adds experience points and saves to localStorage
+   */
+  addExperience(points) {
+    const currentExp = this.getExperience();
+    const newExp = currentExp + points;
+    try {
+      localStorage.setItem('snakeGameExperience', newExp.toString());
+      return newExp;
+    } catch (e) {
+      return currentExp;
+    }
+  }
+
+  /**
+   * Calculates the experience required to reach a specific level
+   * Level progression: Level 1: 0 exp, Level 2: 5 exp, Level 3: 6 exp, Level 4: 8 exp, Level 5: 10 exp, etc.
+   * Pattern starting at level 2: 5, then +1, +2, +2, +3, +3, +4, +4, +5, +5, ...
+   */
+  getExperienceRequiredForLevel(level) {
+    if (level <= 1) return 0;
+    if (level === 2) return 5;
+    
+    let exp = 5; // Level 2 base
+    
+    for (let currentLevel = 3; currentLevel <= level; currentLevel++) {
+      // Calculate increment: +1, +2, +2, +3, +3, +4, +4, ...
+      // For level 3: increment = 1, level 4: increment = 2, level 5: increment = 2, etc.
+      const increment = Math.floor((currentLevel - 2) / 2) + 1;
+      exp += increment;
+    }
+    
+    return exp;
+  }
+
+  /**
+   * Gets current level based on experience
+   */
+  getLevel() {
+    const experience = this.getExperience();
+    
+    let level = 1;
+    while (level < 100) { // Cap at 100 for safety
+      const nextLevelReq = this.getExperienceRequiredForLevel(level + 1);
+      if (experience < nextLevelReq) {
+        break;
+      }
+      level++;
+    }
+    
+    return level;
+  }
+
+  /**
+   * Gets experience needed to reach the next level
+   */
+  getExperienceToNextLevel() {
+    const currentExp = this.getExperience();
+    const currentLevel = this.getLevel();
+    const nextLevelExp = this.getExperienceRequiredForLevel(currentLevel + 1);
+    
+    return Math.max(0, nextLevelExp - currentExp);
+  }
+
+  /**
+   * Clears experience (useful for testing)
+   */
+  clearExperience() {
+    try {
+      localStorage.removeItem('snakeGameExperience');
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
