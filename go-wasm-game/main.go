@@ -60,23 +60,70 @@ func initializeEnvironment() {
 	trees = []Tree{}
 	bushes = []Bush{}
 	
-	// Add some trees
-	trees = append(trees, Tree{x: 100, y: 150, trunkWidth: 15, trunkHeight: 40, canopyRadius: 25})
-	trees = append(trees, Tree{x: 300, y: 200, trunkWidth: 12, trunkHeight: 35, canopyRadius: 22})
-	trees = append(trees, Tree{x: 500, y: 180, trunkWidth: 18, trunkHeight: 45, canopyRadius: 28})
-	trees = append(trees, Tree{x: 750, y: 160, trunkWidth: 14, trunkHeight: 38, canopyRadius: 24})
-	trees = append(trees, Tree{x: 200, y: 400, trunkWidth: 16, trunkHeight: 42, canopyRadius: 26})
-	trees = append(trees, Tree{x: 600, y: 380, trunkWidth: 13, trunkHeight: 36, canopyRadius: 23})
+	// Define world area - make it larger than canvas for future world map expansion
+	worldWidth := math.Max(canvasWidth * 2, 1600)  // At least 1600px wide, or 2x canvas width
+	worldHeight := math.Max(canvasHeight * 2, 1200) // At least 1200px tall, or 2x canvas height
 	
-	// Add some bushes
-	bushes = append(bushes, Bush{x: 150, y: 250, radius: 18})
-	bushes = append(bushes, Bush{x: 250, y: 300, radius: 15})
-	bushes = append(bushes, Bush{x: 400, y: 120, radius: 20})
-	bushes = append(bushes, Bush{x: 550, y: 280, radius: 16})
-	bushes = append(bushes, Bush{x: 700, y: 320, radius: 17})
-	bushes = append(bushes, Bush{x: 80, y: 350, radius: 19})
-	bushes = append(bushes, Bush{x: 450, y: 350, radius: 14})
-	bushes = append(bushes, Bush{x: 650, y: 450, radius: 18})
+	// Generate trees across the larger world area
+	// Use a simple pseudo-random approach for consistent placement
+	treePositions := []struct{ x, y float64 }{
+		{worldWidth * 0.1, worldHeight * 0.15},   // Top-left area
+		{worldWidth * 0.3, worldHeight * 0.2},    // Top area
+		{worldWidth * 0.5, worldHeight * 0.18},   // Top-center
+		{worldWidth * 0.75, worldHeight * 0.16},  // Top-right
+		{worldWidth * 0.2, worldHeight * 0.4},    // Middle-left
+		{worldWidth * 0.6, worldHeight * 0.38},   // Middle-right
+		{worldWidth * 0.85, worldHeight * 0.25},  // Right area
+		{worldWidth * 0.15, worldHeight * 0.65},  // Lower-left
+		{worldWidth * 0.45, worldHeight * 0.7},   // Lower-center
+		{worldWidth * 0.8, worldHeight * 0.6},    // Lower-right
+		{worldWidth * 0.9, worldHeight * 0.8},    // Far bottom-right
+		{worldWidth * 0.05, worldHeight * 0.9},   // Far bottom-left
+	}
+	
+	// Create trees with varied properties
+	for i, pos := range treePositions {
+		trunkWidth := 12.0 + float64(i%4) * 2  // 12, 14, 16, 18
+		trunkHeight := 35.0 + float64(i%3) * 5 // 35, 40, 45
+		canopyRadius := 22.0 + float64(i%4) * 2 // 22, 24, 26, 28
+		
+		trees = append(trees, Tree{
+			x: pos.x, 
+			y: pos.y, 
+			trunkWidth: trunkWidth, 
+			trunkHeight: trunkHeight, 
+			canopyRadius: canopyRadius,
+		})
+	}
+	
+	// Generate bushes across the larger world area
+	bushPositions := []struct{ x, y float64 }{
+		{worldWidth * 0.15, worldHeight * 0.25},  // Upper area
+		{worldWidth * 0.25, worldHeight * 0.3},   
+		{worldWidth * 0.4, worldHeight * 0.12},   
+		{worldWidth * 0.55, worldHeight * 0.28},  
+		{worldWidth * 0.7, worldHeight * 0.32},   
+		{worldWidth * 0.08, worldHeight * 0.35},  
+		{worldWidth * 0.45, worldHeight * 0.45},  
+		{worldWidth * 0.65, worldHeight * 0.55},  
+		{worldWidth * 0.35, worldHeight * 0.75},  // Lower area
+		{worldWidth * 0.75, worldHeight * 0.85},  
+		{worldWidth * 0.1, worldHeight * 0.8},    
+		{worldWidth * 0.9, worldHeight * 0.4},    // Far right
+		{worldWidth * 0.95, worldHeight * 0.95},  // Far corner
+		{worldWidth * 0.02, worldHeight * 0.05},  // Far top-left
+	}
+	
+	// Create bushes with varied sizes
+	for i, pos := range bushPositions {
+		radius := 14.0 + float64(i%5) * 1.5 // 14, 15.5, 17, 18.5, 20
+		
+		bushes = append(bushes, Bush{
+			x: pos.x, 
+			y: pos.y, 
+			radius: radius,
+		})
+	}
 }
 
 func draw(this js.Value, args []js.Value) interface{} {
