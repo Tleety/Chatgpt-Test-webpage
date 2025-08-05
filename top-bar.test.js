@@ -87,19 +87,16 @@ describe('Top Bar Component', () => {
       expect(topBarHTML).toContain('v1.0.0'); // fallback version
     });
 
-    test('should prefer deployment.json over package.json when both are available', async () => {
-      // Mock fetch to return both deployment.json and package.json
+    test('should fallback to local deployment.json when GitHub API fails', async () => {
+      // Mock fetch to fail for GitHub API but succeed for deployment.json
       global.fetch.mockImplementation((url) => {
+        if (url.includes('/releases/latest') || url.includes('/commits/main')) {
+          return Promise.reject(new Error('GitHub API unavailable'));
+        }
         if (url.includes('deployment.json')) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ version: 'deploy-123' })
-          });
-        }
-        if (url.includes('package.json')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ version: '2.5.1' })
           });
         }
         return Promise.reject(new Error('Not found'));
@@ -111,25 +108,55 @@ describe('Top Bar Component', () => {
       expect(topBarHTML).toContain('vdeploy-123'); // Should use deployment.json
     });
 
-    test('should fallback to package.json when deployment.json is not available', async () => {
-      // Mock fetch to fail for deployment.json but succeed for package.json
+    test('should use version from GitHub releases API when available', async () => {
+      // Mock successful release fetch
       global.fetch.mockImplementation((url) => {
-        if (url.includes('deployment.json')) {
-          return Promise.reject(new Error('Not found'));
-        }
-        if (url.includes('package.json')) {
+        if (url.includes('/releases/latest')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ version: '2.5.1' })
+            json: () => Promise.resolve({ tag_name: 'v2.1.0' })
           });
         }
+        return Promise.reject(new Error('Not found'));
+      });
+
+      const topBarHTML = await createTopBar();
+      
+      expect(topBarHTML).toContain('class="version"');
+      expect(topBarHTML).toContain('v2.1.0');
+    });
+
+    test('should use commit SHA when no releases are available', async () => {
+      // Mock failed release fetch but successful commit fetch
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/releases/latest')) {
+          return Promise.reject(new Error('Not found'));
+        }
+        if (url.includes('/commits/main')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ sha: 'abcdef123456789' })
+          });
+        }
+        return Promise.reject(new Error('Not found'));
+      });
+
+      const topBarHTML = await createTopBar();
+      
+      expect(topBarHTML).toContain('class="version"');
+      expect(topBarHTML).toContain('commit-abcdef1');
+    });
+
+    test('should fallback to default version when GitHub API and local files fail', async () => {
+      // Mock fetch to fail for GitHub API and local files
+      global.fetch.mockImplementation((url) => {
         return Promise.reject(new Error('Not found'));
       });
       
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('class="version"');
-      expect(topBarHTML).toContain('v2.5.1');
+      expect(topBarHTML).toContain('v1.0.0'); // fallback version
     });
   });
 
