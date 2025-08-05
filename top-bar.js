@@ -14,12 +14,39 @@ async function getVersion() {
   }
   
   try {
-    // Try different paths for package.json based on current location
+    // Try different paths for deployment.json based on current location
     const possiblePaths = [
-      'package.json',           // Current directory
-      '../package.json',        // One level up
-      '../../package.json',     // Two levels up (for deeply nested pages)
-      '/Chatgpt-Test-webpage/package.json'  // Absolute path for GitHub Pages
+      'deployment.json',           // Current directory
+      '../deployment.json',        // One level up
+      '../../deployment.json',     // Two levels up (for deeply nested pages)
+      '/Chatgpt-Test-webpage/deployment.json'  // Absolute path for GitHub Pages
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        const response = await fetch(path);
+        if (response.ok) {
+          const deploymentInfo = await response.json();
+          // Use the deployment number as the primary version
+          cachedVersion = `v${deploymentInfo.version}`;
+          return cachedVersion;
+        }
+      } catch (e) {
+        // Continue to next path
+        continue;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load version from deployment.json:', error);
+  }
+  
+  // Fallback: try package.json as backup
+  try {
+    const possiblePaths = [
+      'package.json',
+      '../package.json',
+      '../../package.json',
+      '/Chatgpt-Test-webpage/package.json'
     ];
     
     for (const path of possiblePaths) {
@@ -31,7 +58,6 @@ async function getVersion() {
           return cachedVersion;
         }
       } catch (e) {
-        // Continue to next path
         continue;
       }
     }
@@ -39,7 +65,7 @@ async function getVersion() {
     console.warn('Could not load version from package.json:', error);
   }
   
-  // Fallback to default version
+  // Final fallback to default version
   cachedVersion = 'v1.0.0';
   return cachedVersion;
 }

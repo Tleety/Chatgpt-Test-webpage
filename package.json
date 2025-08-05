@@ -6,7 +6,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "build:test-definitions": "node build-test-definitions.js",
-    "bump-version": "node scripts/bump-version.js"
+    "bump-version": "node scripts/bump-version.js",
+    "generate-deployment-info": "node scripts/generate-deployment-info.js"
   },
   "devDependencies": {
     "jest": "^29.0.0",
