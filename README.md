@@ -39,7 +39,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 
 ## Testing
 
-Unit tests are available for the Snake game logic:
+Unit tests are available for multiple projects:
 
 ```bash
 # Install test dependencies
@@ -48,6 +48,10 @@ npm install
 # Run tests
 npm test
 ```
+
+**Current Test Coverage:**
+- **Snake Game Logic**: Comprehensive tests for game mechanics, collision detection, and state management
+- **Todo List Logic**: Full test suite for task management, data persistence, and input validation
 
 See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
