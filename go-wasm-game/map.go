@@ -41,38 +41,143 @@ func NewMap(width, height int, tileSize float64) *Map {
 	return m
 }
 
-// generateTerrain creates a simple terrain pattern with grass and water
+// generateTerrain creates a more realistic terrain pattern with grass and water
 func (m *Map) generateTerrain() {
-	// Create a simple pattern: mostly grass with some water areas
+	// Initialize all tiles to grass
 	for y := 0; y < m.Height; y++ {
 		for x := 0; x < m.Width; x++ {
-			// Default to grass
 			m.Tiles[y][x] = TileGrass
-			
-			// Add some water areas using a simple pattern
-			// Create water near edges and some interior lakes
-			if x < 5 || x >= m.Width-5 || y < 5 || y >= m.Height-5 {
-				// Border areas have higher chance of water
-				if (x+y)%7 == 0 || (x*2+y)%9 == 0 {
+		}
+	}
+	
+	// Generate multiple realistic lakes with varied sizes
+	lakes := []struct {
+		centerX, centerY int
+		radiusX, radiusY float64
+		irregularity     float64
+	}{
+		{40, 30, 18, 12, 0.3},    // Top-left lake (oval)
+		{160, 45, 22, 20, 0.4},   // Top-right lake (round)
+		{80, 120, 15, 25, 0.5},   // Central lake (vertical oval)
+		{140, 160, 20, 15, 0.3},  // Bottom-right lake
+		{25, 170, 12, 18, 0.4},   // Bottom-left small lake
+	}
+	
+	// Create lakes with irregular, natural-looking shores
+	for _, lake := range lakes {
+		for y := 0; y < m.Height; y++ {
+			for x := 0; x < m.Width; x++ {
+				// Calculate normalized distance from lake center
+				dx := float64(x - lake.centerX)
+				dy := float64(y - lake.centerY)
+				
+				// Create irregular shore using simple noise
+				angle := math.Atan2(dy, dx)
+				noise := math.Sin(angle*6) * lake.irregularity
+				noise += math.Sin(angle*4 + 2.5) * lake.irregularity * 0.5
+				
+				// Calculate elliptical distance with noise
+				distX := dx / (lake.radiusX + noise)
+				distY := dy / (lake.radiusY + noise*0.7)
+				distance := math.Sqrt(distX*distX + distY*distY)
+				
+				if distance < 1.0 {
 					m.Tiles[y][x] = TileWater
 				}
-			} else {
-				// Interior lakes - create some circular water areas
-				centerX1, centerY1 := 50, 50
-				centerX2, centerY2 := 150, 100
-				centerX3, centerY3 := 100, 150
-				
-				dist1 := math.Sqrt(float64((x-centerX1)*(x-centerX1) + (y-centerY1)*(y-centerY1)))
-				dist2 := math.Sqrt(float64((x-centerX2)*(x-centerX2) + (y-centerY2)*(y-centerY2)))
-				dist3 := math.Sqrt(float64((x-centerX3)*(x-centerX3) + (y-centerY3)*(y-centerY3)))
-				
-				if dist1 < 15 || dist2 < 12 || dist3 < 10 {
-					m.Tiles[y][x] = TileWater
+			}
+		}
+	}
+	
+	// Add connecting rivers between some lakes
+	m.addRiver(40, 30, 80, 120, 3)   // Connect top-left to central lake
+	m.addRiver(80, 120, 140, 160, 2) // Connect central to bottom-right lake
+	m.addRiver(160, 45, 140, 160, 2) // Connect top-right to bottom-right lake
+	
+	// Add some border water areas (coastal regions)
+	m.addCoastalAreas()
+	
+	// Add small scattered ponds
+	m.addSmallPonds()
+}
+
+// addRiver creates a winding river between two points
+func (m *Map) addRiver(startX, startY, endX, endY, width int) {
+	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
+	if steps == 0 {
+		return
+	}
+	
+	for step := 0; step <= steps; step++ {
+		// Linear interpolation with some randomness for natural curves
+		t := float64(step) / float64(steps)
+		
+		// Add curve using sine wave
+		curve := math.Sin(t * math.Pi * 2) * 8
+		
+		x := int(float64(startX)*(1-t) + float64(endX)*t + curve)
+		y := int(float64(startY)*(1-t) + float64(endY)*t)
+		
+		// Draw river with specified width
+		for dx := -width; dx <= width; dx++ {
+			for dy := -width; dy <= width; dy++ {
+				if dx*dx + dy*dy <= width*width {
+					rx, ry := x+dx, y+dy
+					if rx >= 0 && rx < m.Width && ry >= 0 && ry < m.Height {
+						m.Tiles[ry][rx] = TileWater
+					}
 				}
-				
-				// Add some random water patches
-				if (x*3+y*5)%23 == 0 && (x*y)%17 == 3 {
-					m.Tiles[y][x] = TileWater
+			}
+		}
+	}
+}
+
+// addCoastalAreas adds water along some edges to simulate coastlines
+func (m *Map) addCoastalAreas() {
+	// Left edge - partial coastline
+	for y := 60; y < 140; y++ {
+		depth := int(6 + 4*math.Sin(float64(y)*0.1))
+		for x := 0; x < depth; x++ {
+			if x < m.Width {
+				m.Tiles[y][x] = TileWater
+			}
+		}
+	}
+	
+	// Bottom edge - small coastal area
+	for x := 20; x < 80; x++ {
+		depth := int(4 + 3*math.Sin(float64(x)*0.15))
+		for y := m.Height - depth; y < m.Height; y++ {
+			if y >= 0 {
+				m.Tiles[y][x] = TileWater
+			}
+		}
+	}
+}
+
+// addSmallPonds creates small scattered ponds across the map
+func (m *Map) addSmallPonds() {
+	ponds := []struct{ x, y, radius int }{
+		{120, 80, 4},   // Small pond
+		{180, 120, 3},  // Tiny pond
+		{50, 90, 5},    // Medium pond
+		{170, 30, 3},   // Small pond
+		{30, 140, 4},   // Small pond
+		{110, 40, 3},   // Tiny pond
+		{190, 180, 4},  // Corner pond
+	}
+	
+	for _, pond := range ponds {
+		for dy := -pond.radius; dy <= pond.radius; dy++ {
+			for dx := -pond.radius; dx <= pond.radius; dx++ {
+				if dx*dx + dy*dy <= pond.radius*pond.radius {
+					x, y := pond.x+dx, pond.y+dy
+					if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+						// Add some irregularity to pond edges
+						if dx*dx + dy*dy <= (pond.radius-1)*(pond.radius-1) || 
+						   (x+y)%3 == 0 {
+							m.Tiles[y][x] = TileWater
+						}
+					}
 				}
 			}
 		}
