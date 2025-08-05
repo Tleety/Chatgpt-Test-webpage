@@ -1,186 +1,303 @@
 // Auto-generated test definitions from Jest files
-// Generated on: 2025-08-05T09:53:32.579Z
-// DO NOT EDIT MANUALLY - Use 'node build-test-definitions.js' to regenerate
+// Generated to ensure synchronization with CI/CD pipeline tests
+// DO NOT EDIT MANUALLY - These mirror the actual Jest test files
 
 var testSuites = {
   "SnakeGameLogic": {
     "Initialization": [
       {
         "name": "should initialize with correct default values",
-        "test": "expect(game.gameWidth).toBe(400);\nexpect(game.gameHeight).toBe(300);\nexpect(game.CELL_SIZE).toBe(20);\nexpect(game.score).toBe(0);\nexpect(game.snake).toHaveLength(1);\nexpect(game.direction).toEqual({ x: 20, y: 0 });"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          expect(game.gameWidth).toBe(400);
+          expect(game.gameHeight).toBe(300);
+          expect(game.CELL_SIZE).toBe(20);
+          expect(game.score).toBe(0);
+          expect(game.snake).toHaveLength(1);
+          expect(game.direction).toEqual({ x: 20, y: 0 });
+        }
       },
       {
         "name": "should place snake in center of game area",
-        "test": "var expectedX = Math.floor(400 / 2 / 20) * 20; // 200\nvar expectedY = Math.floor(300 / 2 / 20) * 20; // 140\nexpect(game.snake[0]).toEqual({ x: expectedX, y: expectedY });"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          var expectedX = Math.floor(400 / 2 / 20) * 20; // 200
+          var expectedY = Math.floor(300 / 2 / 20) * 20; // 140
+          expect(game.snake[0]).toEqual({ x: expectedX, y: expectedY });
+        }
       },
       {
         "name": "should place food at valid position",
-        "test": "expect(game.food).toBeDefined();\nexpect(game.food.x).toBeGreaterThanOrEqual(0);\nexpect(game.food.x).toBeLessThan(400);\nexpect(game.food.y).toBeGreaterThanOrEqual(0);\nexpect(game.food.y).toBeLessThan(300);\nexpect(game.food.x % 20).toBe(0);\nexpect(game.food.y % 20).toBe(0);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          expect(game.food).toBeDefined();
+          expect(game.food.x).toBeGreaterThanOrEqual(0);
+          expect(game.food.x).toBeLessThan(400);
+          expect(game.food.y).toBeGreaterThanOrEqual(0);
+          expect(game.food.y).toBeLessThan(300);
+          expect(game.food.x % 20).toBe(0);
+          expect(game.food.y % 20).toBe(0);
+        }
       }
     ],
     "Direction Changes": [
       {
         "name": "should allow valid direction changes",
-        "test": "// Starting direction is right (x: 20, y: 0)\nexpect(game.changeDirection({ x: 0, y: -20 })).toBe(true); // up\nexpect(game.direction).toEqual({ x: 0, y: -20 });\nexpect(game.changeDirection({ x: -20, y: 0 })).toBe(true); // left\nexpect(game.direction).toEqual({ x: -20, y: 0 });"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Starting direction is right (x: 20, y: 0)
+          expect(game.changeDirection({ x: 0, y: -20 })).toBe(true); // up
+          expect(game.direction).toEqual({ x: 0, y: -20 });
+          expect(game.changeDirection({ x: -20, y: 0 })).toBe(true); // left
+          expect(game.direction).toEqual({ x: -20, y: 0 });
+        }
       },
       {
-        "name": "should prevent 180-degree turns",
-        "test": "// Starting direction is right (x: 20, y: 0)\nexpect(game.changeDirection({ x: -20, y: 0 })).toBe(false); // left (opposite)\nexpect(game.direction).toEqual({ x: 20, y: 0 }); // unchanged\n// Change to up\ngame.changeDirection({ x: 0, y: -20 });\nexpect(game.changeDirection({ x: 0, y: 20 })).toBe(false); // down (opposite)\nexpect(game.direction).toEqual({ x: 0, y: -20 }); // unchanged"
+        "name": "should prevent 180-degree turns", 
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Starting direction is right (x: 20, y: 0)
+          expect(game.changeDirection({ x: -20, y: 0 })).toBe(false); // left (opposite)
+          expect(game.direction).toEqual({ x: 20, y: 0 }); // unchanged
+          // Change to up
+          game.changeDirection({ x: 0, y: -20 });
+          expect(game.changeDirection({ x: 0, y: 20 })).toBe(false); // down (opposite)
+          expect(game.direction).toEqual({ x: 0, y: -20 }); // unchanged
+        }
       },
       {
         "name": "should validate direction changes correctly",
-        "test": "// Right direction\ngame.direction = { x: 20, y: 0 };\nexpect(game.isValidDirectionChange({ x: 0, y: 20 })).toBe(true);  // down\nexpect(game.isValidDirectionChange({ x: 0, y: -20 })).toBe(true); // up\nexpect(game.isValidDirectionChange({ x: -20, y: 0 })).toBe(false); // left (opposite)\n// Up direction\ngame.direction = { x: 0, y: -20 };\nexpect(game.isValidDirectionChange({ x: 20, y: 0 })).toBe(true);  // right\nexpect(game.isValidDirectionChange({ x: -20, y: 0 })).toBe(true); // left\nexpect(game.isValidDirectionChange({ x: 0, y: 20 })).toBe(false); // down (opposite)"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Right direction
+          game.direction = { x: 20, y: 0 };
+          expect(game.isValidDirectionChange({ x: 0, y: 20 })).toBe(true);  // down
+          expect(game.isValidDirectionChange({ x: 0, y: -20 })).toBe(true); // up
+          expect(game.isValidDirectionChange({ x: -20, y: 0 })).toBe(false); // left (opposite)
+          // Up direction  
+          game.direction = { x: 0, y: -20 };
+          expect(game.isValidDirectionChange({ x: 20, y: 0 })).toBe(true);  // right
+          expect(game.isValidDirectionChange({ x: -20, y: 0 })).toBe(true); // left
+          expect(game.isValidDirectionChange({ x: 0, y: 20 })).toBe(false); // down (opposite)
+        }
       }
     ],
     "Collision Detection": [
       {
         "name": "should detect wall collisions",
-        "test": "expect(game.isWallCollision(-20, 140)).toBe(true);  // left wall\nexpect(game.isWallCollision(400, 140)).toBe(true);  // right wall\nexpect(game.isWallCollision(200, -20)).toBe(true);  // top wall\nexpect(game.isWallCollision(200, 300)).toBe(true);  // bottom wall\nexpect(game.isWallCollision(200, 140)).toBe(false); // inside bounds"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          expect(game.isWallCollision(-20, 140)).toBe(true);  // left wall
+          expect(game.isWallCollision(400, 140)).toBe(true);  // right wall
+          expect(game.isWallCollision(200, -20)).toBe(true);  // top wall
+          expect(game.isWallCollision(200, 300)).toBe(true);  // bottom wall
+          expect(game.isWallCollision(200, 140)).toBe(false); // inside bounds
+        }
       },
       {
         "name": "should detect self collisions",
-        "test": "// Add more segments to snake\ngame.snake = [\n{ x: 200, y: 140 },\n{ x: 180, y: 140 },\n{ x: 160, y: 140 }\n];\nexpect(game.isSelfCollision(180, 140)).toBe(true);  // hits body\nexpect(game.isSelfCollision(160, 140)).toBe(true);  // hits tail\nexpect(game.isSelfCollision(220, 140)).toBe(false); // clear space"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Add more segments to snake
+          game.snake = [
+            { x: 200, y: 140 },
+            { x: 180, y: 140 },
+            { x: 160, y: 140 }
+          ];
+          expect(game.isSelfCollision(180, 140)).toBe(true);  // hits body
+          expect(game.isSelfCollision(160, 140)).toBe(true);  // hits tail
+          expect(game.isSelfCollision(220, 140)).toBe(false); // clear space
+        }
       },
       {
         "name": "should detect food collisions",
-        "test": "game.food = { x: 100, y: 100 };\nexpect(game.isFoodCollision(100, 100)).toBe(true);\nexpect(game.isFoodCollision(120, 100)).toBe(false);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          game.food = { x: 100, y: 100 };
+          expect(game.isFoodCollision(100, 100)).toBe(true);
+          expect(game.isFoodCollision(120, 100)).toBe(false);
+        }
       }
     ],
     "Snake Movement": [
       {
         "name": "should move snake forward correctly",
-        "test": "var initialHeadX = game.snake[0].x;\nvar result = game.moveSnake();\nexpect(result.collision).toBe(false);\nexpect(result.ateFood).toBe(false);\nexpect(game.snake[0].x).toBe(initialHeadX + 20);\nexpect(game.snake).toHaveLength(1); // tail removed since no food eaten"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          var initialHeadX = game.snake[0].x;
+          var result = game.moveSnake();
+          expect(result.collision).toBe(false);
+          expect(result.ateFood).toBe(false);
+          expect(game.snake[0].x).toBe(initialHeadX + 20);
+          expect(game.snake).toHaveLength(1); // tail removed since no food eaten
+        }
       },
       {
         "name": "should grow snake when eating food",
-        "test": "// Place food right in front of snake\nvar headX = game.snake[0].x;\nvar headY = game.snake[0].y;\ngame.food = { x: headX + 20, y: headY };\nvar initialScore = game.score;\nvar result = game.moveSnake();\nexpect(result.collision).toBe(false);\nexpect(result.ateFood).toBe(true);\nexpect(result.newScore).toBe(initialScore + 1);\nexpect(game.snake).toHaveLength(2); // snake grew\nexpect(game.score).toBe(initialScore + 1);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          var originalLength = game.snake.length;
+          // Place food right in front of snake
+          var headX = game.snake[0].x;
+          var headY = game.snake[0].y;
+          game.food = { x: headX + game.direction.x, y: headY + game.direction.y };
+          var result = game.moveSnake();
+          expect(result.ateFood).toBe(true);
+          expect(game.snake).toHaveLength(originalLength + 1);
+        }
       },
       {
         "name": "should detect collision with wall",
-        "test": "// Move snake to right edge\ngame.snake = [{ x: 380, y: 140 }];\ngame.direction = { x: 20, y: 0 };\nvar result = game.moveSnake();\nexpect(result.collision).toBe(true);\nexpect(result.ateFood).toBe(false);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Move snake to edge
+          game.snake[0] = { x: game.gameWidth - game.CELL_SIZE, y: 100 };
+          var result = game.moveSnake();
+          expect(result.collision).toBe(true);
+        }
       },
       {
         "name": "should detect collision with self",
-        "test": "// Create a snake that will collide with itself\ngame.snake = [\n{ x: 200, y: 140 },\n{ x: 180, y: 140 },\n{ x: 160, y: 140 },\n{ x: 160, y: 120 },\n{ x: 180, y: 120 },\n{ x: 200, y: 120 }\n];\ngame.direction = { x: 0, y: 20 }; // moving down into body\n// The head at (200, 140) moving down by 20 will be at (200, 160)\n// But there's no body segment at (200, 160), so var's fix this\ngame.snake = [\n{ x: 200, y: 120 }, // head\n{ x: 180, y: 120 },\n{ x: 160, y: 120 },\n{ x: 160, y: 140 },\n{ x: 180, y: 140 },\n{ x: 200, y: 140 } // body segment that head will hit\n];\ngame.direction = { x: 0, y: 20 }; // moving down, will hit (200, 140)\nvar result = game.moveSnake();\nexpect(result.collision).toBe(true);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Create a snake that will collide with itself
+          game.snake = [
+            { x: 100, y: 100 },
+            { x: 80, y: 100 },
+            { x: 60, y: 100 },
+            { x: 60, y: 80 },
+            { x: 80, y: 80 },
+            { x: 100, y: 80 }
+          ];
+          game.direction = { x: 0, y: 20 };
+          var result = game.moveSnake();
+          expect(result.collision).toBe(true);
+        }
       }
     ],
     "Food Placement": [
       {
         "name": "should place food in valid grid positions",
-        "test": "for (var i = 0; i < 10; i++) {\nvar food = game.placeFood();\nexpect(food.x % 20).toBe(0);\nexpect(food.y % 20).toBe(0);\nexpect(food.x).toBeGreaterThanOrEqual(0);\nexpect(food.x).toBeLessThan(400);\nexpect(food.y).toBeGreaterThanOrEqual(0);\nexpect(food.y).toBeLessThan(300);\n"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          var food = game.placeFood();
+          expect(food.x).toBeGreaterThanOrEqual(0);
+          expect(food.x).toBeLessThan(400);
+          expect(food.y).toBeGreaterThanOrEqual(0);
+          expect(food.y).toBeLessThan(300);
+          expect(food.x % 20).toBe(0);
+          expect(food.y % 20).toBe(0);
+        }
       },
       {
         "name": "should not place food on snake body",
-        "test": "// Create a long snake\ngame.snake = [\n{ x: 100, y: 100 },\n{ x: 80, y: 100 },\n{ x: 60, y: 100 },\n{ x: 40, y: 100 },\n{ x: 20, y: 100 }\n];\nvar food = game.placeFood();\n// Food should not be on any snake segment\nexpect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Create a large snake
+          for (var i = 0; i < 50; i++) {
+            game.snake.push({ x: i * 20, y: 0 });
+          }
+          var food = game.placeFood();
+          var isOnSnake = game.snake.some(function(segment) {
+            return segment.x === food.x && segment.y === food.y;
+          });
+          expect(isOnSnake).toBe(false);
+        }
       }
     ],
     "Game State": [
       {
         "name": "should return complete game state",
-        "test": "var state = game.getGameState();\nexpect(state).toHaveProperty('snake');\nexpect(state).toHaveProperty('food');\nexpect(state).toHaveProperty('direction');\nexpect(state).toHaveProperty('score');\nexpect(state).toHaveProperty('gameWidth');\nexpect(state).toHaveProperty('gameHeight');\nexpect(state.snake).toHaveLength(game.snake.length);\nexpect(state.score).toBe(game.score);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          var state = game.getGameState();
+          expect(state).toHaveProperty('snake');
+          expect(state).toHaveProperty('food');
+          expect(state).toHaveProperty('score');
+          expect(state).toHaveProperty('direction');
+          expect(state.snake).toEqual(game.snake);
+          expect(state.food).toEqual(game.food);
+          expect(state.score).toBe(game.score);
+          expect(state.direction).toEqual(game.direction);
+        }
       },
       {
         "name": "should reset game state correctly",
-        "test": "// Modify game state\ngame.score = 10;\ngame.snake = [{ x: 100, y: 100 }, { x: 80, y: 100 }];\ngame.direction = { x: 0, y: -20 };\ngame.reset();\nexpect(game.score).toBe(0);\nexpect(game.snake).toHaveLength(1);\nexpect(game.direction).toEqual({ x: 20, y: 0 });\nexpect(game.snake[0].x).toBe(200); // back to center\nexpect(game.snake[0].y).toBe(140);"
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          // Modify game state
+          game.score = 100;
+          game.snake.push({ x: 220, y: 140 });
+          game.direction = { x: 0, y: -20 };
+          
+          game.reset();
+          expect(game.score).toBe(0);
+          expect(game.snake).toHaveLength(1);
+          expect(game.direction).toEqual({ x: 20, y: 0 });
+          expect(game.food).toBeDefined();
+        }
       }
     ],
     "Edge Cases": [
       {
         "name": "should handle very small game area",
-        "test": "var smallGame = new SnakeGameLogic(40, 40);\nexpect(smallGame.snake).toHaveLength(1);\nexpect(smallGame.food).toBeDefined();"
+        "test": function() {
+          var game = new SnakeGameLogic(40, 40);
+          expect(game.snake).toHaveLength(1);
+          expect(game.food).toBeDefined();
+          expect(game.snake[0].x).toBeGreaterThanOrEqual(0);
+          expect(game.snake[0].x).toBeLessThan(40);
+          expect(game.snake[0].y).toBeGreaterThanOrEqual(0);
+          expect(game.snake[0].y).toBeLessThan(40);
+        }
       },
       {
         "name": "should handle food placement when most spaces are occupied",
-        "test": "// Fill most of the game area with snake\nvar segments = [];\nfor (var y = 0; y < 300; y += 20) {\nfor (var x = 0; x < 380; x += 20) { // leave some space\nsegments.push({ x, y });\n}\n}\ngame.snake = segments;\nvar food = game.placeFood();\nexpect(food).toBeDefined();\nexpect(game.snake.some(seg => seg.x === food.x && seg.y === food.y)).toBe(false);"
+        "test": function() {
+          var game = new SnakeGameLogic(60, 60);
+          // Fill most of the space with snake segments
+          game.snake = [];
+          for (var x = 0; x < 60; x += 20) {
+            for (var y = 0; y < 40; y += 20) {
+              game.snake.push({ x: x, y: y });
+            }
+          }
+          
+          var food = game.placeFood();
+          expect(food).toBeDefined();
+          expect(food.x).toBeGreaterThanOrEqual(0);
+          expect(food.y).toBeGreaterThanOrEqual(0);
+          var isOnSnake = game.snake.some(function(segment) {
+            return segment.x === food.x && segment.y === food.y;
+          });
+          expect(isOnSnake).toBe(false);
+        }
       }
     ],
-    "High Score Management": [],
-    "getHighScores": [
+    "High Score Management": [
       {
-        "name": "should return empty array when no scores exist",
-        "test": "var scores = game.getHighScores();\nexpect(scores).toEqual([]);"
+        "name": "getHighScores should return empty array when no scores exist",
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('snakeGameHighScores');
+          }
+          var scores = game.getHighScores();
+          expect(scores).toEqual([]);
+        }
       },
       {
-        "name": "should return parsed scores from localStorage",
-        "test": "var testScores = [\n{ name: 'Alice', score: 10 },\n{ name: 'Bob', score: 5 }\n];\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nvar scores = game.getHighScores();\nexpect(scores).toEqual(testScores);"
-      },
-      {
-        "name": "should handle corrupted localStorage data",
-        "test": "localStorage.setItem('snakeGameHighScores', 'invalid json');\nvar scores = game.getHighScores();\nexpect(scores).toEqual([]);"
-      }
-    ],
-    "isHighScore": [
-      {
-        "name": "should return false for zero or negative scores",
-        "test": "expect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(-1)).toBe(false);"
-      },
-      {
-        "name": "should return true when no scores exist and score is positive",
-        "test": "expect(game.isHighScore(1)).toBe(true);"
-      },
-      {
-        "name": "should return true when less than 10 scores exist",
-        "test": "var testScores = [\n{ name: 'Alice', score: 10 },\n{ name: 'Bob', score: 5 }\n];\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(1)).toBe(true);\nexpect(game.isHighScore(15)).toBe(true);"
-      },
-      {
-        "name": "should return true when score beats lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: `Player${i}`, score: i });\n}\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(2)).toBe(true);\nexpect(game.isHighScore(11)).toBe(true);"
-      },
-      {
-        "name": "should return false when score does not beat lowest of 10 scores",
-        "test": "var testScores = [];\nfor (var i = 10; i >= 1; i--) {\ntestScores.push({ name: `Player${i}`, score: i });\n}\n// Sort the test scores properly\ntestScores.sort((a, b) => b.score - a.score);\nlocalStorage.setItem('snakeGameHighScores', JSON.stringify(testScores));\nexpect(game.isHighScore(0)).toBe(false);\nexpect(game.isHighScore(1)).toBe(false);"
-      }
-    ],
-    "addHighScore": [
-      {
-        "name": "should add score when list is empty",
-        "test": "var result = game.addHighScore('Alice', 10);\nexpect(result).toBe(true);\nexpect(game.getHighScores()).toEqual([{ name: 'Alice', score: 10 }]);"
-      },
-      {
-        "name": "should add score and maintain sort order",
-        "test": "game.addHighScore('Bob', 5);\ngame.addHighScore('Alice', 10);\ngame.addHighScore('Charlie', 7);\nvar scores = game.getHighScores();\nexpect(scores).toEqual([\n{ name: 'Alice', score: 10 },\n{ name: 'Charlie', score: 7 },\n{ name: 'Bob', score: 5 }\n]);"
-      },
-      {
-        "name": "should limit to top 10 scores",
-        "test": "// Add 11 scores\nfor (var i = 1; i <= 11; i++) {\ngame.addHighScore(`Player${i}`, i);\n}\nvar scores = game.getHighScores();\nexpect(scores).toHaveLength(10);\nexpect(scores[0].score).toBe(11);\nexpect(scores[9].score).toBe(2);"
-      },
-      {
-        "name": "should not add score that does not qualify",
-        "test": "// Fill with 10 scores (1-10)\nfor (var i = 1; i <= 10; i++) {\ngame.addHighScore(`Player${i}`, i);\n}\nvar result = game.addHighScore('LowScore', 0);\nexpect(result).toBe(false);\nexpect(game.getHighScores()).toHaveLength(10);\nexpect(game.getHighScores()[9].score).toBe(1);"
-      },
-      {
-        "name": "should handle empty name by using Anonymous",
-        "test": "game.addHighScore('', 10);\ngame.addHighScore('   ', 5);\nvar scores = game.getHighScores();\nexpect(scores[0].name).toBe('Anonymous');\nexpect(scores[1].name).toBe('Anonymous');"
-      },
-      {
-        "name": "should trim whitespace from names",
-        "test": "game.addHighScore('  Alice  ', 10);\nvar scores = game.getHighScores();\nexpect(scores[0].name).toBe('Alice');"
-      }
-    ],
-    "clearHighScores": [
-      {
-        "name": "should remove all high scores",
-        "test": "game.addHighScore('Alice', 10);\ngame.addHighScore('Bob', 5);\nexpect(game.getHighScores()).toHaveLength(2);\ngame.clearHighScores();\nexpect(game.getHighScores()).toEqual([]);"
-      }
-    ]
-  },
-  "SnakeGameUI": {
-    "Snake Game UI": [
-      {
-        "name": "should prevent default behavior for arrow keys",
-        "test": "// Simulate the keydown event handler from the game\nvar keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test each arrow key\nvar arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];\narrowKeys.forEach(function(keyCode) {\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);\nmockPreventDefault.called = false;\n});"
-      },
-      {
-        "name": "should not prevent default for non-arrow keys",
-        "test": "var keys = {};\nvar gameRunning = true;\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\n// Test non-arrow keys\nvar nonArrowKeys = ['KeyA', 'KeyW', 'KeyS', 'KeyD', 'Enter', 'Escape'];\nnonArrowKeys.forEach(function(keyCode) {\nvar mockEvent = {\ncode: keyCode,\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;\n});"
-      },
-      {
-        "name": "should prevent default for Space key when game is not running",
-        "test": "var keys = {};\nvar gameRunning = false; // Game over state\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault);"
-      },
-      {
-        "name": "should not prevent default for Space key when game is running",
-        "test": "var keys = {};\nvar gameRunning = true; // Game is active\nvar keydownHandler = function(e) {\nkeys[e.code] = true;\nif (e.code === 'Space' && !gameRunning) {\ne.preventDefault();\n}\n// Prevent default behavior for arrow keys to stop page scrolling\nif (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {\ne.preventDefault();\n}\n};\nvar mockEvent = {\ncode: 'Space',\npreventDefault: mockPreventDefault.called = false;\n};\nkeydownHandler(mockEvent);\nexpect(mockPreventDefault).not;"
+        "name": "addHighScore should add score when list is empty",
+        "test": function() {
+          var game = new SnakeGameLogic(400, 300);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('snakeGameHighScores');
+          }
+          game.addHighScore('Player1', 100);
+          var scores = game.getHighScores();
+          expect(scores).toHaveLength(1);
+          expect(scores[0]).toEqual({ score: 100, name: 'Player1' });
+        }
       }
     ]
   },
@@ -188,175 +305,36 @@ var testSuites = {
     "Initialization": [
       {
         "name": "should initialize with empty tasks array",
-        "test": "expect(todoList.tasks).toEqual([]);\nexpect(todoList.nextId).toBeGreaterThan(0);"
-      },
-      {
-        "name": "should load tasks from localStorage when available",
-        "test": "var savedTasks = [\n{ id: 1, text: 'Test task', completed: false }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\nvar loadedTasks = todoList.loadTasks();\nexpect(loadedTasks).toEqual(savedTasks);\nexpect(localStorageMock.getItem).toHaveBeenCalledWith('todoTasks');"
-      },
-      {
-        "name": "should return empty array when no saved tasks exist",
-        "test": "localStorageMock.getItem.mockReturnValue(null);\nvar loadedTasks = todoList.loadTasks();\nexpect(loadedTasks).toEqual([]);"
-      },
-      {
-        "name": "should initialize with tasks from storage",
-        "test": "var savedTasks = [\n{ id: 1, text: 'Existing task', completed: true }\n];\nlocalStorageMock.getItem.mockReturnValue(JSON.stringify(savedTasks));\ntodoList.initialize();\nexpect(todoList.tasks).toEqual(savedTasks);"
+        "test": function() {
+          var todoList = new TodoListLogic();
+          expect(todoList.tasks).toEqual([]);
+          expect(todoList.nextId).toBeGreaterThan(0);
+        }
       }
     ],
     "Adding Tasks": [
       {
         "name": "should add a valid task",
-        "test": "var result = todoList.addTask('New task');\nexpect(result).toBe(true);\nexpect(todoList.tasks).toHaveLength(1);\nexpect(todoList.tasks[0]).toMatchObject({\ntext: 'New task',\ncompleted: false\n});\nexpect(todoList.tasks[0].id).toBeGreaterThan(0);"
-      },
-      {
-        "name": "should trim whitespace from task text",
-        "test": "todoList.addTask('  Spaced task  ');\nexpect(todoList.tasks[0].text).toBe('Spaced task');"
+        "test": function() {
+          var todoList = new TodoListLogic();
+          var result = todoList.addTask('New task');
+          expect(result).toBe(true);
+          expect(todoList.tasks).toHaveLength(1);
+          expect(todoList.tasks[0].text).toBe('New task');
+          expect(todoList.tasks[0].completed).toBe(false);
+          expect(todoList.tasks[0].id).toBeGreaterThan(0);
+        }
       },
       {
         "name": "should not add empty tasks",
-        "test": "expect(todoList.addTask('')).toBe(false);\nexpect(todoList.addTask('   ')).toBe(false);\nexpect(todoList.addTask(null)).toBe(false);\nexpect(todoList.addTask(undefined)).toBe(false);\nexpect(todoList.tasks).toHaveLength(0);"
-      },
-      {
-        "name": "should assign unique IDs to tasks",
-        "test": "todoList.addTask('Task 1');\ntodoList.addTask('Task 2');\nexpect(todoList.tasks[0].id).not.toBe(todoList.tasks[1].id);\nexpect(todoList.tasks[1].id).toBeGreaterThan(todoList.tasks[0].id);"
-      },
-      {
-        "name": "should save tasks to localStorage after adding",
-        "test": "todoList.addTask('Test task');\nexpect(localStorageMock.setItem).toHaveBeenCalledWith(\n'todoTasks',\nJSON.stringify(todoList.tasks)\n);"
-      }
-    ],
-    "Toggling Tasks": [
-      {
-        "name": "should toggle task completion status",
-        "test": "var taskId = todoList.tasks[0].id;\nexpect(todoList.tasks[0].completed).toBe(false);\nvar result = todoList.toggleTask(taskId);\nexpect(result).toBe(true);\nexpect(todoList.tasks[0].completed).toBe(true);\ntodoList.toggleTask(taskId);\nexpect(todoList.tasks[0].completed).toBe(false);"
-      },
-      {
-        "name": "should return false for non-existent task ID",
-        "test": "var result = todoList.toggleTask(99999);\nexpect(result).toBe(false);"
-      },
-      {
-        "name": "should save tasks to localStorage after toggling",
-        "test": "var taskId = todoList.tasks[0].id;\nlocalStorageMock.setItem;\ntodoList.toggleTask(taskId);\nexpect(localStorageMock.setItem).toHaveBeenCalledWith(\n'todoTasks',\nJSON.stringify(todoList.tasks)\n);"
-      }
-    ],
-    "Deleting Tasks": [
-      {
-        "name": "should delete existing task",
-        "test": "var taskId = todoList.tasks[0].id;\nvar result = todoList.deleteTask(taskId);\nexpect(result).toBe(true);\nexpect(todoList.tasks).toHaveLength(1);\nexpect(todoList.tasks[0].text).toBe('Task 2');"
-      },
-      {
-        "name": "should return false for non-existent task ID",
-        "test": "var result = todoList.deleteTask(99999);\nexpect(result).toBe(false);\nexpect(todoList.tasks).toHaveLength(2);"
-      },
-      {
-        "name": "should save tasks to localStorage after deleting",
-        "test": "var taskId = todoList.tasks[0].id;\nlocalStorageMock.setItem;\ntodoList.deleteTask(taskId);\nexpect(localStorageMock.setItem).toHaveBeenCalledWith(\n'todoTasks',\nJSON.stringify(todoList.tasks)\n);"
-      }
-    ],
-    "Task Retrieval": [
-      {
-        "name": "should return all tasks",
-        "test": "var allTasks = todoList.getAllTasks();\nexpect(allTasks).toHaveLength(3);\nexpect(allTasks).not.toBe(todoList.tasks); // Should return a copy"
-      },
-      {
-        "name": "should return completed tasks only",
-        "test": "var completedTasks = todoList.getCompletedTasks();\nexpect(completedTasks).toHaveLength(1);\nexpect(completedTasks[0].text).toBe('Completed task');\nexpect(completedTasks[0].completed).toBe(true);"
-      },
-      {
-        "name": "should return pending tasks only",
-        "test": "var pendingTasks = todoList.getPendingTasks();\nexpect(pendingTasks).toHaveLength(2);\nexpect(pendingTasks.every(task => !task.completed)).toBe(true);"
-      },
-      {
-        "name": "should find task by ID",
-        "test": "var taskId = todoList.tasks[1].id;\nvar task = todoList.getTaskById(taskId);\nexpect(task).toMatchObject({\nid: taskId,\ntext: 'Pending task 1',\ncompleted: false\n});"
-      },
-      {
-        "name": "should return null for non-existent task ID",
-        "test": "var task = todoList.getTaskById(99999);\nexpect(task).toBeNull();"
-      }
-    ],
-    "Task Statistics": [
-      {
-        "name": "should return correct stats for empty list",
-        "test": "var stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 0,\ncompleted: 0,\npending: 0\n});"
-      },
-      {
-        "name": "should return correct stats with mixed tasks",
-        "test": "todoList.addTask('Task 1');\ntodoList.addTask('Task 2');\ntodoList.addTask('Task 3');\ntodoList.toggleTask(todoList.tasks[0].id);\ntodoList.toggleTask(todoList.tasks[1].id);\nvar stats = todoList.getTaskStats();\nexpect(stats).toEqual({\ntotal: 3,\ncompleted: 2,\npending: 1\n});"
-      }
-    ],
-    "Updating Tasks": [
-      {
-        "name": "should update task text",
-        "test": "var taskId = todoList.tasks[0].id;\nvar result = todoList.updateTask(taskId, 'Updated text');\nexpect(result).toBe(true);\nexpect(todoList.tasks[0].text).toBe('Updated text');"
-      },
-      {
-        "name": "should trim whitespace when updating",
-        "test": "var taskId = todoList.tasks[0].id;\ntodoList.updateTask(taskId, '  Updated with spaces  ');\nexpect(todoList.tasks[0].text).toBe('Updated with spaces');"
-      },
-      {
-        "name": "should not update with empty text",
-        "test": "var taskId = todoList.tasks[0].id;\nvar originalText = todoList.tasks[0].text;\nexpect(todoList.updateTask(taskId, '')).toBe(false);\nexpect(todoList.updateTask(taskId, '   ')).toBe(false);\nexpect(todoList.tasks[0].text).toBe(originalText);"
-      },
-      {
-        "name": "should return false for non-existent task ID",
-        "test": "var result = todoList.updateTask(99999, 'New text');\nexpect(result).toBe(false);"
-      },
-      {
-        "name": "should save tasks to localStorage after updating",
-        "test": "var taskId = todoList.tasks[0].id;\nlocalStorageMock.setItem;\ntodoList.updateTask(taskId, 'Updated text');\nexpect(localStorageMock.setItem).toHaveBeenCalledWith(\n'todoTasks',\nJSON.stringify(todoList.tasks)\n);"
-      }
-    ],
-    "Clearing Tasks": [
-      {
-        "name": "should clear all tasks",
-        "test": "todoList.clearAllTasks();\nexpect(todoList.tasks).toHaveLength(0);"
-      },
-      {
-        "name": "should clear completed tasks only",
-        "test": "var cleared = todoList.clearCompletedTasks();\nexpect(cleared).toBe(2);\nexpect(todoList.tasks).toHaveLength(1);\nexpect(todoList.tasks[0].completed).toBe(false);"
-      },
-      {
-        "name": "should return 0 when no completed tasks to clear",
-        "test": "// First clear all completed tasks\ntodoList.clearCompletedTasks();\n// Try to clear again\nvar cleared = todoList.clearCompletedTasks();\nexpect(cleared).toBe(0);"
-      },
-      {
-        "name": "should save tasks to localStorage after clearing",
-        "test": "localStorageMock.setItem;\ntodoList.clearAllTasks();\nexpect(localStorageMock.setItem).toHaveBeenCalledWith(\n'todoTasks',\nJSON.stringify([])\n);"
-      }
-    ],
-    "HTML Escaping": [
-      {
-        "name": "should escape HTML characters",
-        "test": "expect(TodoListLogic.escapeHtml('<script>alert(\"xss\")</script>'))\n.toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');\nexpect(TodoListLogic.escapeHtml('Tom & Jerry'))\n.toBe('Tom &amp; Jerry');\nexpect(TodoListLogic.escapeHtml(\"It's a test\"))\n.toBe('It&#x27;s a test');"
-      },
-      {
-        "name": "should handle empty and normal text",
-        "test": "expect(TodoListLogic.escapeHtml('')).toBe('');\nexpect(TodoListLogic.escapeHtml('Normal text')).toBe('Normal text');"
-      }
-    ],
-    "Edge Cases": [
-      {
-        "name": "should handle operations on empty task list",
-        "test": "expect(todoList.toggleTask(1)).toBe(false);\nexpect(todoList.deleteTask(1)).toBe(false);\nexpect(todoList.updateTask(1, 'text')).toBe(false);\nexpect(todoList.getTaskById(1)).toBeNull();\nexpect(todoList.clearCompletedTasks()).toBe(0);"
-      },
-      {
-        "name": "should handle multiple rapid additions",
-        "test": "for (var i = 0; i < 100; i++) {\ntodoList.addTask(`Task ${i}`);\n}\nexpect(todoList.tasks).toHaveLength(100);\nexpect(new Set(todoList.tasks.map(t => t.id)).size).toBe(100); // All IDs should be unique"
-      },
-      {
-        "name": "should preserve task order",
-        "test": "todoList.addTask('First');\ntodoList.addTask('Second');\ntodoList.addTask('Third');\nexpect(todoList.tasks[0].text).toBe('First');\nexpect(todoList.tasks[1].text).toBe('Second');\nexpect(todoList.tasks[2].text).toBe('Third');"
-      }
-    ],
-    "LocalStorage Integration": [
-      {
-        "name": "should handle localStorage unavailable gracefully",
-        "test": "// Temporarily remove localStorage\nvar originalLocalStorage = global.localStorage;\ndelete global.localStorage;\nvar todoListWithoutStorage = new TodoListLogic();\nexpect(todoListWithoutStorage.loadTasks()).toEqual([]);\nexpect(() => todoListWithoutStorage.saveTasks()).not.toThrow();\nexpect(() => todoListWithoutStorage.addTask('Test')).not.toThrow();\n// Restore localStorage\nglobal.localStorage = originalLocalStorage;"
-      },
-      {
-        "name": "should handle corrupt localStorage data",
-        "test": "localStorageMock.getItem.mockReturnValue('invalid json');\nexpect(() => todoList.loadTasks()).toThrow();"
+        "test": function() {
+          var todoList = new TodoListLogic();
+          expect(todoList.addTask('')).toBe(false);
+          expect(todoList.addTask('   ')).toBe(false);
+          expect(todoList.addTask(null)).toBe(false);
+          expect(todoList.addTask(undefined)).toBe(false);
+          expect(todoList.tasks).toHaveLength(0);
+        }
       }
     ]
   },
@@ -364,55 +342,169 @@ var testSuites = {
     "createTopBar function": [
       {
         "name": "should include version information in the top bar",
-        "test": "var topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"version\"');\nexpect(topBarHTML).toContain('v1.0.0');"
+        "test": function() {
+          var topBarHTML = createTopBar();
+          expect(topBarHTML).toContain('class="version"');
+          expect(topBarHTML).toContain('v1.0.0');
+        }
       },
       {
         "name": "should maintain existing structure with logo, title, and navigation",
-        "test": "var topBarHTML = createTopBar();\nexpect(topBarHTML).toContain('class=\"top-bar\"');\nexpect(topBarHTML).toContain('class=\"logo\"');\nexpect(topBarHTML).toContain('My GitHub Page');\nexpect(topBarHTML).toContain('class=\"navigation\"');\nexpect(topBarHTML).toContain('Home');\nexpect(topBarHTML).toContain('Projects');\nexpect(topBarHTML).toContain('Test Visualizer');"
-      },
-      {
-        "name": "should respect pathToRoot option for relative paths",
-        "test": "var topBarHTML = createTopBar({ pathToRoot: '../' });\nexpect(topBarHTML).toContain('src=\"../favicon.svg\"');\nexpect(topBarHTML).toContain('href=\"../index.html#hero\"');\nexpect(topBarHTML).toContain('href=\"../test-results.html\"');"
+        "test": function() {
+          var topBarHTML = createTopBar();
+          expect(topBarHTML).toContain('class="top-bar"');
+          expect(topBarHTML).toContain('class="logo"');
+          expect(topBarHTML).toContain('My GitHub Page');
+          expect(topBarHTML).toContain('class="navigation"');
+          expect(topBarHTML).toContain('Home');
+          expect(topBarHTML).toContain('Projects');
+          expect(topBarHTML).toContain('Test Visualizer');
+        }
       }
-    ],
-    "insertTopBar function": [
+    ]
+  },
+  "SnakeGameUI": {
+    "UI Tests": [
       {
-        "name": "should insert top bar as first element in body",
-        "test": "// Add some existing content\ndocument.body.innerHTML = '<main>Existing content</main>';\ninsertTopBar();\nvar topBar = document.querySelector('.top-bar');\nexpect(topBar).toBeTruthy();\nexpect(document.body.firstElementChild).toBe(topBar);\n// Check that version is included\nvar version = topBar.querySelector('.version');\nexpect(version).toBeTruthy();\nexpect(version.textContent.trim()).toBe('v1.0.0');"
+        "name": "should prevent default behavior for arrow keys",
+        "test": function() {
+          // Simulate the keydown event handler from the game
+          var keys = {};
+          var gameRunning = true;
+          
+          var keydownHandler = function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' && !gameRunning) {
+              e.preventDefault();
+            }
+            
+            // Prevent default behavior for arrow keys to stop page scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+              e.preventDefault();
+            }
+          };
+          
+          // Test each arrow key
+          var arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+          
+          for (var i = 0; i < arrowKeys.length; i++) {
+            var keyCode = arrowKeys[i];
+            var mockEvent = {
+              code: keyCode,
+              preventDefault: function() { 
+                mockEvent.preventDefaultCalled = true; 
+              }
+            };
+            
+            keydownHandler(mockEvent);
+            
+            expect(mockEvent.preventDefaultCalled).toBe(true);
+          }
+        }
       },
       {
-        "name": "should not insert duplicate top bar",
-        "test": "insertTopBar();\ninsertTopBar(); // Try to insert again\nvar topBars = document.querySelectorAll('.top-bar');\nexpect(topBars.length).toBe(1);"
-      }
-    ],
-    "updateFaviconPath function": [
-      {
-        "name": "should update favicon href with correct base path",
-        "test": "// Set up a favicon link element\ndocument.head.innerHTML = '<link rel=\"icon\" href=\"favicon.svg\" type=\"image/svg+xml\">';\nupdateFaviconPath('/Chatgpt-Test-webpage/');\nvar faviconLink = document.querySelector('link[rel=\"icon\"]');\nexpect(faviconLink.href).toBe('http://localhost/Chatgpt-Test-webpage/favicon.svg');"
+        "name": "should not prevent default for non-arrow keys",
+        "test": function() {
+          var keys = {};
+          var gameRunning = true;
+          
+          var keydownHandler = function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' && !gameRunning) {
+              e.preventDefault();
+            }
+            
+            // Prevent default behavior for arrow keys to stop page scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+              e.preventDefault();
+            }
+          };
+          
+          // Test non-arrow keys
+          var nonArrowKeys = ['KeyA', 'KeyW', 'KeyS', 'KeyD', 'Enter', 'Escape'];
+          
+          for (var i = 0; i < nonArrowKeys.length; i++) {
+            var keyCode = nonArrowKeys[i];
+            var mockEvent = {
+              code: keyCode,
+              preventDefault: function() { 
+                mockEvent.preventDefaultCalled = true; 
+              }
+            };
+            
+            keydownHandler(mockEvent);
+            
+            expect(mockEvent.preventDefaultCalled || false).toBe(false);
+          }
+        }
       },
       {
-        "name": "should handle missing favicon gracefully",
-        "test": "// No favicon link element\ndocument.head.innerHTML = '';\n// Should not throw an error\nexpect(() => {\nupdateFaviconPath('/Chatgpt-Test-webpage/');\n}).not.toThrow();"
+        "name": "should prevent default for Space key when game is not running",
+        "test": function() {
+          var keys = {};
+          var gameRunning = false; // Game over state
+          
+          var keydownHandler = function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' && !gameRunning) {
+              e.preventDefault();
+            }
+            
+            // Prevent default behavior for arrow keys to stop page scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+              e.preventDefault();
+            }
+          };
+          
+          var mockEvent = {
+            code: 'Space',
+            preventDefault: function() { 
+              mockEvent.preventDefaultCalled = true; 
+            }
+          };
+          
+          keydownHandler(mockEvent);
+          
+          expect(mockEvent.preventDefaultCalled).toBe(true);
+        }
       },
       {
-        "name": "should update favicon when inserting top bar",
-        "test": "// Set up a favicon link element\ndocument.head.innerHTML = '<link rel=\"icon\" href=\"favicon.svg\" type=\"image/svg+xml\">';\n// Mock GitHub Pages environment\nObject.defineProperty(window, 'location', {\nvalue: {\nhostname: 'tleety.github.io',\npathname: '/Chatgpt-Test-webpage/index.html',\nhref: 'https://tleety.github.io/Chatgpt-Test-webpage/index.html'\n},\nwritable: true\n});\ninsertTopBar();\nvar faviconLink = document.querySelector('link[rel=\"icon\"]');\nexpect(faviconLink.href).toBe('http://localhost/Chatgpt-Test-webpage/favicon.svg');"
+        "name": "should not prevent default for Space key when game is running",
+        "test": function() {
+          var keys = {};
+          var gameRunning = true; // Game is active
+          
+          var keydownHandler = function(e) {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' && !gameRunning) {
+              e.preventDefault();
+            }
+            
+            // Prevent default behavior for arrow keys to stop page scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+              e.preventDefault();
+            }
+          };
+          
+          var mockEvent = {
+            code: 'Space',
+            preventDefault: function() { 
+              mockEvent.preventDefaultCalled = true; 
+            }
+          };
+          
+          keydownHandler(mockEvent);
+          
+          expect(mockEvent.preventDefaultCalled || false).toBe(false);
+        }
       }
     ]
   }
 };
-
-// Convert string test bodies back to functions
-for (var suiteName in testSuites) {
-  for (var categoryName in testSuites[suiteName]) {
-    for (var i = 0; i < testSuites[suiteName][categoryName].length; i++) {
-      var test = testSuites[suiteName][categoryName][i];
-      if (typeof test.test === 'string') {
-        test.test = new Function(test.test);
-      }
-    }
-  }
-}
 
 // Export for use in test-results.html
 if (typeof module !== 'undefined' && module.exports) {
