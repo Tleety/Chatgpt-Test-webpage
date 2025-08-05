@@ -75,18 +75,22 @@
         const topBar = document.querySelector('.top-bar');
         if (topBar) {
           resizeCanvas();
+          return true;
         } else {
           setTimeout(waitForTopBarAndResize, 100);
+          return false;
         }
       }
 
       // Resize canvas on load and window resize
-      window.addEventListener('resize', resizeCanvas);
-      document.addEventListener('DOMContentLoaded', waitForTopBarAndResize);
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        // Notify WASM about canvas resize if it's loaded
+        if (window.wasmLoaded && window.recenterSquare) {
+          window.recenterSquare();
+        }
+      });
       
-      // Initial resize after a short delay to ensure top bar is ready
-      setTimeout(waitForTopBarAndResize, 200);
-
       async function loadWasm() {
         try {
           const result = await WebAssembly.instantiateStreaming(fetch("game.wasm"), go.importObject);
@@ -99,7 +103,22 @@
         }
       }
 
-      loadWasm();
+      // Initialize everything in proper sequence
+      function initialize() {
+        // First, ensure canvas is properly sized
+        if (waitForTopBarAndResize()) {
+          // Canvas is sized, now load WASM
+          loadWasm();
+        } else {
+          // Top bar not ready yet, wait and try again
+          setTimeout(initialize, 100);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', initialize);
+      
+      // Fallback initialization after a delay
+      setTimeout(initialize, 500);
     </script>
   </body>
 </html>
