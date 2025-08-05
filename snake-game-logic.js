@@ -143,6 +143,70 @@ class SnakeGameLogic {
       gameHeight: this.gameHeight
     };
   }
+
+  /**
+   * High Score Management
+   */
+
+  /**
+   * Gets high scores from localStorage
+   * Returns array of {name, score} objects sorted by score descending
+   */
+  getHighScores() {
+    try {
+      const stored = localStorage.getItem('snakeGameHighScores');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /**
+   * Checks if a score qualifies for the high score list (top 10)
+   */
+  isHighScore(score) {
+    if (score <= 0) return false; // Don't allow zero or negative scores
+    const highScores = this.getHighScores();
+    return highScores.length < 10 || score > highScores[highScores.length - 1].score;
+  }
+
+  /**
+   * Adds a new high score if it qualifies
+   * Returns true if score was added, false otherwise
+   */
+  addHighScore(name, score) {
+    if (!this.isHighScore(score)) {
+      return false;
+    }
+
+    const highScores = this.getHighScores();
+    highScores.push({ name: name.trim() || 'Anonymous', score });
+    
+    // Sort by score descending
+    highScores.sort((a, b) => b.score - a.score);
+    
+    // Keep only top 10
+    const topScores = highScores.slice(0, 10);
+    
+    try {
+      localStorage.setItem('snakeGameHighScores', JSON.stringify(topScores));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Clears all high scores (useful for testing)
+   */
+  clearHighScores() {
+    try {
+      localStorage.removeItem('snakeGameHighScores');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 // For Node.js environment (testing)
