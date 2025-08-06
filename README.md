@@ -57,8 +57,11 @@ npm test -- --coverage
 - **Todo List Logic**: Full test suite for task management, data persistence, and input validation
 - **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
+- **WASM Game Collision**: Tests for collision detection and smart movement in the WebAssembly game
+- **Deployment Info**: Tests for CI/CD integration and deployment information generation
+- **Version Update**: Tests for version management and update system
 
-**Total: 148 tests across 6 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 158 tests across 7 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
