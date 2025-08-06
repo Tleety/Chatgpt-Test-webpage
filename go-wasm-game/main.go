@@ -215,10 +215,10 @@ func renderPlayerLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight
 // initializeGameLayers sets up all game layers after game objects are created
 func initializeGameLayers() {
 	// Add objects layer (priority 10 - foreground)
-	gameMap.LayerManager.AddLayer("objects", 10, true, renderObjectsLayer)
+	gameMap.Layers.AddLayer("objects", 10, true, renderObjectsLayer)
 	
 	// Add player layer (priority 20 - top layer)
-	gameMap.LayerManager.AddLayer("player", 20, true, renderPlayerLayer)
+	gameMap.Layers.AddLayer("player", 20, true, renderPlayerLayer)
 }
 
 func recenterSquare(this js.Value, args []js.Value) interface{} {

@@ -12,7 +12,7 @@ type Map struct {
 	Height   int
 	TileSize float64
 	Tiles    [][]TileType
-	LayerManager *LayerManager
+	Layers *Layers
 }
 
 // Layer represents a rendering layer with priority and visibility
@@ -23,8 +23,8 @@ type Layer struct {
 	RenderFunc func(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64)
 }
 
-// LayerManager manages multiple rendering layers
-type LayerManager struct {
+// Layers manages multiple rendering layers
+type Layers struct {
 	Layers []Layer
 }
 
@@ -35,7 +35,7 @@ func NewMap(width, height int, tileSize float64) *Map {
 		Height:   height,
 		TileSize: tileSize,
 		Tiles:    make([][]TileType, height),
-		LayerManager: NewLayerManager(),
+		Layers: NewLayers(),
 	}
 	
 	// Initialize the 2D slice
@@ -117,30 +117,30 @@ func (m *Map) GridToWorld(gridX, gridY int) (float64, float64) {
 	return worldX, worldY
 }
 
-// NewLayerManager creates a new layer manager
-func NewLayerManager() *LayerManager {
-	return &LayerManager{
+// NewLayers creates a new layers collection
+func NewLayers() *Layers {
+	return &Layers{
 		Layers: make([]Layer, 0),
 	}
 }
 
-// AddLayer adds a new layer to the manager
-func (lm *LayerManager) AddLayer(name string, priority int, visible bool, renderFunc func(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64)) {
+// AddLayer adds a new layer to the collection
+func (l *Layers) AddLayer(name string, priority int, visible bool, renderFunc func(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64)) {
 	layer := Layer{
 		Name:       name,
 		Priority:   priority,
 		Visible:    visible,
 		RenderFunc: renderFunc,
 	}
-	lm.Layers = append(lm.Layers, layer)
-	lm.sortLayers()
+	l.Layers = append(l.Layers, layer)
+	l.sortLayers()
 }
 
 // RemoveLayer removes a layer by name
-func (lm *LayerManager) RemoveLayer(name string) bool {
-	for i, layer := range lm.Layers {
+func (l *Layers) RemoveLayer(name string) bool {
+	for i, layer := range l.Layers {
 		if layer.Name == name {
-			lm.Layers = append(lm.Layers[:i], lm.Layers[i+1:]...)
+			l.Layers = append(l.Layers[:i], l.Layers[i+1:]...)
 			return true
 		}
 	}
@@ -148,10 +148,10 @@ func (lm *LayerManager) RemoveLayer(name string) bool {
 }
 
 // SetLayerVisibility sets the visibility of a layer by name
-func (lm *LayerManager) SetLayerVisibility(name string, visible bool) bool {
-	for i, layer := range lm.Layers {
+func (l *Layers) SetLayerVisibility(name string, visible bool) bool {
+	for i, layer := range l.Layers {
 		if layer.Name == name {
-			lm.Layers[i].Visible = visible
+			l.Layers[i].Visible = visible
 			return true
 		}
 	}
@@ -159,11 +159,11 @@ func (lm *LayerManager) SetLayerVisibility(name string, visible bool) bool {
 }
 
 // SetLayerPriority sets the priority of a layer by name
-func (lm *LayerManager) SetLayerPriority(name string, priority int) bool {
-	for i, layer := range lm.Layers {
+func (l *Layers) SetLayerPriority(name string, priority int) bool {
+	for i, layer := range l.Layers {
 		if layer.Name == name {
-			lm.Layers[i].Priority = priority
-			lm.sortLayers()
+			l.Layers[i].Priority = priority
+			l.sortLayers()
 			return true
 		}
 	}
@@ -171,25 +171,25 @@ func (lm *LayerManager) SetLayerPriority(name string, priority int) bool {
 }
 
 // GetLayer gets a layer by name
-func (lm *LayerManager) GetLayer(name string) *Layer {
-	for i, layer := range lm.Layers {
+func (l *Layers) GetLayer(name string) *Layer {
+	for i, layer := range l.Layers {
 		if layer.Name == name {
-			return &lm.Layers[i]
+			return &l.Layers[i]
 		}
 	}
 	return nil
 }
 
 // sortLayers sorts layers by priority (lower priority renders first)
-func (lm *LayerManager) sortLayers() {
-	sort.Slice(lm.Layers, func(i, j int) bool {
-		return lm.Layers[i].Priority < lm.Layers[j].Priority
+func (l *Layers) sortLayers() {
+	sort.Slice(l.Layers, func(i, j int) bool {
+		return l.Layers[i].Priority < l.Layers[j].Priority
 	})
 }
 
 // RenderAllLayers renders all visible layers in priority order
-func (lm *LayerManager) RenderAllLayers(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
-	for _, layer := range lm.Layers {
+func (l *Layers) RenderAllLayers(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
+	for _, layer := range l.Layers {
 		if layer.Visible && layer.RenderFunc != nil {
 			layer.RenderFunc(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 		}
@@ -199,7 +199,7 @@ func (lm *LayerManager) RenderAllLayers(ctx js.Value, cameraX, cameraY, canvasWi
 // initializeLayers sets up the default layers for the map
 func (m *Map) initializeLayers() {
 	// Add tiles layer (priority 0 - background)
-	m.LayerManager.AddLayer("tiles", 0, true, m.renderTilesLayer)
+	m.Layers.AddLayer("tiles", 0, true, m.renderTilesLayer)
 	
 	// Objects layer will be added by main.go when trees and bushes are available
 	// Player layer will be added by main.go when player is available
@@ -241,5 +241,5 @@ func (m *Map) renderTilesLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canv
 
 // RenderWithLayers renders the map using the layer system
 func (m *Map) RenderWithLayers(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
-	m.LayerManager.RenderAllLayers(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+	m.Layers.RenderAllLayers(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 }
