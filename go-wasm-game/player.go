@@ -53,31 +53,15 @@ func (p *Player) Update() {
 	}
 }
 
-// MoveByKeyboard handles keyboard-based movement
-func (p *Player) MoveByKeyboard(key string) {
-	// Stop any ongoing tile movement when using keyboard
-	p.IsMoving = false
-	
-	switch key {
-	case "ArrowUp", "w", "W":
-		p.Y -= p.Speed
-		p.TargetY = p.Y
-	case "ArrowDown", "s", "S":
-		p.Y += p.Speed
-		p.TargetY = p.Y
-	case "ArrowLeft", "a", "A":
-		p.X -= p.Speed
-		p.TargetX = p.X
-	case "ArrowRight", "d", "D":
-		p.X += p.Speed
-		p.TargetX = p.X
-	}
-}
 
-// MoveToTile initiates movement to a specific tile
+
+// MoveToTile initiates movement to a specific tile with smart collision detection
 func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
+	// Find the nearest walkable tile if the target is not walkable
+	walkableTileX, walkableTileY := FindNearestWalkableTile(tileX, tileY, gameMap)
+	
 	// Convert tile coordinates to world coordinates (center of tile)
-	worldX, worldY := gameMap.GridToWorld(tileX, tileY)
+	worldX, worldY := gameMap.GridToWorld(walkableTileX, walkableTileY)
 	
 	// Offset to center the player square in the tile
 	p.TargetX = worldX - p.Width/2
@@ -139,3 +123,4 @@ func (p *Player) SetPosition(x, y float64) {
 	p.TargetY = y
 	p.IsMoving = false
 }
+
