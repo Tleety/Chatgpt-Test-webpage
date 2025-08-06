@@ -282,38 +282,17 @@ func (m *Map) GridToWorld(gridX, gridY int) (float64, float64) {
 
 // addDirtPaths creates snaking dirt paths across the landscape
 func (m *Map) addDirtPaths() {
-	// Create several snaking paths that wind naturally across the map
-	// All paths are exactly 1 tile wide (width = 0)
+	// Create just a few main paths that are continuous and well-defined
+	// Focus on fewer, more pronounced paths instead of many scattered ones
 	
-	// Generate multiple snaking paths from different starting points
-	pathStarts := []struct{ x, y int }{
-		{5, m.Height / 4},        // Left edge, upper
-		{5, 3 * m.Height / 4},    // Left edge, lower
-		{m.Width / 4, 5},         // Top edge, left
-		{3 * m.Width / 4, 5},     // Top edge, right
-		{m.Width - 5, m.Height / 3},     // Right edge, upper
-		{m.Width - 5, 2 * m.Height / 3}, // Right edge, lower
-		{m.Width / 3, m.Height - 5},     // Bottom edge, left
-		{2 * m.Width / 3, m.Height - 5}, // Bottom edge, right
-	}
+	// Main horizontal path across the map
+	m.addSnakingPath(10, m.Height/2, m.Width-10, m.Height/2, 120)
 	
-	// Create snaking paths from each starting point
-	for i, start := range pathStarts {
-		// Each path winds toward the center area with variations
-		centerX := m.Width/2 + (i-4)*10  // Offset center slightly for each path
-		centerY := m.Height/2 + (i-4)*8
-		
-		m.addSnakingPath(start.x, start.y, centerX, centerY, 80+i*10)
-	}
+	// Main vertical path connecting top to bottom
+	m.addSnakingPath(m.Width/2, 10, m.Width/2, m.Height-10, 100)
 	
-	// Add some connecting snaking paths between lakes
-	m.addSnakingPath(40, 30, 160, 45, 60)    // Between top lakes
-	m.addSnakingPath(80, 120, 140, 160, 50)  // Between central and bottom-right lakes
-	m.addSnakingPath(25, 170, 80, 120, 70)   // Between bottom-left and central
-	
-	// Add a few more random snaking paths for variety
-	m.addSnakingPath(m.Width/6, m.Height/6, 5*m.Width/6, 5*m.Height/6, 90)
-	m.addSnakingPath(5*m.Width/6, m.Height/6, m.Width/6, 5*m.Height/6, 85)
+	// One diagonal path for variety
+	m.addSnakingPath(20, 20, m.Width-20, m.Height-20, 110)
 }
 
 // addPath creates a straight path between two points, avoiding water when possible
@@ -348,54 +327,48 @@ func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
 
 // addSnakingPath creates a winding, snake-like path between two points
 func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
-	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
-	if steps == 0 {
+	totalDistance := math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY)))
+	if totalDistance == 0 {
 		return
 	}
 	
-	// Current position starts at the beginning
-	currentX := float64(startX)
-	currentY := float64(startY)
+	// Use smaller, more consistent steps to ensure continuity
+	stepSize := 1.0 // Guarantee no gaps in the path
+	steps := int(totalDistance / stepSize)
 	
-	// Random walk parameters
-	baseStepSize := 2.0
-	randomness := 0.6
-	
-	for step := 0; step < windiness; step++ {
-		// Calculate how far we still need to go
-		remainingDx := float64(endX) - currentX
-		remainingDy := float64(endY) - currentY
-		remainingDistance := math.Sqrt(remainingDx*remainingDx + remainingDy*remainingDy)
+	for step := 0; step <= steps; step++ {
+		// Calculate progress along the path (0 to 1)
+		t := float64(step) / float64(steps)
 		
-		if remainingDistance < baseStepSize {
-			break
-		}
+		// Base linear interpolation between start and end
+		baseX := float64(startX)*(1-t) + float64(endX)*t
+		baseY := float64(startY)*(1-t) + float64(endY)*t
 		
-		// Base direction toward target (normalized)
-		dirX := remainingDx / remainingDistance
-		dirY := remainingDy / remainingDistance
+		// Add gentle snaking using sine waves for smooth curves
+		// Use multiple sine waves with different frequencies for natural curves
+		snakeAmplitude := 8.0 // Moderate snaking - not too wild
 		
-		// Add random perpendicular offset for snaking effect
-		perpX := -dirY // Perpendicular to direction
+		// Primary curve
+		primaryCurve := math.Sin(t * math.Pi * 3) * snakeAmplitude
+		
+		// Secondary subtle curve for more natural appearance
+		secondaryCurve := math.Sin(t * math.Pi * 7) * (snakeAmplitude * 0.3)
+		
+		// Calculate perpendicular direction for snaking
+		dirX := float64(endX - startX) / totalDistance
+		dirY := float64(endY - startY) / totalDistance
+		perpX := -dirY // Perpendicular to main direction
 		perpY := dirX
 		
-		// Random offset strength (varies throughout the path)
-		noiseStrength := 15.0 * math.Sin(float64(step)*0.3) * randomness
-		randomOffset := (float64(step%7) - 3.0) / 3.0 // Pseudo-random between -1 and 1
+		// Apply snaking offset perpendicular to the main direction
+		finalX := baseX + perpX*(primaryCurve + secondaryCurve)
+		finalY := baseY + perpY*(primaryCurve + secondaryCurve)
 		
-		// Calculate next position with snaking
-		nextX := currentX + dirX*baseStepSize + perpX*noiseStrength*randomOffset
-		nextY := currentY + dirY*baseStepSize + perpY*noiseStrength*randomOffset
+		// Round to get tile coordinates
+		tileX := int(math.Round(finalX))
+		tileY := int(math.Round(finalY))
 		
-		// Add some curves by changing direction slightly
-		curve := math.Sin(float64(step)*0.15) * 8.0
-		nextX += curve * perpX
-		nextY += curve * perpY
-		
-		// Place the path tile (1 tile wide)
-		tileX := int(math.Round(nextX))
-		tileY := int(math.Round(nextY))
-		
+		// Place the path tile
 		if tileX >= 0 && tileX < m.Width && tileY >= 0 && tileY < m.Height {
 			// Only place dirt path on grass (don't overwrite water)
 			if m.Tiles[tileY][tileX] == TileGrass {
@@ -403,46 +376,27 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 			}
 		}
 		
-		// Update current position
-		currentX = nextX
-		currentY = nextY
-		
-		// Occasionally add small branches for more organic look
-		if step%20 == 0 && step > 10 {
-			branchLength := 5 + step%8
-			branchAngle := float64(step%6) - 3.0 // Random branch direction
-			
-			branchEndX := currentX + math.Cos(branchAngle)*float64(branchLength)
-			branchEndY := currentY + math.Sin(branchAngle)*float64(branchLength)
-			
-			// Create a short branch
-			for i := 0; i < branchLength; i++ {
-				t := float64(i) / float64(branchLength)
-				bx := int(math.Round(currentX*(1-t) + branchEndX*t))
-				by := int(math.Round(currentY*(1-t) + branchEndY*t))
+		// Also place tiles at adjacent positions to ensure continuity
+		// This helps prevent gaps when the path curves
+		for dx := -1; dx <= 1; dx++ {
+			for dy := -1; dy <= 1; dy++ {
+				if dx == 0 && dy == 0 {
+					continue // Already placed above
+				}
 				
-				if bx >= 0 && bx < m.Width && by >= 0 && by < m.Height {
-					if m.Tiles[by][bx] == TileGrass {
-						m.Tiles[by][bx] = TileDirtPath
+				adjX := tileX + dx
+				adjY := tileY + dy
+				
+				if adjX >= 0 && adjX < m.Width && adjY >= 0 && adjY < m.Height {
+					// Only fill small gaps to maintain path continuity
+					if m.Tiles[adjY][adjX] == TileGrass {
+						// Check if this helps connect the path
+						distToLine := math.Abs(float64(dx)) + math.Abs(float64(dy))
+						if distToLine <= 1.0 { // Only immediate neighbors
+							m.Tiles[adjY][adjX] = TileDirtPath
+						}
 					}
 				}
-			}
-		}
-	}
-	
-	// Connect final segment to the target
-	finalSteps := int(math.Sqrt((float64(endX)-currentX)*(float64(endX)-currentX) + (float64(endY)-currentY)*(float64(endY)-currentY)))
-	for step := 0; step <= finalSteps; step++ {
-		if finalSteps == 0 {
-			break
-		}
-		t := float64(step) / float64(finalSteps)
-		x := int(math.Round(currentX*(1-t) + float64(endX)*t))
-		y := int(math.Round(currentY*(1-t) + float64(endY)*t))
-		
-		if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
-			if m.Tiles[y][x] == TileGrass {
-				m.Tiles[y][x] = TileDirtPath
 			}
 		}
 	}
