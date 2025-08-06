@@ -15,6 +15,8 @@ type Player struct {
 	TargetY    float64
 	IsMoving   bool
 	MoveSpeed  float64
+	Path       Path    // Current pathfinding path
+	PathStep   int     // Current step in the path
 }
 
 // NewPlayer creates a new player with default settings
@@ -29,56 +31,115 @@ func NewPlayer(startX, startY float64) *Player {
 		TargetY:   startY,
 		IsMoving:  false,
 		MoveSpeed: 3, // Speed for tile-to-tile movement
+		Path:      nil,
+		PathStep:  0,
 	}
 }
 
-// Update handles player movement logic with tile-based speed adjustment
+// Update handles player movement logic with pathfinding and tile-based speed adjustment
 func (p *Player) Update(gameMap *Map) {
-	if p.IsMoving {
-		// Calculate direction to target
-		dx := p.TargetX - p.X
-		dy := p.TargetY - p.Y
-		distance := math.Sqrt(dx*dx + dy*dy)
-		
-		// Get current tile and apply speed multiplier
-		currentTileX, currentTileY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
-		currentTileType := gameMap.GetTile(currentTileX, currentTileY)
-		tileDef, exists := TileDefinitions[currentTileType]
-		if !exists {
-			// If tile definition not found, assume it's grass
-			tileDef = TileDefinitions[TileGrass]
+	if p.IsMoving && p.Path != nil {
+		// Check if we need to move to the next step in the path
+		if !p.isMovingToTarget() {
+			// We've reached the current target, move to next step in path
+			p.PathStep++
+			
+			if IsPathComplete(p.Path, p.PathStep) {
+				// Path completed
+				p.IsMoving = false
+				p.Path = nil
+				p.PathStep = 0
+				return
+			}
+			
+			// Set next target from path
+			stepX, stepY, hasNext := GetNextPathStep(p.Path, p.PathStep)
+			if hasNext {
+				worldX, worldY := gameMap.GridToWorld(stepX, stepY)
+				p.TargetX = worldX - p.Width/2
+				p.TargetY = worldY - p.Height/2
+			}
 		}
 		
-		// Apply tile speed multiplier to base movement speed
-		adjustedSpeed := p.MoveSpeed * tileDef.WalkSpeed
-		
-		// If close enough to target, snap to it and stop moving
-		if distance < adjustedSpeed {
-			p.X = p.TargetX
-			p.Y = p.TargetY
-			p.IsMoving = false
-		} else {
-			// Move towards target with tile-adjusted speed
-			p.X += (dx / distance) * adjustedSpeed
-			p.Y += (dy / distance) * adjustedSpeed
-		}
+		// Move towards current target with tile-based speed adjustment
+		p.moveTowardTargetWithTileSpeed(gameMap)
+	}
+}
+
+// isMovingToTarget checks if player is still moving toward the current target
+func (p *Player) isMovingToTarget() bool {
+	dx := p.TargetX - p.X
+	dy := p.TargetY - p.Y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	return distance >= p.MoveSpeed
+}
+
+// moveTowardTargetWithTileSpeed moves the player toward the current target position with tile-based speed
+func (p *Player) moveTowardTargetWithTileSpeed(gameMap *Map) {
+	dx := p.TargetX - p.X
+	dy := p.TargetY - p.Y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	
+	// Get current tile and apply speed multiplier
+	currentTileX, currentTileY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
+	currentTileType := gameMap.GetTile(currentTileX, currentTileY)
+	tileDef, exists := TileDefinitions[currentTileType]
+	if !exists {
+		// If tile definition not found, assume it's grass
+		tileDef = TileDefinitions[TileGrass]
+	}
+	
+	// Apply tile speed multiplier to base movement speed
+	adjustedSpeed := p.MoveSpeed * tileDef.WalkSpeed
+	
+	if distance < adjustedSpeed {
+		// Snap to target
+		p.X = p.TargetX
+		p.Y = p.TargetY
+	} else {
+		// Move towards target with tile-adjusted speed
+		p.X += (dx / distance) * adjustedSpeed
+		p.Y += (dy / distance) * adjustedSpeed
 	}
 }
 
 
 
-// MoveToTile initiates movement to a specific tile with smart collision detection
+// MoveToTile initiates pathfinding-based movement to a specific tile
 func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
-	// Find the nearest walkable tile if the target is not walkable
-	walkableTileX, walkableTileY := FindNearestWalkableTile(tileX, tileY, gameMap)
+	// Get current player position in grid coordinates
+	currentX, currentY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
 	
-	// Convert tile coordinates to world coordinates (center of tile)
-	worldX, worldY := gameMap.GridToWorld(walkableTileX, walkableTileY)
+	// If already at target tile, no need to pathfind
+	if currentX == tileX && currentY == tileY {
+		p.IsMoving = false
+		p.Path = nil
+		p.PathStep = 0
+		return
+	}
 	
-	// Offset to center the player square in the tile
-	p.TargetX = worldX - p.Width/2
-	p.TargetY = worldY - p.Height/2
+	// Find path from current position to target
+	path := FindPath(currentX, currentY, tileX, tileY, gameMap)
+	
+	if path == nil || len(path) == 0 {
+		// No path found, don't move
+		return
+	}
+	
+	// Set up pathfinding movement
+	p.Path = path
+	p.PathStep = 0
 	p.IsMoving = true
+	
+	// Set initial target (first step in path)
+	if len(path) > 0 {
+		stepX, stepY, hasNext := GetNextPathStep(path, 0)
+		if hasNext {
+			worldX, worldY := gameMap.GridToWorld(stepX, stepY)
+			p.TargetX = worldX - p.Width/2
+			p.TargetY = worldY - p.Height/2
+		}
+	}
 }
 
 // ClampToMapBounds ensures the player stays within map boundaries
@@ -134,5 +195,7 @@ func (p *Player) SetPosition(x, y float64) {
 	p.TargetX = x
 	p.TargetY = y
 	p.IsMoving = false
+	p.Path = nil
+	p.PathStep = 0
 }
 

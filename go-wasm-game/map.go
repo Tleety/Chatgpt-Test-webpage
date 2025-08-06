@@ -58,6 +58,9 @@ func NewMap(width, height int, tileSize float64) *Map {
 	// Add dirt paths around the map on the base layer
 	m.addDirtPaths()
 	
+	// Create additional layers to demonstrate pathfinding with multi-layer obstacles
+	m.createPathfindingDemoLayers()
+	
 	return m
 }
 
@@ -217,4 +220,83 @@ func (m *Map) GridToWorld(gridX, gridY int) (float64, float64) {
 	worldX := float64(gridX)*m.TileSize + m.TileSize/2
 	worldY := float64(gridY)*m.TileSize + m.TileSize/2
 	return worldX, worldY
+}
+
+// createPathfindingDemoLayers creates additional layers to demonstrate pathfinding capabilities
+func (m *Map) createPathfindingDemoLayers() {
+	// Add Path Network layer (order 1) with dirt paths that create shortcuts
+	pathLayer := NewLayer("Path Network", 1, true, m.Width, m.Height)
+	m.Layers = append(m.Layers, pathLayer)
+	
+	// Create some strategic dirt paths that provide faster routes
+	m.addStrategicPaths(pathLayer)
+	
+	// Add Decorations layer (order 2) with scattered obstacles
+	decorationsLayer := NewLayer("Decorations", 2, true, m.Width, m.Height)
+	m.Layers = append(m.Layers, decorationsLayer)
+	
+	// Add some decorative obstacles that pathfinding must navigate around
+	m.addDecorationObstacles(decorationsLayer)
+}
+
+// addStrategicPaths adds dirt paths on the path network layer for faster movement
+func (m *Map) addStrategicPaths(layer *Layer) {
+	// Create horizontal paths
+	for y := 50; y <= 52; y++ {
+		for x := 20; x < 180; x++ {
+			if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+				layer.Tiles[y][x] = TileDirtPath
+			}
+		}
+	}
+	
+	// Create vertical paths
+	for x := 100; x <= 102; x++ {
+		for y := 20; y < 180; y++ {
+			if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+				layer.Tiles[y][x] = TileDirtPath
+			}
+		}
+	}
+	
+	// Create diagonal shortcut path
+	for i := 0; i < 60; i++ {
+		x := 150 + i
+		y := 30 + i
+		if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+			layer.Tiles[y][x] = TileDirtPath
+		}
+	}
+}
+
+// addDecorationObstacles adds water obstacles on the decorations layer
+func (m *Map) addDecorationObstacles(layer *Layer) {
+	// Add some strategic water obstacles that force pathfinding to find alternate routes
+	
+	// Create a water barrier that blocks direct movement in the middle-right area
+	for y := 60; y <= 85; y++ {
+		for x := 130; x <= 135; x++ {
+			if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+				layer.Tiles[y][x] = TileWater
+			}
+		}
+	}
+	
+	// Add small scattered water obstacles
+	obstacles := []struct{ x, y, w, h int }{
+		{70, 40, 3, 3},   // Small pond near top
+		{45, 80, 2, 4},   // Vertical obstacle
+		{165, 120, 4, 2}, // Horizontal obstacle
+		{90, 150, 3, 3},  // Small pond near bottom
+	}
+	
+	for _, obs := range obstacles {
+		for y := obs.y; y < obs.y+obs.h; y++ {
+			for x := obs.x; x < obs.x+obs.w; x++ {
+				if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
+					layer.Tiles[y][x] = TileWater
+				}
+			}
+		}
+	}
 }
