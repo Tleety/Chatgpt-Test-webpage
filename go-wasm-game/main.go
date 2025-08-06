@@ -28,6 +28,7 @@ var (
 	trees        []Tree
 	bushes       []Bush
 	gameMap      *Map
+	unitManager  *UnitManager
 	cameraX      float64
 	cameraY      float64
 )
@@ -35,6 +36,10 @@ var (
 var drawFunc js.Func
 var recenterFunc js.Func
 var clickFunc js.Func
+var createUnitFunc js.Func
+var getUnitsFunc js.Func
+var moveUnitFunc js.Func
+var removeUnitFunc js.Func
 
 // drawTreeAt renders a tree at screen coordinates
 func drawTreeAt(tree Tree) {
@@ -202,6 +207,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Draw player
 	player.Draw(ctx, cameraX, cameraY)
 	
+	// Draw units
+	unitManager.RenderUnits(ctx, cameraX, cameraY)
+	
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
 }
@@ -252,6 +260,117 @@ func click(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
+func createUnit(this js.Value, args []js.Value) interface{} {
+	if len(args) < 3 {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "createUnit requires unitType, tileX, tileY",
+		}
+	}
+
+	unitType := UnitType(args[0].Int())
+	tileX := args[1].Int()
+	tileY := args[2].Int()
+	name := ""
+	if len(args) > 3 {
+		name = args[3].String()
+	}
+
+	unit, err := unitManager.CreateUnit(unitType, tileX, tileY, name)
+	if err != nil {
+		return map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		}
+	}
+
+	return map[string]interface{}{
+		"success": true,
+		"unit": map[string]interface{}{
+			"id":     unit.ID,
+			"name":   unit.Name,
+			"typeId": int(unit.TypeID),
+			"tileX":  unit.TileX,
+			"tileY":  unit.TileY,
+			"health": unit.CurrentStats.Health,
+			"level":  unit.Level,
+		},
+	}
+}
+
+func getUnits(this js.Value, args []js.Value) interface{} {
+	units := unitManager.GetAllUnits()
+	result := make([]interface{}, 0, len(units))
+
+	for _, unit := range units {
+		if !unit.IsAlive {
+			continue
+		}
+
+		result = append(result, map[string]interface{}{
+			"id":     unit.ID,
+			"name":   unit.Name,
+			"typeId": int(unit.TypeID),
+			"tileX":  unit.TileX,
+			"tileY":  unit.TileY,
+			"health": unit.CurrentStats.Health,
+			"maxHealth": unit.MaxStats.Health,
+			"level":  unit.Level,
+			"status": unit.Status,
+		})
+	}
+
+	return result
+}
+
+func moveUnitJS(this js.Value, args []js.Value) interface{} {
+	if len(args) < 3 {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "moveUnit requires unitId, tileX, tileY",
+		}
+	}
+
+	unitID := args[0].String()
+	tileX := args[1].Int()
+	tileY := args[2].Int()
+
+	err := unitManager.MoveUnit(unitID, tileX, tileY)
+	if err != nil {
+		return map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		}
+	}
+
+	return map[string]interface{}{
+		"success": true,
+	}
+}
+
+func removeUnitJS(this js.Value, args []js.Value) interface{} {
+	if len(args) < 1 {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "removeUnit requires unitId",
+		}
+	}
+
+	unitID := args[0].String()
+
+	err := unitManager.RemoveUnit(unitID)
+	if err != nil {
+		return map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		}
+	}
+
+	return map[string]interface{}{
+		"success": true,
+	}
+}
+
 func main() {
 	doc := js.Global().Get("document")
 	canvas = doc.Call("getElementById", "game")
@@ -263,6 +382,15 @@ func main() {
 
 	// Initialize the map (200x200 tiles, 32px per tile)
 	gameMap = NewMap(200, 200, 32.0)
+	
+	// Initialize unit manager
+	unitManager = NewUnitManager(gameMap)
+	
+	// Create some initial units for demonstration
+	unitManager.CreateUnit(UnitWarrior, 95, 95, "")
+	unitManager.CreateUnit(UnitArcher, 97, 95, "")
+	unitManager.CreateUnit(UnitMage, 95, 97, "")
+	unitManager.CreateUnit(UnitScout, 97, 97, "")
 	
 	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
@@ -286,6 +414,19 @@ func main() {
 	// Expose click function to JavaScript (for potential external use)
 	clickFunc = js.FuncOf(click)
 	js.Global().Set("gameClick", clickFunc)
+	
+	// Expose unit management functions to JavaScript
+	createUnitFunc = js.FuncOf(createUnit)
+	js.Global().Set("createUnit", createUnitFunc)
+	
+	getUnitsFunc = js.FuncOf(getUnits)
+	js.Global().Set("getUnits", getUnitsFunc)
+	
+	moveUnitFunc = js.FuncOf(moveUnitJS)
+	js.Global().Set("moveUnit", moveUnitFunc)
+	
+	removeUnitFunc = js.FuncOf(removeUnitJS)
+	js.Global().Set("removeUnit", removeUnitFunc)
 	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)
