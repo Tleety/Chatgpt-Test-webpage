@@ -6,7 +6,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 ## Projects
 
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
-- **Simple Phaser Game** – Phaser 3 example with a bouncing logo.
+- **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 
 ## Running locally
