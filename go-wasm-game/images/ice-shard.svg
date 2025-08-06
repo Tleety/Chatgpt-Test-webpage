@@ -1,0 +1,29 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ice shard core -->
+  <polygon points="16,4 20,12 16,20 12,12" fill="url(#iceGradient)"/>
+  <polygon points="4,16 12,12 20,16 12,20" fill="url(#iceGradient)"/>
+  
+  <!-- Inner crystal -->
+  <polygon points="16,8 18,14 16,18 14,14" fill="#E0FFFF" opacity="0.8"/>
+  <polygon points="8,16 14,14 18,16 14,18" fill="#E0FFFF" opacity="0.8"/>
+  
+  <!-- Ice particles -->
+  <polygon points="6,6 8,8 6,10 4,8" fill="#B0E0E6"/>
+  <polygon points="26,6 28,8 26,10 24,8" fill="#B0E0E6"/>
+  <polygon points="6,26 8,28 6,30 4,28" fill="#B0E0E6"/>
+  <polygon points="26,26 28,28 26,30 24,28" fill="#B0E0E6"/>
+  
+  <!-- Frost trails -->
+  <circle cx="10" cy="10" r="1.5" fill="#E0FFFF" opacity="0.7"/>
+  <circle cx="22" cy="10" r="1.5" fill="#E0FFFF" opacity="0.7"/>
+  <circle cx="10" cy="22" r="1.5" fill="#E0FFFF" opacity="0.7"/>
+  <circle cx="22" cy="22" r="1.5" fill="#E0FFFF" opacity="0.7"/>
+  
+  <defs>
+    <linearGradient id="iceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF;stop-opacity:0.9"/>
+      <stop offset="50%" style="stop-color:#B0E0E6;stop-opacity:0.7"/>
+      <stop offset="100%" style="stop-color:#4682B4;stop-opacity:0.5"/>
+    </linearGradient>
+  </defs>
+</svg>
