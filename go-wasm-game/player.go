@@ -32,23 +32,35 @@ func NewPlayer(startX, startY float64) *Player {
 	}
 }
 
-// Update handles player movement logic
-func (p *Player) Update() {
+// Update handles player movement logic with tile-based speed adjustment
+func (p *Player) Update(gameMap *Map) {
 	if p.IsMoving {
 		// Calculate direction to target
 		dx := p.TargetX - p.X
 		dy := p.TargetY - p.Y
 		distance := math.Sqrt(dx*dx + dy*dy)
 		
+		// Get current tile and apply speed multiplier
+		currentTileX, currentTileY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
+		currentTileType := gameMap.GetTile(currentTileX, currentTileY)
+		tileDef, exists := TileDefinitions[currentTileType]
+		if !exists {
+			// If tile definition not found, assume it's grass
+			tileDef = TileDefinitions[TileGrass]
+		}
+		
+		// Apply tile speed multiplier to base movement speed
+		adjustedSpeed := p.MoveSpeed * tileDef.WalkSpeed
+		
 		// If close enough to target, snap to it and stop moving
-		if distance < p.MoveSpeed {
+		if distance < adjustedSpeed {
 			p.X = p.TargetX
 			p.Y = p.TargetY
 			p.IsMoving = false
 		} else {
-			// Move towards target
-			p.X += (dx / distance) * p.MoveSpeed
-			p.Y += (dy / distance) * p.MoveSpeed
+			// Move towards target with tile-adjusted speed
+			p.X += (dx / distance) * adjustedSpeed
+			p.Y += (dy / distance) * adjustedSpeed
 		}
 	}
 }
