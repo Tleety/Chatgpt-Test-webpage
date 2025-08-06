@@ -78,8 +78,9 @@ func (p *Player) isMovingToTarget() bool {
 	dy := p.TargetY - p.Y
 	distance := math.Sqrt(dx*dx + dy*dy)
 	// Use a small threshold to prevent floating point precision issues
-	const precisionThreshold = 0.5
-	return distance >= math.Max(p.MoveSpeed, precisionThreshold)
+	// This should be consistent with the snap threshold in moveTowardTargetWithTileSpeed
+	const precisionThreshold = 1.5
+	return distance >= precisionThreshold
 }
 
 // moveTowardTargetWithTileSpeed moves the player toward the current target position with tile-based speed
