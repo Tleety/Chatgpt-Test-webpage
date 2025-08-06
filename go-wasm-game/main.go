@@ -35,6 +35,7 @@ var (
 var drawFunc js.Func
 var recenterFunc js.Func
 var clickFunc js.Func
+var setLayerVisibilityFunc js.Func
 
 // drawTreeAt renders a tree at screen coordinates
 func drawTreeAt(tree Tree) {
@@ -226,7 +227,16 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-
+func setLayerVisibility(this js.Value, args []js.Value) interface{} {
+	if len(args) < 2 {
+		return false
+	}
+	
+	layerIndex := args[0].Int()
+	visible := args[1].Bool()
+	
+	return gameMap.SetLayerVisibility(layerIndex, visible)
+}
 
 func click(this js.Value, args []js.Value) interface{} {
 	// Get mouse click coordinates relative to canvas
@@ -264,6 +274,13 @@ func main() {
 	// Initialize the map (200x200 tiles, 32px per tile)
 	gameMap = NewMap(200, 200, 32.0)
 	
+	// Add demonstration layers to show the multi-layer system
+	pathLayerIndex := gameMap.AddLayer("Path Network", 1, true)
+	decorationLayerIndex := gameMap.AddLayer("Decorations", 2, true)
+	
+	// Add some demonstration content to the new layers
+	addDemoLayerContent(gameMap, pathLayerIndex, decorationLayerIndex)
+	
 	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
 	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
@@ -287,6 +304,10 @@ func main() {
 	clickFunc = js.FuncOf(click)
 	js.Global().Set("gameClick", clickFunc)
 	
+	// Expose layer visibility control to JavaScript
+	setLayerVisibilityFunc = js.FuncOf(setLayerVisibility)
+	js.Global().Set("setLayerVisibility", setLayerVisibilityFunc)
+	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)
 
@@ -294,4 +315,39 @@ func main() {
 	js.Global().Call("requestAnimationFrame", drawFunc)
 
 	select {}
+}
+
+// addDemoLayerContent adds demonstration content to show multi-layer functionality
+func addDemoLayerContent(gameMap *Map, pathLayerIndex, decorationLayerIndex int) {
+	// Add some special paths on the path layer (draw order 1)
+	for i := 0; i < 20; i++ {
+		x := 50 + i*2
+		y := 50
+		if x < gameMap.Width && y < gameMap.Height {
+			gameMap.SetTileOnLayer(pathLayerIndex, x, y, TileDirtPath)
+		}
+	}
+	
+	// Add a vertical path intersecting the horizontal one
+	for i := 0; i < 30; i++ {
+		x := 70
+		y := 30 + i*2
+		if x < gameMap.Width && y < gameMap.Height {
+			gameMap.SetTileOnLayer(pathLayerIndex, x, y, TileDirtPath)
+		}
+	}
+	
+	// Add some decorative elements on the decoration layer (draw order 2)
+	// Create a small pattern of water on the decoration layer
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			x := 120 + i
+			y := 80 + j
+			if x < gameMap.Width && y < gameMap.Height {
+				if (i+j)%2 == 0 { // Checkerboard pattern
+					gameMap.SetTileOnLayer(decorationLayerIndex, x, y, TileWater)
+				}
+			}
+		}
+	}
 }

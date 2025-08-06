@@ -35,11 +35,35 @@
         font-size: 1.2em;
       }
       .game-instructions {
-        margin: 0;
+        margin: 0 0 10px 0;
         color: #666;
         font-size: 0.9em;
         line-height: 1.4;
         max-width: 300px;
+      }
+      .layer-controls {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+      }
+      .layer-controls h3 {
+        margin: 0 0 8px 0;
+        font-size: 1em;
+        color: #333;
+      }
+      .layer-control {
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .layer-control label {
+        font-size: 0.85em;
+        color: #555;
+        cursor: pointer;
+      }
+      .layer-control input[type="checkbox"] {
+        margin: 0;
       }
       canvas {
         display: block;
@@ -55,6 +79,21 @@
       <div class="hero">
         <h1>Go WASM Square</h1>
         <p class="game-instructions">Click on any tile to move the square there! When you click on water, the square will move to the nearest walkable tile. This is a WebAssembly demo written in Go!</p>
+        <div class="layer-controls">
+          <h3>Map Layers</h3>
+          <div class="layer-control">
+            <input type="checkbox" id="layer-base" checked>
+            <label for="layer-base">Base Terrain (Order: 0)</label>
+          </div>
+          <div class="layer-control">
+            <input type="checkbox" id="layer-paths" checked>
+            <label for="layer-paths">Path Network (Order: 1)</label>
+          </div>
+          <div class="layer-control">
+            <input type="checkbox" id="layer-decorations" checked>
+            <label for="layer-decorations">Decorations (Order: 2)</label>
+          </div>
+        </div>
       </div>
       <canvas id="game"></canvas>
     </main>
@@ -117,6 +156,33 @@
       }
 
       document.addEventListener('DOMContentLoaded', initialize);
+      
+      // Layer control functionality
+      function setupLayerControls() {
+        // Wait for WASM to be loaded before setting up controls
+        if (!window.wasmLoaded || !window.setLayerVisibility) {
+          setTimeout(setupLayerControls, 100);
+          return;
+        }
+        
+        const layerControls = [
+          { id: 'layer-base', layerIndex: 0 },
+          { id: 'layer-paths', layerIndex: 1 },
+          { id: 'layer-decorations', layerIndex: 2 }
+        ];
+        
+        layerControls.forEach(control => {
+          const checkbox = document.getElementById(control.id);
+          if (checkbox) {
+            checkbox.addEventListener('change', (e) => {
+              window.setLayerVisibility(control.layerIndex, e.target.checked);
+            });
+          }
+        });
+      }
+      
+      // Set up layer controls after WASM loads
+      setTimeout(setupLayerControls, 1000);
       
       // Fallback initialization after a delay
       setTimeout(initialize, 500);

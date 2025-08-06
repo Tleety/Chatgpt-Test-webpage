@@ -2,7 +2,7 @@ package main
 
 import "math"
 
-// addDirtPaths creates snaking dirt paths across the landscape
+// addDirtPaths creates snaking dirt paths across the landscape on the base layer
 func (m *Map) addDirtPaths() {
 	// Create just a few main paths that are continuous and well-defined
 	// Focus on fewer, more pronounced paths instead of many scattered ones
@@ -17,8 +17,13 @@ func (m *Map) addDirtPaths() {
 	m.addSnakingPath(20, 20, m.Width-20, m.Height-20, 110)
 }
 
-// addPath creates a straight path between two points, avoiding water when possible
+// addPath creates a straight path between two points, avoiding water when possible on the base layer
 func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
+	if len(m.Layers) == 0 {
+		return
+	}
+	
+	baseLayer := m.Layers[0]
 	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
 	if steps == 0 {
 		return
@@ -37,8 +42,8 @@ func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
 					px, py := x+dx, y+dy
 					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
 						// Only place dirt path on grass (don't overwrite water)
-						if m.Tiles[py][px] == TileGrass {
-							m.Tiles[py][px] = TileDirtPath
+						if baseLayer.Tiles[py][px] == TileGrass {
+							baseLayer.Tiles[py][px] = TileDirtPath
 						}
 					}
 				}
@@ -47,8 +52,13 @@ func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
 	}
 }
 
-// addSnakingPath creates a winding, snake-like path between two points
+// addSnakingPath creates a winding, snake-like path between two points on the base layer
 func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
+	if len(m.Layers) == 0 {
+		return
+	}
+	
+	baseLayer := m.Layers[0]
 	totalDistance := math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY)))
 	if totalDistance == 0 {
 		return
@@ -93,8 +103,8 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 		// Place the path tile
 		if tileX >= 0 && tileX < m.Width && tileY >= 0 && tileY < m.Height {
 			// Only place dirt path on grass (don't overwrite water)
-			if m.Tiles[tileY][tileX] == TileGrass {
-				m.Tiles[tileY][tileX] = TileDirtPath
+			if baseLayer.Tiles[tileY][tileX] == TileGrass {
+				baseLayer.Tiles[tileY][tileX] = TileDirtPath
 			}
 		}
 		
@@ -111,11 +121,11 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 				
 				if adjX >= 0 && adjX < m.Width && adjY >= 0 && adjY < m.Height {
 					// Only fill small gaps to maintain path continuity
-					if m.Tiles[adjY][adjX] == TileGrass {
+					if baseLayer.Tiles[adjY][adjX] == TileGrass {
 						// Check if this helps connect the path
 						distToLine := math.Abs(float64(dx)) + math.Abs(float64(dy))
 						if distToLine <= 1.0 { // Only immediate neighbors
-							m.Tiles[adjY][adjX] = TileDirtPath
+							baseLayer.Tiles[adjY][adjX] = TileDirtPath
 						}
 					}
 				}
@@ -124,8 +134,13 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 	}
 }
 
-// addCurvedPath creates a curved path with some randomness for natural appearance
+// addCurvedPath creates a curved path with some randomness for natural appearance on the base layer
 func (m *Map) addCurvedPath(startX, startY, endX, endY, width int) {
+	if len(m.Layers) == 0 {
+		return
+	}
+	
+	baseLayer := m.Layers[0]
 	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
 	if steps == 0 {
 		return
@@ -148,8 +163,8 @@ func (m *Map) addCurvedPath(startX, startY, endX, endY, width int) {
 					px, py := x+dx, y+dy
 					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
 						// Only place dirt path on grass (don't overwrite water)
-						if m.Tiles[py][px] == TileGrass {
-							m.Tiles[py][px] = TileDirtPath
+						if baseLayer.Tiles[py][px] == TileGrass {
+							baseLayer.Tiles[py][px] = TileDirtPath
 						}
 					}
 				}
