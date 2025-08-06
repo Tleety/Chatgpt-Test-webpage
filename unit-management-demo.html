@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Management System Demo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .controls button:hover {
+            background: #0056b3;
+        }
+        
+        .controls select, .controls input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .unit-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+            transition: transform 0.2s;
+        }
+        
+        .unit-card:hover {
+            transform: translateY(-2px);
+            border-color: #007bff;
+        }
+        
+        .unit-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .unit-icon {
+            font-size: 24px;
+        }
+        
+        .unit-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .unit-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 5px;
+            border-radius: 3px;
+            text-align: center;
+        }
+        
+        .unit-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .unit-actions button {
+            flex: 1;
+            padding: 5px;
+            font-size: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .unit-actions button:hover {
+            background: #5a6268;
+        }
+        
+        .stats-panel {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .position-display {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            height: 400px;
+            position: relative;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .unit-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .unit-marker:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-left: 3px solid #007bff;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <script src="top-bar.js"></script>
+    
+    <div class="demo-container">
+        <main>
+            <section class="hero">
+                <h1>🏰 Unit Management System Demo</h1>
+                <p>Explore the data-driven unit management components with interactive controls.</p>
+            </section>
+
+            <div class="section">
+                <h2>Unit Creation</h2>
+                <div class="controls">
+                    <select id="unitTypeSelect">
+                        <option value="warrior">⚔️ Warrior</option>
+                        <option value="archer">🏹 Archer</option>
+                        <option value="mage">🔮 Mage</option>
+                        <option value="scout">👁️ Scout</option>
+                    </select>
+                    <button onclick="createRandomUnit()">Create Unit</button>
+                    <button onclick="createMultipleUnits()">Create 5 Units</button>
+                    <button onclick="clearAllUnits()">Clear All</button>
+                </div>
+                
+                <div class="stats-panel">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalUnits">0</div>
+                            <div>Total Units</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="unitTypes">0</div>
+                            <div>Active Types</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="aliveUnits">0</div>
+                            <div>Alive Units</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="averageLevel">0</div>
+                            <div>Avg Level</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Unit Roster</h2>
+                <div id="unitRoster" class="unit-grid">
+                    <!-- Units will be populated here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Position Visualization</h2>
+                <div class="controls">
+                    <button onclick="randomizePositions()">Randomize Positions</button>
+                    <button onclick="formationSpread()">Formation: Spread</button>
+                    <button onclick="formationLine()">Formation: Line</button>
+                    <button onclick="formationCircle()">Formation: Circle</button>
+                </div>
+                <div id="positionDisplay" class="position-display">
+                    <!-- Unit positions will be displayed here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Activity Log</h2>
+                <div id="activityLog" class="log">
+                    <div class="log-entry">System initialized. Ready to create units!</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include our unit management components -->
+    <script src="unit-types.js"></script>
+    <script src="units.js"></script>
+    <script src="unit-type-tracker.js"></script>
+    <script src="unit-position-tracker.js"></script>
+
+    <script>
+        // Initialize the unit management system
+        const unitTypes = new UnitTypes();
+        const units = new Units(unitTypes);
+        const typeTracker = new UnitTypeTracker();
+        const positionTracker = new UnitPositionTracker(800, 400);
+
+        // Add event listeners
+        typeTracker.addEventListener('unit_registered', (data) => {
+            logActivity(`Unit ${data.unitId} registered as ${data.typeId}`);
+        });
+
+        positionTracker.addEventListener('position_changed', (data) => {
+            logActivity(`Unit ${data.unitId} moved to (${data.newPosition.x}, ${data.newPosition.y})`);
+        });
+
+        function logActivity(message) {
+            const log = document.getElementById('activityLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function createRandomUnit() {
+            const types = ['warrior', 'archer', 'mage', 'scout'];
+            const typeId = types[Math.floor(Math.random() * types.length)];
+            
+            const unitId = units.createUnit(typeId);
+            typeTracker.registerUnit(unitId, typeId);
+            
+            // Place unit at random position
+            const x = Math.random() * 750 + 25;
+            const y = Math.random() * 350 + 25;
+            positionTracker.setPosition(unitId, x, y, Math.random() * 360);
+            
+            updateDisplay();
+            logActivity(`Created new ${typeId}: ${unitId}`);
+        }
+
+        function createMultipleUnits() {
+            for (let i = 0; i < 5; i++) {
+                createRandomUnit();
+            }
+        }
+
+        function clearAllUnits() {
+            const allUnits = units.getAllUnits();
+            allUnits.forEach(unit => {
+                units.removeUnit(unit.id);
+                typeTracker.unregisterUnit(unit.id);
+                positionTracker.removeUnit(unit.id);
+            });
+            updateDisplay();
+            logActivity('All units cleared');
+        }
+
+        function damageUnit(unitId) {
+            const damage = Math.floor(Math.random() * 20) + 10;
+            units.damageUnit(unitId, damage);
+            updateDisplay();
+            logActivity(`Unit ${unitId} took ${damage} damage`);
+        }
+
+        function healUnit(unitId) {
+            const healing = Math.floor(Math.random() * 15) + 5;
+            units.healUnit(unitId, healing);
+            updateDisplay();
+            logActivity(`Unit ${unitId} healed for ${healing} HP`);
+        }
+
+        function levelUpUnit(unitId) {
+            units.levelUpUnit(unitId);
+            updateDisplay();
+            logActivity(`Unit ${unitId} leveled up!`);
+        }
+
+        function removeUnit(unitId) {
+            units.removeUnit(unitId);
+            typeTracker.unregisterUnit(unitId);
+            positionTracker.removeUnit(unitId);
+            updateDisplay();
+            logActivity(`Unit ${unitId} removed`);
+        }
+
+        function randomizePositions() {
+            const allUnits = units.getAllUnits();
+            allUnits.forEach(unit => {
+                const x = Math.random() * 750 + 25;
+                const y = Math.random() * 350 + 25;
+                positionTracker.setPosition(unit.id, x, y, Math.random() * 360);
+            });
+            updateDisplay();
+            logActivity('Positions randomized');
+        }
+
+        function formationSpread() {
+            const allUnits = units.getAllUnits();
+            const gridSize = Math.ceil(Math.sqrt(allUnits.length));
+            allUnits.forEach((unit, index) => {
+                const row = Math.floor(index / gridSize);
+                const col = index % gridSize;
+                const x = (col + 1) * (800 / (gridSize + 1));
+                const y = (row + 1) * (400 / (gridSize + 1));
+                positionTracker.setPosition(unit.id, x, y, 0);
+            });
+            updateDisplay();
+            logActivity('Formation: Spread applied');
+        }
+
+        function formationLine() {
+            const allUnits = units.getAllUnits();
+            allUnits.forEach((unit, index) => {
+                const x = (index + 1) * (800 / (allUnits.length + 1));
+                const y = 200;
+                positionTracker.setPosition(unit.id, x, y, 90);
+            });
+            updateDisplay();
+            logActivity('Formation: Line applied');
+        }
+
+        function formationCircle() {
+            const allUnits = units.getAllUnits();
+            const centerX = 400;
+            const centerY = 200;
+            const radius = 150;
+            allUnits.forEach((unit, index) => {
+                const angle = (index / allUnits.length) * 2 * Math.PI;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                const facing = (angle * 180 / Math.PI + 90) % 360;
+                positionTracker.setPosition(unit.id, x, y, facing);
+            });
+            updateDisplay();
+            logActivity('Formation: Circle applied');
+        }
+
+        function updateDisplay() {
+            updateStats();
+            updateUnitRoster();
+            updatePositionDisplay();
+        }
+
+        function updateStats() {
+            const allUnits = units.getAllUnits();
+            const aliveUnits = units.getAliveUnits();
+            const activeTypes = typeTracker.getActiveTypes();
+            const averageLevel = allUnits.length > 0 ? 
+                (allUnits.reduce((sum, unit) => sum + unit.metadata.level, 0) / allUnits.length).toFixed(1) : 0;
+
+            document.getElementById('totalUnits').textContent = allUnits.length;
+            document.getElementById('unitTypes').textContent = activeTypes.length;
+            document.getElementById('aliveUnits').textContent = aliveUnits.length;
+            document.getElementById('averageLevel').textContent = averageLevel;
+        }
+
+        function updateUnitRoster() {
+            const roster = document.getElementById('unitRoster');
+            const allUnits = units.getAllUnits();
+            
+            roster.innerHTML = '';
+            
+            allUnits.forEach(unit => {
+                const unitType = unitTypes.getUnitType(unit.typeId);
+                const position = positionTracker.getPosition(unit.id);
+                
+                const card = document.createElement('div');
+                card.className = 'unit-card';
+                if (!unit.state.isAlive) {
+                    card.style.opacity = '0.5';
+                    card.style.background = '#ffebee';
+                }
+                
+                card.innerHTML = `
+                    <div class="unit-header">
+                        <div class="unit-icon">${unitType.appearance.icon}</div>
+                        <div class="unit-name">${unit.name}</div>
+                    </div>
+                    <div class="unit-stats">
+                        <div class="stat-item">HP: ${unit.currentStats.health}/${unit.maxStats.health}</div>
+                        <div class="stat-item">DMG: ${unit.currentStats.damage}</div>
+                        <div class="stat-item">SPD: ${unit.currentStats.speed}</div>
+                        <div class="stat-item">DEF: ${unit.currentStats.defense}</div>
+                    </div>
+                    <div>Level: ${unit.metadata.level} | Status: ${unit.state.status}</div>
+                    ${position ? `<div>Position: (${Math.round(position.x)}, ${Math.round(position.y)})</div>` : ''}
+                    <div class="unit-actions">
+                        <button onclick="damageUnit('${unit.id}')">Damage</button>
+                        <button onclick="healUnit('${unit.id}')">Heal</button>
+                        <button onclick="levelUpUnit('${unit.id}')">Level Up</button>
+                        <button onclick="removeUnit('${unit.id}')">Remove</button>
+                    </div>
+                `;
+                
+                roster.appendChild(card);
+            });
+        }
+
+        function updatePositionDisplay() {
+            const display = document.getElementById('positionDisplay');
+            const allUnits = units.getAllUnits();
+            
+            // Clear existing markers
+            display.innerHTML = '';
+            
+            allUnits.forEach(unit => {
+                const position = positionTracker.getPosition(unit.id);
+                if (!position) return;
+                
+                const unitType = unitTypes.getUnitType(unit.typeId);
+                const marker = document.createElement('div');
+                marker.className = 'unit-marker';
+                marker.style.left = position.x + 'px';
+                marker.style.top = position.y + 'px';
+                marker.style.background = unitType.appearance.color;
+                marker.textContent = unitType.appearance.icon;
+                marker.title = `${unit.name} (${unit.typeId})`;
+                
+                if (!unit.state.isAlive) {
+                    marker.style.opacity = '0.5';
+                    marker.style.filter = 'grayscale(100%)';
+                }
+                
+                display.appendChild(marker);
+            });
+        }
+
+        // Initialize display
+        updateDisplay();
+
+        // Create some initial units for demonstration
+        setTimeout(() => {
+            createRandomUnit();
+            createRandomUnit();
+            createRandomUnit();
+        }, 500);
+    </script>
+</body>
+</html>
