@@ -27,6 +27,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Update player (handles movement animations with pathfinding and tile-based speed)
 	player.Update(gameMap)
 	
+	// Update all units using the unified movement system
+	unitManager.Update()
+	
 	// Keep player within world bounds (map bounds)
 	player.ClampToMapBounds(gameMap)
 	
@@ -112,7 +115,7 @@ func main() {
 	// Create player at center of map
 	centerX := (mapWorldWidth - 20) / 2
 	centerY := (mapWorldHeight - 20) / 2
-	player = NewPlayer(centerX, centerY)
+	player = NewPlayer(centerX, centerY, gameMap)
   
 	environment = NewEnvironment(gameMap)
 
