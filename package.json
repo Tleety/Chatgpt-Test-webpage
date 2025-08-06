@@ -1,7 +1,7 @@
 {
   "name": "chatgpt-test-webpage",
   "version": "1.0.2",
-  "description": "A GitHub Pages site with web projects",
+  "description": "A GitHub Pages site with web projects including a Snake game",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",

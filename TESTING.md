@@ -4,6 +4,11 @@ This repository contains comprehensive unit tests for multiple projects.
 
 ## Test Files
 
+### Snake Game Tests
+- `snake-game-logic.js` - Core game logic extracted into a testable module
+- `snake-game-logic.test.js` - Comprehensive unit tests covering all game functionality
+- `snake-game-ui.test.js` - UI interaction tests for the Snake game
+
 ### Todo List Tests
 - `todo-list-logic.js` - Todo list logic extracted into a testable module
 - `todo-list-logic.test.js` - Comprehensive unit tests covering all todo functionality
@@ -22,6 +27,17 @@ npm run test:watch
 ```
 
 ## Test Coverage
+
+### Snake Game Tests
+The Snake game tests cover:
+
+- **Initialization**: Game setup, snake placement, food placement
+- **Direction Changes**: Valid moves, preventing 180-degree turns
+- **Collision Detection**: Wall collisions, self-collisions, food collisions
+- **Snake Movement**: Forward movement, growing when eating food, collision handling
+- **Food Placement**: Valid positioning, avoiding snake body
+- **Game State**: State management, reset functionality
+- **Edge Cases**: Small game areas, crowded game areas
 
 ### Todo List Tests
 The Todo list tests cover:
