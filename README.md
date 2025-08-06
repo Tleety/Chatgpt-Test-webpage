@@ -6,7 +6,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 ## Projects
 
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
-- **Simple Phaser Game** – Phaser 3 example with a bouncing logo.
+- **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 
 ## Running locally
@@ -24,11 +24,11 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    Requires a Ruby environment with Jekyll installed.
 
-3. **Run the Phaser demo**
+3. **Run the Snake Game**
    ```
-   open phaser-game/index.html
+   open snake-game/index.html
    ```
-   It loads Phaser from a CDN, so no build step is necessary.
+   The snake game is implemented with HTML5 canvas, so no build step is necessary.
 
 4. **Build the Go WASM demo**
    ```
@@ -57,8 +57,11 @@ npm test -- --coverage
 - **Todo List Logic**: Full test suite for task management, data persistence, and input validation
 - **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
+- **WASM Game Collision**: Tests for collision detection and smart movement in the WebAssembly game
+- **Deployment Info**: Tests for CI/CD integration and deployment information generation
+- **Version Update**: Tests for version management and update system
 
-**Total: 148 tests across 6 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 158 tests across 7 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 

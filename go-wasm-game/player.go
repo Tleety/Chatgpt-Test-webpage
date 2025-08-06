@@ -103,25 +103,6 @@ func (p *Player) moveTowardTargetWithTileSpeed(gameMap *Map) {
 	}
 }
 
-// moveTowardTarget moves the player toward the current target position (legacy method for compatibility)
-func (p *Player) moveTowardTarget() {
-	dx := p.TargetX - p.X
-	dy := p.TargetY - p.Y
-	distance := math.Sqrt(dx*dx + dy*dy)
-	
-	if distance < p.MoveSpeed {
-		// Snap to target
-		p.X = p.TargetX
-		p.Y = p.TargetY
-	} else {
-		// Move towards target
-		p.X += (dx / distance) * p.MoveSpeed
-		p.Y += (dy / distance) * p.MoveSpeed
-	}
-}
-
-
-
 // MoveToTile initiates pathfinding-based movement to a specific tile
 func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
 	// Get current player position in grid coordinates

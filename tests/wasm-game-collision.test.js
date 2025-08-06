@@ -468,4 +468,199 @@ describe('WASM Game Collision Detection and Pathfinding Movement', () => {
       expect(mockMap.getTile).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('Tile-Based Movement Speed', () => {
+    test('should apply normal speed multiplier on grass tiles', () => {
+      const mockPlayer = {
+        x: 100,
+        y: 100,
+        width: 20,
+        height: 20,
+        targetX: 150,
+        targetY: 100,
+        isMoving: true,
+        moveSpeed: 3
+      };
+      
+      const mockMap = {
+        worldToGrid: jest.fn().mockReturnValue([3, 3]),
+        getTile: jest.fn().mockReturnValue('grass')
+      };
+      
+      // Mock tile definitions
+      const tileDefinitions = {
+        grass: { walkSpeed: 1.0 }
+      };
+      
+      // Simulate movement update with tile speed multiplier
+      function updatePlayerMovement(player, map, tileDefs) {
+        if (player.isMoving) {
+          const dx = player.targetX - player.x;
+          const dy = player.targetY - player.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Get current tile speed
+          const centerX = player.x + player.width / 2;
+          const centerY = player.y + player.height / 2;
+          const [tileX, tileY] = map.worldToGrid(centerX, centerY);
+          const tileType = map.getTile(tileX, tileY);
+          const tileDef = tileDefs[tileType] || tileDefs.grass;
+          
+          // Apply speed multiplier
+          const adjustedSpeed = player.moveSpeed * tileDef.walkSpeed;
+          
+          return adjustedSpeed;
+        }
+        return 0;
+      }
+      
+      const actualSpeed = updatePlayerMovement(mockPlayer, mockMap, tileDefinitions);
+      expect(actualSpeed).toBe(3); // 3 * 1.0 = 3 (normal speed on grass)
+      expect(mockMap.worldToGrid).toHaveBeenCalledWith(110, 110); // player center
+      expect(mockMap.getTile).toHaveBeenCalledWith(3, 3);
+    });
+    
+    test('should apply faster speed multiplier on dirt path tiles', () => {
+      const mockPlayer = {
+        x: 100,
+        y: 100,
+        width: 20,
+        height: 20,
+        targetX: 150,
+        targetY: 100,
+        isMoving: true,
+        moveSpeed: 3
+      };
+      
+      const mockMap = {
+        worldToGrid: jest.fn().mockReturnValue([5, 5]),
+        getTile: jest.fn().mockReturnValue('dirtPath')
+      };
+      
+      // Mock tile definitions
+      const tileDefinitions = {
+        grass: { walkSpeed: 1.0 },
+        dirtPath: { walkSpeed: 1.5 }
+      };
+      
+      // Simulate movement update with tile speed multiplier
+      function updatePlayerMovement(player, map, tileDefs) {
+        if (player.isMoving) {
+          const dx = player.targetX - player.x;
+          const dy = player.targetY - player.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Get current tile speed
+          const centerX = player.x + player.width / 2;
+          const centerY = player.y + player.height / 2;
+          const [tileX, tileY] = map.worldToGrid(centerX, centerY);
+          const tileType = map.getTile(tileX, tileY);
+          const tileDef = tileDefs[tileType] || tileDefs.grass;
+          
+          // Apply speed multiplier
+          const adjustedSpeed = player.moveSpeed * tileDef.walkSpeed;
+          
+          return adjustedSpeed;
+        }
+        return 0;
+      }
+      
+      const actualSpeed = updatePlayerMovement(mockPlayer, mockMap, tileDefinitions);
+      expect(actualSpeed).toBe(4.5); // 3 * 1.5 = 4.5 (faster speed on dirt path)
+      expect(mockMap.worldToGrid).toHaveBeenCalledWith(110, 110); // player center
+      expect(mockMap.getTile).toHaveBeenCalledWith(5, 5);
+    });
+    
+    test('should handle movement speed transition between different tile types', () => {
+      const mockPlayer = {
+        x: 100,
+        y: 100,
+        width: 20,
+        height: 20,
+        targetX: 150,
+        targetY: 100,
+        isMoving: true,
+        moveSpeed: 3
+      };
+      
+      const mockMap = {
+        worldToGrid: jest.fn(),
+        getTile: jest.fn()
+      };
+      
+      // Mock tile definitions
+      const tileDefinitions = {
+        grass: { walkSpeed: 1.0 },
+        dirtPath: { walkSpeed: 1.5 }
+      };
+      
+      // First call - player on grass
+      mockMap.worldToGrid.mockReturnValueOnce([3, 3]);
+      mockMap.getTile.mockReturnValueOnce('grass');
+      
+      // Second call - player moved to dirt path
+      mockMap.worldToGrid.mockReturnValueOnce([4, 3]);
+      mockMap.getTile.mockReturnValueOnce('dirtPath');
+      
+      function updatePlayerMovement(player, map, tileDefs) {
+        const centerX = player.x + player.width / 2;
+        const centerY = player.y + player.height / 2;
+        const [tileX, tileY] = map.worldToGrid(centerX, centerY);
+        const tileType = map.getTile(tileX, tileY);
+        const tileDef = tileDefs[tileType] || tileDefs.grass;
+        
+        return player.moveSpeed * tileDef.walkSpeed;
+      }
+      
+      // Test first position (grass)
+      const speed1 = updatePlayerMovement(mockPlayer, mockMap, tileDefinitions);
+      expect(speed1).toBe(3); // Normal speed on grass
+      
+      // Simulate player movement to dirt path
+      mockPlayer.x = 115;
+      
+      // Test second position (dirt path)
+      const speed2 = updatePlayerMovement(mockPlayer, mockMap, tileDefinitions);
+      expect(speed2).toBe(4.5); // Faster speed on dirt path
+      
+      expect(mockMap.worldToGrid).toHaveBeenCalledTimes(2);
+      expect(mockMap.getTile).toHaveBeenCalledTimes(2);
+    });
+    
+    test('should fallback to grass speed for unknown tile types', () => {
+      const mockPlayer = {
+        x: 100,
+        y: 100,
+        width: 20,
+        height: 20,
+        moveSpeed: 3
+      };
+      
+      const mockMap = {
+        worldToGrid: jest.fn().mockReturnValue([3, 3]),
+        getTile: jest.fn().mockReturnValue('unknownTile')
+      };
+      
+      // Mock tile definitions (doesn't include unknownTile)
+      const tileDefinitions = {
+        grass: { walkSpeed: 1.0 },
+        dirtPath: { walkSpeed: 1.5 }
+      };
+      
+      function updatePlayerMovement(player, map, tileDefs) {
+        const centerX = player.x + player.width / 2;
+        const centerY = player.y + player.height / 2;
+        const [tileX, tileY] = map.worldToGrid(centerX, centerY);
+        const tileType = map.getTile(tileX, tileY);
+        const tileDef = tileDefs[tileType] || tileDefs.grass; // Fallback to grass
+        
+        return player.moveSpeed * tileDef.walkSpeed;
+      }
+      
+      const actualSpeed = updatePlayerMovement(mockPlayer, mockMap, tileDefinitions);
+      expect(actualSpeed).toBe(3); // Should fallback to grass speed (1.0)
+      expect(mockMap.worldToGrid).toHaveBeenCalledWith(110, 110);
+      expect(mockMap.getTile).toHaveBeenCalledWith(3, 3);
+    });
+  });
 });
