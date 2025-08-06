@@ -5,13 +5,44 @@ import (
 	"syscall/js"
 )
 
+// Tile represents a terrain tile with properties
+type Tile struct {
+	Walkable  bool
+	WalkSpeed float64
+	Color     string
+	Image     string // Path to image file, empty string means use color
+}
+
 // TileType represents the type of terrain tile
 type TileType int
 
 const (
 	TileGrass TileType = iota
 	TileWater
+	TileDirtPath
 )
+
+// Tile definitions with their properties
+var TileDefinitions = map[TileType]Tile{
+	TileGrass: {
+		Walkable:  true,
+		WalkSpeed: 1.0,
+		Color:     "#90EE90", // Light green
+		Image:     "",
+	},
+	TileWater: {
+		Walkable:  false,
+		WalkSpeed: 0.0,
+		Color:     "#4169E1", // Royal blue
+		Image:     "",
+	},
+	TileDirtPath: {
+		Walkable:  true,
+		WalkSpeed: 1.5, // 50% faster than grass
+		Color:     "#8B4513", // Saddle brown
+		Image:     "",
+	},
+}
 
 // Map represents a grid-based map with tiles
 type Map struct {
@@ -98,6 +129,9 @@ func (m *Map) generateTerrain() {
 	
 	// Add small scattered ponds
 	m.addSmallPonds()
+	
+	// Add dirt paths around the map
+	m.addDirtPaths()
 }
 
 // addRiver creates a winding river between two points
@@ -216,13 +250,15 @@ func (m *Map) Render(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight f
 			screenX := float64(x)*m.TileSize - cameraX
 			screenY := float64(y)*m.TileSize - cameraY
 			
-			// Set color based on tile type
-			switch tileType {
-			case TileGrass:
-				ctx.Set("fillStyle", "#90EE90") // Light green
-			case TileWater:
-				ctx.Set("fillStyle", "#4169E1") // Royal blue
+			// Get tile definition and set color
+			tileDef, exists := TileDefinitions[tileType]
+			if !exists {
+				// Fallback to grass if tile type not found
+				tileDef = TileDefinitions[TileGrass]
 			}
+			
+			// For now, we'll use color (image support can be added later)
+			ctx.Set("fillStyle", tileDef.Color)
 			
 			// Draw the tile
 			ctx.Call("fillRect", screenX, screenY, m.TileSize, m.TileSize)
@@ -242,4 +278,98 @@ func (m *Map) GridToWorld(gridX, gridY int) (float64, float64) {
 	worldX := float64(gridX)*m.TileSize + m.TileSize/2
 	worldY := float64(gridY)*m.TileSize + m.TileSize/2
 	return worldX, worldY
+}
+
+// addDirtPaths creates dirt paths connecting various areas of the map
+func (m *Map) addDirtPaths() {
+	// Create main pathways connecting different areas
+	
+	// Horizontal path across the middle of the map
+	m.addPath(10, m.Height/2, m.Width-10, m.Height/2, 3, false)
+	
+	// Vertical path down the center
+	m.addPath(m.Width/2, 10, m.Width/2, m.Height-10, 3, true)
+	
+	// Diagonal paths for more natural look
+	m.addPath(20, 20, m.Width-20, m.Height-20, 2, false)    // Top-left to bottom-right
+	m.addPath(m.Width-20, 20, 20, m.Height-20, 2, false)    // Top-right to bottom-left
+	
+	// Connecting paths to lakes and important areas
+	m.addPath(40, 30, 80, 120, 2, false)   // Connect top-left lake to central lake area
+	m.addPath(160, 45, 140, 160, 2, false) // Connect top-right lake to bottom-right
+	m.addPath(25, 170, 80, 120, 2, false)  // Connect bottom-left lake to center
+	
+	// Curved paths around the map edges (avoiding water)
+	m.addCurvedPath(5, 5, m.Width-5, 5, 2)      // Top edge path
+	m.addCurvedPath(5, 5, 5, m.Height-5, 2)     // Left edge path
+	m.addCurvedPath(m.Width-5, 5, m.Width-5, m.Height-5, 2) // Right edge path
+	m.addCurvedPath(5, m.Height-5, m.Width-5, m.Height-5, 2) // Bottom edge path
+	
+	// Small connecting paths between main paths
+	m.addPath(m.Width/4, m.Height/4, 3*m.Width/4, m.Height/4, 2, false)
+	m.addPath(m.Width/4, 3*m.Height/4, 3*m.Width/4, 3*m.Height/4, 2, false)
+}
+
+// addPath creates a straight path between two points, avoiding water when possible
+func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
+	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
+	if steps == 0 {
+		return
+	}
+	
+	for step := 0; step <= steps; step++ {
+		// Linear interpolation
+		t := float64(step) / float64(steps)
+		x := int(float64(startX)*(1-t) + float64(endX)*t)
+		y := int(float64(startY)*(1-t) + float64(endY)*t)
+		
+		// Draw path with specified width
+		for dx := -width; dx <= width; dx++ {
+			for dy := -width; dy <= width; dy++ {
+				if dx*dx + dy*dy <= width*width {
+					px, py := x+dx, y+dy
+					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
+						// Only place dirt path on grass (don't overwrite water)
+						if !avoidWater || m.Tiles[py][px] == TileGrass {
+							m.Tiles[py][px] = TileDirtPath
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// addCurvedPath creates a curved path with some randomness for natural appearance
+func (m *Map) addCurvedPath(startX, startY, endX, endY, width int) {
+	steps := int(math.Sqrt(float64((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))))
+	if steps == 0 {
+		return
+	}
+	
+	for step := 0; step <= steps; step++ {
+		// Linear interpolation with sine curve for natural look
+		t := float64(step) / float64(steps)
+		
+		// Add slight curve
+		curve := math.Sin(t*math.Pi*3) * 5
+		
+		x := int(float64(startX)*(1-t) + float64(endX)*t + curve)
+		y := int(float64(startY)*(1-t) + float64(endY)*t)
+		
+		// Draw curved path
+		for dx := -width; dx <= width; dx++ {
+			for dy := -width; dy <= width; dy++ {
+				if dx*dx + dy*dy <= width*width {
+					px, py := x+dx, y+dy
+					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
+						// Only place dirt path on grass (don't overwrite water)
+						if m.Tiles[py][px] == TileGrass {
+							m.Tiles[py][px] = TileDirtPath
+						}
+					}
+				}
+			}
+		}
+	}
 }
