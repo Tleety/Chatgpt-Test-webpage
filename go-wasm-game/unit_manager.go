@@ -205,7 +205,7 @@ func (um *UnitManager) GetTotalUnitCount() int {
 	return count
 }
 
-// RenderUnits draws all units on the screen
-func (um *UnitManager) RenderUnits(ctx js.Value, cameraX, cameraY float64) {
+// Render draws all units on the screen
+func (um *UnitManager) Render(ctx js.Value, cameraX, cameraY float64) {
 	um.renderer.RenderUnits(ctx, um.units, cameraX, cameraY)
 }

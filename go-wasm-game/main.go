@@ -14,6 +14,7 @@ var (
 	bushes       []Bush
 	gameMap      *Map
 	unitManager  *UnitManager
+	environment  *Environment
 	cameraX      float64
 	cameraY      float64
 )
@@ -62,13 +63,13 @@ func draw(this js.Value, args []js.Value) interface{} {
 	gameMap.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 	
 	// Draw environment objects (trees and bushes)
-	renderEnvironment(ctx, trees, bushes, cameraX, cameraY, canvasWidth, canvasHeight)
+	environment.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 	
 	// Draw player
 	player.Draw(ctx, cameraX, cameraY)
 	
 	// Draw units
-	unitManager.RenderUnits(ctx, cameraX, cameraY)
+	unitManager.Render(ctx, cameraX, cameraY)
 	
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
@@ -105,6 +106,7 @@ func main() {
 	player = NewPlayer(centerX, centerY)
 
 	// Initialize environment (trees and bushes positioned in world coordinates)
+	environment = NewEnvironment(gameMap)
 	trees, bushes = initializeEnvironment(gameMap)
 
 	// Initialize event handlers and JavaScript interface

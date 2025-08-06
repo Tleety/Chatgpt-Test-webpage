@@ -19,6 +19,12 @@ type Bush struct {
 	radius float64
 }
 
+// Environment manages and renders all environmental objects
+type Environment struct {
+	trees  []Tree
+	bushes []Bush
+}
+
 // drawTreeAt renders a tree at screen coordinates
 func drawTreeAt(ctx js.Value, tree Tree) {
 	// Draw trunk
@@ -50,8 +56,8 @@ func drawBush(ctx js.Value, bush Bush) {
 	drawBushAt(ctx, bush)
 }
 
-// initializeEnvironment creates trees and bushes in world coordinates
-func initializeEnvironment(gameMap *Map) ([]Tree, []Bush) {
+// NewEnvironment creates a new environment with trees and bushes
+func NewEnvironment(gameMap *Map) *Environment {
 	var trees []Tree
 	var bushes []Bush
 	
@@ -119,13 +125,16 @@ func initializeEnvironment(gameMap *Map) ([]Tree, []Bush) {
 		})
 	}
 
-	return trees, bushes
+	return &Environment{
+		trees:  trees,
+		bushes: bushes,
+	}
 }
 
-// renderEnvironment draws all trees and bushes relative to camera
-func renderEnvironment(ctx js.Value, trees []Tree, bushes []Bush, cameraX, cameraY, canvasWidth, canvasHeight float64) {
+// Render draws all trees and bushes relative to camera
+func (e *Environment) Render(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
 	// Draw environment objects (trees and bushes) relative to camera
-	for _, tree := range trees {
+	for _, tree := range e.trees {
 		screenX := tree.x - cameraX
 		screenY := tree.y - cameraY
 		
@@ -134,7 +143,7 @@ func renderEnvironment(ctx js.Value, trees []Tree, bushes []Bush, cameraX, camer
 			drawTreeAt(ctx, Tree{x: screenX, y: screenY, trunkWidth: tree.trunkWidth, trunkHeight: tree.trunkHeight, canopyRadius: tree.canopyRadius})
 		}
 	}
-	for _, bush := range bushes {
+	for _, bush := range e.bushes {
 		screenX := bush.x - cameraX
 		screenY := bush.y - cameraY
 		
@@ -143,4 +152,16 @@ func renderEnvironment(ctx js.Value, trees []Tree, bushes []Bush, cameraX, camer
 			drawBushAt(ctx, Bush{x: screenX, y: screenY, radius: bush.radius})
 		}
 	}
+}
+
+// initializeEnvironment creates trees and bushes in world coordinates (legacy function, kept for compatibility)
+func initializeEnvironment(gameMap *Map) ([]Tree, []Bush) {
+	env := NewEnvironment(gameMap)
+	return env.trees, env.bushes
+}
+
+// renderEnvironment draws all trees and bushes relative to camera (legacy function, kept for compatibility)
+func renderEnvironment(ctx js.Value, trees []Tree, bushes []Bush, cameraX, cameraY, canvasWidth, canvasHeight float64) {
+	env := &Environment{trees: trees, bushes: bushes}
+	env.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 }
