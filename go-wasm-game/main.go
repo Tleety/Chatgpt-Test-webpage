@@ -176,9 +176,15 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	
-	// Draw map first (background)
-	gameMap.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+	// Use the new layer system to render everything
+	gameMap.RenderWithLayers(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 	
+	js.Global().Call("requestAnimationFrame", drawFunc)
+	return nil
+}
+
+// renderObjectsLayer renders trees and bushes (environment objects)
+func renderObjectsLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
 	// Draw environment objects (trees and bushes) relative to camera
 	for _, tree := range trees {
 		screenX := tree.x - cameraX
@@ -198,12 +204,21 @@ func draw(this js.Value, args []js.Value) interface{} {
 			drawBushAt(Bush{x: screenX, y: screenY, radius: bush.radius})
 		}
 	}
-	
+}
+
+// renderPlayerLayer renders the player
+func renderPlayerLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
 	// Draw player
 	player.Draw(ctx, cameraX, cameraY)
+}
+
+// initializeGameLayers sets up all game layers after game objects are created
+func initializeGameLayers() {
+	// Add objects layer (priority 10 - foreground)
+	gameMap.Layers.AddLayer("objects", 10, true, renderObjectsLayer)
 	
-	js.Global().Call("requestAnimationFrame", drawFunc)
-	return nil
+	// Add player layer (priority 20 - top layer)
+	gameMap.Layers.AddLayer("player", 20, true, renderPlayerLayer)
 }
 
 func recenterSquare(this js.Value, args []js.Value) interface{} {
@@ -275,6 +290,9 @@ func main() {
 
 	// Initialize environment (trees and bushes positioned in world coordinates)
 	initializeEnvironment()
+
+	// Initialize game layers now that all objects are created
+	initializeGameLayers()
 
 	// Add event listeners - only mouse click, no keyboard
 	canvas.Call("addEventListener", "click", js.FuncOf(click))
