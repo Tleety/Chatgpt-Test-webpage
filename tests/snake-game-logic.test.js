@@ -392,7 +392,7 @@ describe('SnakeGameLogic', () => {
     });
 
     describe('experience integration with game mechanics', () => {
-      test('should award experience when eating food based on current level', () => {
+      test('should award experience when eating food', () => {
         // Clear experience first
         game.clearExperience();
         
@@ -402,14 +402,13 @@ describe('SnakeGameLogic', () => {
         game.food = { x: headX + 20, y: headY };
         
         const initialExp = game.getExperience();
-        const currentLevel = game.getLevel();
         const result = game.moveSnake();
         
         expect(result.ateFood).toBe(true);
-        expect(game.getExperience()).toBe(initialExp + currentLevel);
+        expect(game.getExperience()).toBe(initialExp + 1); // Should always gain 1 exp per food
       });
 
-      test('should award exponentially more experience at higher levels', () => {
+      test('should award consistent experience regardless of level', () => {
         // Test experience gain at level 1 (should get 1 exp)
         game.clearExperience();
         expect(game.getLevel()).toBe(1);
@@ -434,7 +433,7 @@ describe('SnakeGameLogic', () => {
         
         const expBefore = game.getExperience();
         game.moveSnake();
-        expect(game.getExperience()).toBe(expBefore + 2); // Level 2 = 2 exp per food
+        expect(game.getExperience()).toBe(expBefore + 1); // Level 2 = 1 exp per food (consistent)
         
         // Test level 3
         game.clearExperience();
@@ -448,7 +447,7 @@ describe('SnakeGameLogic', () => {
         
         const exp3Before = game.getExperience();
         game.moveSnake();
-        expect(game.getExperience()).toBe(exp3Before + 3); // Level 3 = 3 exp per food
+        expect(game.getExperience()).toBe(exp3Before + 1); // Level 3 = 1 exp per food (consistent)
       });
 
       test('should not award experience when not eating food', () => {
