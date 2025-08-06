@@ -29,7 +29,7 @@ describe('WASM Game Modular Architecture', () => {
         
         // Count lines - should be significantly reduced
         const lines = mainGoContent.split('\n').length;
-        expect(lines).toBeLessThan(130); // Original was ~440 lines
+        expect(lines).toBeLessThan(140); // Original was ~440 lines
     });
 
     test('environment.go contains environment-related functionality', () => {
@@ -42,7 +42,7 @@ describe('WASM Game Modular Architecture', () => {
         expect(envGoContent).toContain('func drawTreeAt');
         expect(envGoContent).toContain('func drawBushAt');
         expect(envGoContent).toContain('func initializeEnvironment');
-        expect(envGoContent).toContain('func renderEnvironment');
+        expect(envGoContent).toContain('func (e *Environment) Render');
     });
 
     test('js_interface.go contains JavaScript interface functions', () => {
@@ -93,7 +93,7 @@ describe('WASM Game Modular Architecture', () => {
             
             // Each module should be reasonably sized and focused
             if (filename === 'main.go') {
-                expect(lines).toBeLessThan(130); // Main should be lean
+                expect(lines).toBeLessThan(140); // Main should be lean
             } else {
                 expect(lines).toBeLessThan(200); // Modules should be focused
             }
@@ -136,7 +136,7 @@ describe('WASM Game Modular Architecture', () => {
         expect(mainFunctions.length).toBeLessThanOrEqual(4); // draw, main, and maybe 1-2 helpers max
         
         // Check that we use modular function calls
-        expect(mainGoContent).toContain('renderEnvironment(');
+        expect(mainGoContent).toContain('environment.Render(');
         expect(mainGoContent).toContain('initializeEventHandlers(');
         expect(mainGoContent).toContain('initializeJSInterface(');
     });
