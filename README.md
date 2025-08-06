@@ -86,9 +86,12 @@ See [TESTING.md](TESTING.md) for detailed information about the test suite.
 
 This repository includes automated testing and deployment via GitHub Actions:
 
-- **All pull requests** must pass unit tests before merging
+- **All pull requests** must pass unit tests before merging via the "PR Tests Required" status check
 - **Main branch pushes** trigger full build and deployment to GitHub Pages
 - **Test failures** prevent deployment and require fixes before merge
+
+⚠️ **Important**: To enforce test requirements, branch protection rules must be configured in repository settings.
+See [Branch Protection Setup Guide](.github/BRANCH_PROTECTION.md) for complete instructions.
 
 See [CI/CD Setup Instructions](.github/CI_SETUP.md) for configuration details.
 

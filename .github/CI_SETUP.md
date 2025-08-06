@@ -8,8 +8,8 @@ Navigate to: **Settings > Branches > Add rule** for the `main` branch
 
 ### Required Status Checks
 Enable the following required status checks:
-- `Unit Tests` (from the "Test Suite" workflow)
-- `Run Tests` (from the "CI/CD Pipeline" workflow)
+- `PR Tests Required` (from the "PR Validation" workflow) - **CRITICAL FOR MERGE PROTECTION**
+- `Unit Tests` (from the "CI/CD Pipeline" workflow)
 
 ### Recommended Settings
 - ✅ **Require status checks to pass before merging**
@@ -25,13 +25,14 @@ Enable the following required status checks:
 
 ## Workflows Included
 
-### 1. Test Suite (`test.yml`)
-- **Purpose**: Focused on running unit tests quickly
-- **Triggers**: Push to main, Pull requests to main
+### 1. PR Validation (`pr-validation.yml`) - **PRIMARY MERGE PROTECTION**
+- **Purpose**: Enforce unit test requirements for all pull requests
+- **Triggers**: Pull request events (opened, updated, reopened)
 - **Actions**: 
   - Installs dependencies with `npm ci`
-  - Runs `npm test` with verbose output
-  - Generates coverage reports
+  - Runs `npm test` with strict validation
+  - Creates "PR Tests Required" status check that **MUST PASS** for merging
+  - Generates test summary and validation report
 
 ### 2. CI/CD Pipeline (`ci.yml`)
 - **Purpose**: Complete build, test, and deployment pipeline
@@ -44,21 +45,37 @@ Enable the following required status checks:
 ## Testing Coverage
 
 Current test coverage includes:
-- **Snake Game Logic** (17 tests): Game mechanics, collision detection, state management
+- **Snake Game Logic** (37 tests): Game mechanics, collision detection, state management
 - **Snake Game UI** (4 tests): UI interactions and keyboard handling  
 - **Todo List Logic** (37 tests): Task management, data persistence, input validation
 - **Top Bar Component** (8 tests): Navigation and UI consistency
+- **WASM Game Collision** (26 tests): Collision detection and movement in WebAssembly game
+- **Deployment Info** (20 tests): CI/CD integration and deployment information generation
+- **Version Update** (26 tests): Version management and update system
 
-**Total: 66 tests across 4 test suites**
+**Total: 158 tests across 7 test suites** - **ALL MUST PASS FOR PR MERGE**
 
 ## Benefits
 
 With these workflows and branch protection rules:
-1. **No broken code in main**: All tests must pass before merge
-2. **Automated deployment**: Successful builds automatically deploy to GitHub Pages
-3. **Build validation**: All project components (JS, Go WASM, Jekyll) are built and validated
-4. **Fast feedback**: Test failures are caught early in pull requests
-5. **Coverage tracking**: Test coverage information is available in CI logs
+1. **Guaranteed test validation**: The "PR Tests Required" status check prevents merging PRs with failing tests
+2. **No broken code in main**: All 158 tests must pass before merge
+3. **Automated deployment**: Successful builds automatically deploy to GitHub Pages
+4. **Build validation**: All project components (JS, Go WASM, Jekyll) are built and validated
+5. **Fast feedback**: Test failures are caught early in pull requests
+6. **Coverage tracking**: Test coverage information is available in CI logs
+
+## Critical Setup Required
+
+⚠️ **IMPORTANT**: To enforce test requirements, the repository administrator must configure branch protection rules in GitHub settings:
+
+1. Go to **Settings > Branches**
+2. Add a rule for the `main` branch
+3. Enable **"Require status checks to pass before merging"**
+4. Select the **"PR Tests Required"** status check as required
+5. Optionally require **"Unit Tests"** from the CI/CD pipeline as well
+
+**Without these branch protection rules, PRs can still be merged even if tests fail.**
 
 ## Local Development
 
