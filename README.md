@@ -58,10 +58,12 @@ npm test -- --coverage
 - **Snake Game UI**: Tests for user interface interactions and keyboard handling
 - **Top Bar Component**: Tests for navigation and UI consistency
 - **WASM Game Collision**: Tests for collision detection and smart movement in the WebAssembly game
+- **WASM Game Pathfinding**: Tests for lake navigation and pathfinding algorithm accuracy
 - **Deployment Info**: Tests for CI/CD integration and deployment information generation
 - **Version Update**: Tests for version management and update system
+- **WASM Game Refactoring**: Tests for code organization and module structure
 
-**Total: 158 tests across 7 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 179 tests across 9 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 

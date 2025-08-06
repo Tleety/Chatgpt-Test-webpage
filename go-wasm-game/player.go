@@ -58,6 +58,12 @@ func (p *Player) Update(gameMap *Map) {
 				worldX, worldY := gameMap.GridToWorld(stepX, stepY)
 				p.TargetX = worldX - p.Width/2
 				p.TargetY = worldY - p.Height/2
+			} else {
+				// No next step available, stop movement to prevent getting stuck
+				p.IsMoving = false
+				p.Path = nil
+				p.PathStep = 0
+				return
 			}
 		}
 		
@@ -71,7 +77,9 @@ func (p *Player) isMovingToTarget() bool {
 	dx := p.TargetX - p.X
 	dy := p.TargetY - p.Y
 	distance := math.Sqrt(dx*dx + dy*dy)
-	return distance >= p.MoveSpeed
+	// Use a small threshold to prevent floating point precision issues
+	const precisionThreshold = 0.5
+	return distance >= math.Max(p.MoveSpeed, precisionThreshold)
 }
 
 // moveTowardTargetWithTileSpeed moves the player toward the current target position with tile-based speed
@@ -79,6 +87,14 @@ func (p *Player) moveTowardTargetWithTileSpeed(gameMap *Map) {
 	dx := p.TargetX - p.X
 	dy := p.TargetY - p.Y
 	distance := math.Sqrt(dx*dx + dy*dy)
+	
+	// If we're very close to the target, snap to it to prevent floating point issues
+	const snapThreshold = 1.0
+	if distance <= snapThreshold {
+		p.X = p.TargetX
+		p.Y = p.TargetY
+		return
+	}
 	
 	// Get current tile and apply speed multiplier
 	currentTileX, currentTileY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
@@ -122,6 +138,21 @@ func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
 	if path == nil || len(path) == 0 {
 		// No path found, don't move
 		return
+	}
+	
+	// Ensure the destination is walkable - if not, find nearest walkable tile
+	endTileType := gameMap.GetTile(tileX, tileY)
+	tileDef, exists := TileDefinitions[endTileType]
+	if !exists || !tileDef.Walkable {
+		// Find nearest walkable tile
+		adjustedX, adjustedY := FindNearestWalkableTile(tileX, tileY, gameMap)
+		if adjustedX != tileX || adjustedY != tileY {
+			// Recalculate path to the adjusted destination
+			path = FindPath(currentX, currentY, adjustedX, adjustedY, gameMap)
+			if path == nil || len(path) == 0 {
+				return
+			}
+		}
 	}
 	
 	// Set up pathfinding movement

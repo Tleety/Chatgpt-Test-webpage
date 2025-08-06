@@ -59,18 +59,24 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	
-	// Draw map first (background)
-	gameMap.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
-	
+	// Use the new layer system to render everything
+	gameMap.RenderWithLayers(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+
 	// Draw environment objects (trees and bushes)
 	environment.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
 	
 	// Draw player
 	player.Draw(ctx, cameraX, cameraY)
+}
+
+// initializeGameLayers sets up all game layers after game objects are created
+func initializeGameLayers() {
+	// Add objects layer (priority 10 - foreground)
+	gameMap.Layers.AddLayer("objects", 10, true, renderObjectsLayer)
 	
 	// Draw units
 	unitManager.Render(ctx, cameraX, cameraY)
-	
+  
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
 }
@@ -104,10 +110,10 @@ func main() {
 	centerX := (mapWorldWidth - 20) / 2
 	centerY := (mapWorldHeight - 20) / 2
 	player = NewPlayer(centerX, centerY)
-
-	// Initialize environment (trees and bushes positioned in world coordinates)
+  
 	environment = NewEnvironment(gameMap)
 	trees, bushes = initializeEnvironment(gameMap)
+
 
 	// Initialize event handlers and JavaScript interface
 	initializeEventHandlers(canvas)
