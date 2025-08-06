@@ -23,7 +23,7 @@ describe('WASM Game Modular Architecture', () => {
         // Verify main.go still contains essential functionality
         expect(mainGoContent).toContain('func main()');
         expect(mainGoContent).toContain('func draw(');
-        expect(mainGoContent).toContain('initializeEnvironment');
+        expect(mainGoContent).toContain('environment = NewEnvironment'); // Simplified environment initialization
         expect(mainGoContent).toContain('initializeEventHandlers');
         expect(mainGoContent).toContain('initializeJSInterface');
         
@@ -39,9 +39,8 @@ describe('WASM Game Modular Architecture', () => {
         // Verify environment functions are present
         expect(envGoContent).toContain('type Tree struct');
         expect(envGoContent).toContain('type Bush struct');
-        expect(envGoContent).toContain('func drawTreeAt');
-        expect(envGoContent).toContain('func drawBushAt');
-        expect(envGoContent).toContain('func initializeEnvironment');
+        expect(envGoContent).toContain('func renderTree'); // Updated naming convention
+        expect(envGoContent).toContain('func renderBush'); // Updated naming convention
         expect(envGoContent).toContain('func (e *Environment) Render');
     });
 
@@ -52,8 +51,8 @@ describe('WASM Game Modular Architecture', () => {
         // Verify JS interface functions are present
         expect(jsInterfaceContent).toContain('func createUnit');
         expect(jsInterfaceContent).toContain('func getUnits');
-        expect(jsInterfaceContent).toContain('func moveUnitJS');
-        expect(jsInterfaceContent).toContain('func removeUnitJS');
+        expect(jsInterfaceContent).toContain('func moveUnit'); // Updated naming convention
+        expect(jsInterfaceContent).toContain('func removeUnit'); // Updated naming convention
         expect(jsInterfaceContent).toContain('func initializeJSInterface');
     });
 

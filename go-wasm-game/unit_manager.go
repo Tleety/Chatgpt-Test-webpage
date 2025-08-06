@@ -30,21 +30,9 @@ func NewUnitManager(gameMap *Map) *UnitManager {
 
 // CreateUnit creates a new unit at the specified tile coordinates
 func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name string) (*Unit, error) {
-	// Validate tile coordinates
-	if tileX < 0 || tileX >= um.gameMap.Width || tileY < 0 || tileY >= um.gameMap.Height {
-		return nil, fmt.Errorf("tile coordinates out of bounds: (%d, %d)", tileX, tileY)
-	}
-
-	// Check if tile is walkable
-	tileType := um.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := TileDefinitions[tileType]
-	if !exists || !tileDef.Walkable {
-		return nil, fmt.Errorf("cannot place unit on non-walkable tile at (%d, %d)", tileX, tileY)
-	}
-
-	// Check if tile is already occupied
-	if um.spatialIndex.IsPositionOccupied(tileX, tileY) {
-		return nil, fmt.Errorf("tile already occupied at (%d, %d)", tileX, tileY)
+	// Validate position
+	if err := um.validatePosition(tileX, tileY); err != nil {
+		return nil, err
 	}
 
 	// Get unit type definition
@@ -61,7 +49,7 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 		name = fmt.Sprintf("%s #%d", typeDef.Name, um.nextUnitID-1)
 	}
 
-	// Create unit instance
+	// Create and register unit
 	unit := &Unit{
 		ID:           unitID,
 		TypeID:       unitType,
@@ -78,11 +66,32 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 		LastMoved:    time.Now(),
 	}
 
-	// Add unit to collections
 	um.units[unitID] = unit
 	um.spatialIndex.AddUnit(unit)
 
 	return unit, nil
+}
+
+// validatePosition checks if a position is valid for unit placement
+func (um *UnitManager) validatePosition(tileX, tileY int) error {
+	// Check bounds
+	if tileX < 0 || tileX >= um.gameMap.Width || tileY < 0 || tileY >= um.gameMap.Height {
+		return fmt.Errorf("tile coordinates out of bounds: (%d, %d)", tileX, tileY)
+	}
+
+	// Check walkability
+	tileType := um.gameMap.GetTile(tileX, tileY)
+	tileDef, exists := TileDefinitions[tileType]
+	if !exists || !tileDef.Walkable {
+		return fmt.Errorf("cannot place unit on non-walkable tile at (%d, %d)", tileX, tileY)
+	}
+
+	// Check occupation
+	if um.spatialIndex.IsPositionOccupied(tileX, tileY) {
+		return fmt.Errorf("tile already occupied at (%d, %d)", tileX, tileY)
+	}
+
+	return nil
 }
 
 // GetUnit retrieves a unit by ID
@@ -120,24 +129,17 @@ func (um *UnitManager) MoveUnit(unitID string, tileX, tileY int) error {
 		return fmt.Errorf("cannot move dead unit: %s", unitID)
 	}
 
-	// Validate new tile coordinates
-	if tileX < 0 || tileX >= um.gameMap.Width || tileY < 0 || tileY >= um.gameMap.Height {
-		return fmt.Errorf("tile coordinates out of bounds: (%d, %d)", tileX, tileY)
+	// Skip validation if moving to same position
+	if unit.TileX == tileX && unit.TileY == tileY {
+		return nil
 	}
 
-	// Check if new tile is walkable
-	tileType := um.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := TileDefinitions[tileType]
-	if !exists || !tileDef.Walkable {
-		return fmt.Errorf("cannot move unit to non-walkable tile at (%d, %d)", tileX, tileY)
+	// Validate new position
+	if err := um.validatePosition(tileX, tileY); err != nil {
+		return err
 	}
 
-	// Check if new tile is already occupied (unless it's the same position)
-	if !(unit.TileX == tileX && unit.TileY == tileY) && um.spatialIndex.IsPositionOccupied(tileX, tileY) {
-		return fmt.Errorf("destination tile already occupied at (%d, %d)", tileX, tileY)
-	}
-
-	// Update position in spatial index
+	// Update position
 	oldX, oldY := unit.TileX, unit.TileY
 	um.spatialIndex.UpdateUnitPosition(unit, oldX, oldY, tileX, tileY)
 	unit.LastMoved = time.Now()

@@ -10,8 +10,6 @@ var (
 	player       *Player
 	canvasWidth  float64
 	canvasHeight float64
-	trees        []Tree
-	bushes       []Bush
 	gameMap      *Map
 	unitManager  *UnitManager
 	environment  *Environment
@@ -117,7 +115,6 @@ func main() {
 	player = NewPlayer(centerX, centerY)
   
 	environment = NewEnvironment(gameMap)
-	trees, bushes = initializeEnvironment(gameMap)
 
 	// Initialize game layers
 	initializeGameLayers()

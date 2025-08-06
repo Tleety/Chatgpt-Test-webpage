@@ -19,20 +19,20 @@ func NewUnitRenderer(gameMap *Map) *UnitRenderer {
 }
 
 // RenderUnits draws all units on the screen
-func (ur *UnitRenderer) RenderUnits(ctx js.Value, units map[string]*Unit, cameraX, cameraY float64) {
+func (renderer *UnitRenderer) RenderUnits(ctx js.Value, units map[string]*Unit, cameraX, cameraY float64) {
 	for _, unit := range units {
 		if !unit.IsAlive {
 			continue
 		}
 
-		ur.renderUnit(ctx, unit, cameraX, cameraY)
+		renderer.renderUnit(ctx, unit, cameraX, cameraY)
 	}
 }
 
 // renderUnit draws a single unit
-func (ur *UnitRenderer) renderUnit(ctx js.Value, unit *Unit, cameraX, cameraY float64) {
+func (renderer *UnitRenderer) renderUnit(ctx js.Value, unit *Unit, cameraX, cameraY float64) {
 	// Convert tile coordinates to world coordinates
-	worldX, worldY := ur.gameMap.GridToWorld(unit.TileX, unit.TileY)
+	worldX, worldY := renderer.gameMap.GridToWorld(unit.TileX, unit.TileY)
 	
 	// Calculate screen position
 	screenX := worldX - cameraX
@@ -68,12 +68,12 @@ func (ur *UnitRenderer) renderUnit(ctx js.Value, unit *Unit, cameraX, cameraY fl
 
 	// Draw health bar if damaged
 	if unit.CurrentStats.Health < unit.MaxStats.Health {
-		ur.renderHealthBar(ctx, unit, screenX, screenY, radius)
+		renderer.renderHealthBar(ctx, unit, screenX, screenY, radius)
 	}
 }
 
 // renderHealthBar draws a health bar above the unit
-func (ur *UnitRenderer) renderHealthBar(ctx js.Value, unit *Unit, screenX, screenY, radius float64) {
+func (renderer *UnitRenderer) renderHealthBar(ctx js.Value, unit *Unit, screenX, screenY, radius float64) {
 	barWidth := radius * 2
 	barHeight := 4.0
 	barY := screenY - radius - 8
