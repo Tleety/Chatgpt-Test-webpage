@@ -283,31 +283,32 @@ func (m *Map) GridToWorld(gridX, gridY int) (float64, float64) {
 // addDirtPaths creates dirt paths connecting various areas of the map
 func (m *Map) addDirtPaths() {
 	// Create main pathways connecting different areas
+	// Using width 0-1 for 1-2 tile wide paths and always avoiding water
 	
 	// Horizontal path across the middle of the map
-	m.addPath(10, m.Height/2, m.Width-10, m.Height/2, 3, false)
+	m.addPath(10, m.Height/2, m.Width-10, m.Height/2, 1, true)
 	
 	// Vertical path down the center
-	m.addPath(m.Width/2, 10, m.Width/2, m.Height-10, 3, true)
+	m.addPath(m.Width/2, 10, m.Width/2, m.Height-10, 1, true)
 	
 	// Diagonal paths for more natural look
-	m.addPath(20, 20, m.Width-20, m.Height-20, 2, false)    // Top-left to bottom-right
-	m.addPath(m.Width-20, 20, 20, m.Height-20, 2, false)    // Top-right to bottom-left
+	m.addPath(20, 20, m.Width-20, m.Height-20, 1, true)    // Top-left to bottom-right
+	m.addPath(m.Width-20, 20, 20, m.Height-20, 1, true)    // Top-right to bottom-left
 	
 	// Connecting paths to lakes and important areas
-	m.addPath(40, 30, 80, 120, 2, false)   // Connect top-left lake to central lake area
-	m.addPath(160, 45, 140, 160, 2, false) // Connect top-right lake to bottom-right
-	m.addPath(25, 170, 80, 120, 2, false)  // Connect bottom-left lake to center
+	m.addPath(40, 30, 80, 120, 0, true)   // Connect top-left lake to central lake area
+	m.addPath(160, 45, 140, 160, 0, true) // Connect top-right lake to bottom-right
+	m.addPath(25, 170, 80, 120, 0, true)  // Connect bottom-left lake to center
 	
 	// Curved paths around the map edges (avoiding water)
-	m.addCurvedPath(5, 5, m.Width-5, 5, 2)      // Top edge path
-	m.addCurvedPath(5, 5, 5, m.Height-5, 2)     // Left edge path
-	m.addCurvedPath(m.Width-5, 5, m.Width-5, m.Height-5, 2) // Right edge path
-	m.addCurvedPath(5, m.Height-5, m.Width-5, m.Height-5, 2) // Bottom edge path
+	m.addCurvedPath(5, 5, m.Width-5, 5, 1)      // Top edge path
+	m.addCurvedPath(5, 5, 5, m.Height-5, 1)     // Left edge path
+	m.addCurvedPath(m.Width-5, 5, m.Width-5, m.Height-5, 1) // Right edge path
+	m.addCurvedPath(5, m.Height-5, m.Width-5, m.Height-5, 1) // Bottom edge path
 	
 	// Small connecting paths between main paths
-	m.addPath(m.Width/4, m.Height/4, 3*m.Width/4, m.Height/4, 2, false)
-	m.addPath(m.Width/4, 3*m.Height/4, 3*m.Width/4, 3*m.Height/4, 2, false)
+	m.addPath(m.Width/4, m.Height/4, 3*m.Width/4, m.Height/4, 0, true)
+	m.addPath(m.Width/4, 3*m.Height/4, 3*m.Width/4, 3*m.Height/4, 0, true)
 }
 
 // addPath creates a straight path between two points, avoiding water when possible
@@ -330,7 +331,7 @@ func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
 					px, py := x+dx, y+dy
 					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
 						// Only place dirt path on grass (don't overwrite water)
-						if !avoidWater || m.Tiles[py][px] == TileGrass {
+						if m.Tiles[py][px] == TileGrass {
 							m.Tiles[py][px] = TileDirtPath
 						}
 					}
