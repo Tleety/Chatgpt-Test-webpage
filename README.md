@@ -24,11 +24,11 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    Requires a Ruby environment with Jekyll installed.
 
-3. **Run the Phaser demo**
+3. **Run the Snake Game**
    ```
-   open phaser-game/index.html
+   open snake-game/index.html
    ```
-   It loads Phaser from a CDN, so no build step is necessary.
+   The snake game is implemented with HTML5 canvas, so no build step is necessary.
 
 4. **Build the Go WASM demo**
    ```
