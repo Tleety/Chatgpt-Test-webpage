@@ -153,13 +153,18 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 				continue
 			}
 			
-			// Calculate movement cost (diagonal moves cost more)
-			moveCost := 1.0
+			// Calculate movement cost (diagonal moves cost more + terrain cost)
+			baseCost := 1.0
 			if dir.dx != 0 && dir.dy != 0 {
-				moveCost = 1.414 // sqrt(2) for diagonal movement
+				baseCost = 1.414 // sqrt(2) for diagonal movement
 			}
 			
-			tentativeGCost := current.GCost + moveCost
+			// Factor in terrain movement cost (slower terrain = higher pathfinding cost)
+			// This encourages pathfinding through faster terrain when available
+			tileDef := TileDefinitions[neighborTile]
+			terrainCost := baseCost / tileDef.WalkSpeed // Invert speed to get cost
+			
+			tentativeGCost := current.GCost + terrainCost
 			
 			// Check if we found a better path to this neighbor
 			neighbor, exists := allNodes[neighborKey]
