@@ -11,10 +11,16 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 		{x + width, y + height},          // Bottom-right
 	}
 	
-	// Check if any corner of the player would be on a water tile
+	// Check if any corner of the player would be on a non-walkable tile
 	for _, corner := range corners {
 		tileX, tileY := gameMap.WorldToGrid(corner.px, corner.py)
-		if gameMap.GetTile(tileX, tileY) == TileWater {
+		tileType := gameMap.GetTile(tileX, tileY)
+		tileDef, exists := TileDefinitions[tileType]
+		if !exists {
+			// If tile definition not found, assume it's walkable (fallback to grass)
+			tileDef = TileDefinitions[TileGrass]
+		}
+		if !tileDef.Walkable {
 			return false
 		}
 	}
@@ -26,7 +32,13 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 // This is used when the player clicks on water - we find the nearest grass tile
 func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 	// If the target tile is already walkable, return it
-	if gameMap.GetTile(targetX, targetY) != TileWater {
+	tileType := gameMap.GetTile(targetX, targetY)
+	tileDef, exists := TileDefinitions[tileType]
+	if !exists {
+		// If tile definition not found, assume it's walkable (fallback to grass)
+		tileDef = TileDefinitions[TileGrass]
+	}
+	if tileDef.Walkable {
 		return targetX, targetY
 	}
 	
@@ -47,9 +59,16 @@ func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 				
 				// Check if this tile is within map bounds and walkable
 				if checkX >= 0 && checkX < gameMap.Width && 
-				   checkY >= 0 && checkY < gameMap.Height &&
-				   gameMap.GetTile(checkX, checkY) != TileWater {
-					return checkX, checkY
+				   checkY >= 0 && checkY < gameMap.Height {
+					tileType := gameMap.GetTile(checkX, checkY)
+					tileDef, exists := TileDefinitions[tileType]
+					if !exists {
+						// If tile definition not found, assume it's walkable (fallback to grass)
+						tileDef = TileDefinitions[TileGrass]
+					}
+					if tileDef.Walkable {
+						return checkX, checkY
+					}
 				}
 			}
 		}
