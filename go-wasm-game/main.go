@@ -143,7 +143,7 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
 	
-	// Update player (handles movement animations)
+	// Update player (handles movement animations with pathfinding and tile-based speed)
 	player.Update(gameMap)
 	
 	// Keep player within world bounds (map bounds)
