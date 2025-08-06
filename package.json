@@ -10,9 +10,9 @@
     "generate-deployment-info": "node scripts/generate-deployment-info.js"
   },
   "devDependencies": {
-    "jest": "^29.0.0",
     "@jest/globals": "^29.0.0",
-    "jest-environment-jsdom": "^29.0.0"
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "jsdom",

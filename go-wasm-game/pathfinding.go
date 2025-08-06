@@ -235,6 +235,7 @@ func PathLength(path Path) int {
 	return len(path)
 }
 
+
 // absInt returns the absolute value of an integer (moved here for pathfinding-specific use)
 func absInt(x int) int {
 	if x < 0 {

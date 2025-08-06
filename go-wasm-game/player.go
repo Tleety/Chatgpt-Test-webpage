@@ -103,8 +103,6 @@ func (p *Player) moveTowardTargetWithTileSpeed(gameMap *Map) {
 	}
 }
 
-
-
 // MoveToTile initiates pathfinding-based movement to a specific tile
 func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
 	// Get current player position in grid coordinates
