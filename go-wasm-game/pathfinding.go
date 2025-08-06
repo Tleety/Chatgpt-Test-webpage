@@ -88,7 +88,8 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	closedSet := make(map[int]bool)
 	
 	// Add search limit to prevent infinite loops in extreme cases
-	const maxSearchIterations = 10000
+	// Increased limit to handle larger rivers and complex terrain
+	const maxSearchIterations = 50000
 	searchIterations := 0
 	
 	// Helper function to get unique key for coordinates
@@ -193,8 +194,9 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 		}
 	}
 	
-	// No path found, return direct path to destination as fallback
-	return Path{{X: endX, Y: endY}}
+	// No path found - return nil to indicate no valid path exists
+	// This prevents the player from getting stuck trying to follow an impossible path
+	return nil
 }
 
 // heuristic calculates the Euclidean distance heuristic for A*
