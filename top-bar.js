@@ -18,39 +18,7 @@ async function getVersion() {
   const repoName = 'Chatgpt-Test-webpage';
   
   try {
-    // First try to get the latest release from GitHub API
-    const releaseResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
-    if (releaseResponse.ok) {
-      const releaseData = await releaseResponse.json();
-      if (releaseData.tag_name) {
-        cachedVersion = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
-        return cachedVersion;
-      }
-    } else if (releaseResponse.status === 404) {
-      // Repository has no releases yet, this is expected - don't log as error
-      console.debug('No releases found for repository (this is normal for new repositories)');
-    }
-  } catch (error) {
-    console.warn('Could not load version from GitHub releases:', error);
-  }
-  
-  try {
-    // If no releases, try to get latest commit info
-    const commitResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits/main`);
-    if (commitResponse.ok) {
-      const commitData = await commitResponse.json();
-      if (commitData.sha) {
-        const shortSha = commitData.sha.substring(0, 7);
-        cachedVersion = `commit-${shortSha}`;
-        return cachedVersion;
-      }
-    }
-  } catch (error) {
-    console.warn('Could not load version from GitHub commits:', error);
-  }
-  
-  try {
-    // Fallback: try local deployment.json if it exists (for local development)
+    // First try local deployment.json which contains the deployed version info
     const possiblePaths = [
       'deployment.json',
       '../deployment.json', 
@@ -74,6 +42,38 @@ async function getVersion() {
     }
   } catch (error) {
     console.warn('Could not load version from deployment.json:', error);
+  }
+  
+  try {
+    // Fallback: try to get the latest release from GitHub API
+    const releaseResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+    if (releaseResponse.ok) {
+      const releaseData = await releaseResponse.json();
+      if (releaseData.tag_name) {
+        cachedVersion = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
+        return cachedVersion;
+      }
+    } else if (releaseResponse.status === 404) {
+      // Repository has no releases yet, this is expected - don't log as error
+      console.debug('No releases found for repository (this is normal for new repositories)');
+    }
+  } catch (error) {
+    console.warn('Could not load version from GitHub releases:', error);
+  }
+  
+  try {
+    // If no releases, try to get latest commit info as final API fallback
+    const commitResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits/main`);
+    if (commitResponse.ok) {
+      const commitData = await commitResponse.json();
+      if (commitData.sha) {
+        const shortSha = commitData.sha.substring(0, 7);
+        cachedVersion = `commit-${shortSha}`;
+        return cachedVersion;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load version from GitHub commits:', error);
   }
   
   // Final fallback to default version
