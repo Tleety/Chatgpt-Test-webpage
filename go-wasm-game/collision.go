@@ -1,5 +1,7 @@
 package main
 
+import "math"
+
 // IsPositionWalkable checks if the player can walk on the tiles at the given position
 // This checks all four corners of the player rectangle against tile types
 func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
@@ -46,11 +48,15 @@ func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 	maxSearchRadius := 20 // Limit search to avoid infinite loops
 	
 	for radius := 1; radius <= maxSearchRadius; radius++ {
-		// Check all tiles at this radius using a diamond pattern
+		// Check all tiles within this radius, prioritizing closer tiles
+		// Use a circular search pattern to find the truly closest walkable tile
 		for dx := -radius; dx <= radius; dx++ {
 			for dy := -radius; dy <= radius; dy++ {
-				// Only check tiles at the current radius (diamond shape)
-				if abs(dx) + abs(dy) != radius {
+				// Calculate actual distance to prioritize closer tiles
+				actualDistance := math.Sqrt(float64(dx*dx + dy*dy))
+				
+				// Only check tiles within the current radius
+				if actualDistance > float64(radius) {
 					continue
 				}
 				
