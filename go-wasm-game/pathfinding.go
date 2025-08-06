@@ -87,6 +87,10 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	allNodes := make(map[int]*PathNode)
 	closedSet := make(map[int]bool)
 	
+	// Add search limit to prevent infinite loops in extreme cases
+	const maxSearchIterations = 10000
+	searchIterations := 0
+	
 	// Helper function to get unique key for coordinates
 	getKey := func(x, y int) int {
 		return y*gameMap.Width + x
@@ -111,7 +115,9 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	}
 	
 	// A* main loop
-	for openSet.Len() > 0 {
+	for openSet.Len() > 0 && searchIterations < maxSearchIterations {
+		searchIterations++
+		
 		// Get node with lowest F cost
 		current := heap.Pop(openSet).(*PathNode)
 		currentKey := getKey(current.X, current.Y)
@@ -186,10 +192,11 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	return Path{{X: endX, Y: endY}}
 }
 
-// heuristic calculates the Manhattan distance heuristic for A*
+// heuristic calculates the Euclidean distance heuristic for A*
+// This provides better pathfinding accuracy for diagonal movement compared to Manhattan distance
 func heuristic(x1, y1, x2, y2 int) float64 {
-	dx := float64(abs(x2 - x1))
-	dy := float64(abs(y2 - y1))
+	dx := float64(absInt(x2 - x1))
+	dy := float64(absInt(y2 - y1))
 	// Use Euclidean distance for more accurate pathfinding with diagonal movement
 	return math.Sqrt(dx*dx + dy*dy)
 }
@@ -226,4 +233,12 @@ func IsPathComplete(path Path, currentStep int) bool {
 // PathLength returns the number of steps in the path
 func PathLength(path Path) int {
 	return len(path)
+}
+
+// abs returns the absolute value of an integer (moved here for pathfinding-specific use)
+func absInt(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

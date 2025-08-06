@@ -108,6 +108,14 @@ func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
 	// Get current player position in grid coordinates
 	currentX, currentY := gameMap.WorldToGrid(p.X + p.Width/2, p.Y + p.Height/2)
 	
+	// If already at target tile, no need to pathfind
+	if currentX == tileX && currentY == tileY {
+		p.IsMoving = false
+		p.Path = nil
+		p.PathStep = 0
+		return
+	}
+	
 	// Find path from current position to target
 	path := FindPath(currentX, currentY, tileX, tileY, gameMap)
 	
