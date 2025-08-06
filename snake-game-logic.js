@@ -80,9 +80,8 @@ class SnakeGameLogic {
     const ateFood = this.isFoodCollision(newX, newY);
     if (ateFood) {
       this.score += 1;
-      // Award experience based on current level (exponential growth)
-      const currentLevel = this.getLevel();
-      this.addExperience(currentLevel);
+      // Award consistent experience per food (1 point regardless of level)
+      this.addExperience(1);
       this.food = this.placeFood();
     } else {
       // Remove tail if no food eaten
