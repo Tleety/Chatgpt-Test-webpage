@@ -144,7 +144,7 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasHeight = canvas.Get("height").Float()
 	
 	// Update player (handles movement animations)
-	player.Update()
+	player.Update(gameMap)
 	
 	// Keep player within world bounds (map bounds)
 	player.ClampToMapBounds(gameMap)
