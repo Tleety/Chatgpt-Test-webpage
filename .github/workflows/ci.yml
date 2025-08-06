@@ -24,6 +24,16 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Setup Go for WASM build
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build Go WASM module for tests
+      run: |
+        cd go-wasm-game
+        GOOS=js GOARCH=wasm go build -o game.wasm
+      
     - name: Run unit tests
       run: npm test
       
