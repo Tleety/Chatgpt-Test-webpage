@@ -228,7 +228,7 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 
 func keydown(this js.Value, args []js.Value) interface{} {
 	key := args[0].Get("key").String()
-	player.MoveByKeyboard(key)
+	player.MoveByKeyboard(key, gameMap)
 	return nil
 }
 

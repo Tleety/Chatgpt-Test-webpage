@@ -54,28 +54,42 @@ func (p *Player) Update() {
 }
 
 // MoveByKeyboard handles keyboard-based movement
-func (p *Player) MoveByKeyboard(key string) {
+func (p *Player) MoveByKeyboard(key string, gameMap *Map) {
 	// Stop any ongoing tile movement when using keyboard
 	p.IsMoving = false
 	
+	// Calculate new position based on key
+	newX, newY := p.X, p.Y
 	switch key {
 	case "ArrowUp", "w", "W":
-		p.Y -= p.Speed
-		p.TargetY = p.Y
+		newY = p.Y - p.Speed
 	case "ArrowDown", "s", "S":
-		p.Y += p.Speed
-		p.TargetY = p.Y
+		newY = p.Y + p.Speed
 	case "ArrowLeft", "a", "A":
-		p.X -= p.Speed
-		p.TargetX = p.X
+		newX = p.X - p.Speed
 	case "ArrowRight", "d", "D":
-		p.X += p.Speed
-		p.TargetX = p.X
+		newX = p.X + p.Speed
+	default:
+		return // Invalid key, no movement
 	}
+	
+	// Check if the new position would place player on water
+	if p.isPositionWalkable(newX, newY, gameMap) {
+		p.X = newX
+		p.Y = newY
+		p.TargetX = p.X
+		p.TargetY = p.Y
+	}
+	// If position is not walkable, simply don't move
 }
 
 // MoveToTile initiates movement to a specific tile
 func (p *Player) MoveToTile(gameMap *Map, tileX, tileY int) {
+	// Check if target tile is walkable (not water)
+	if gameMap.GetTile(tileX, tileY) == TileWater {
+		return // Don't move to water tiles
+	}
+	
 	// Convert tile coordinates to world coordinates (center of tile)
 	worldX, worldY := gameMap.GridToWorld(tileX, tileY)
 	
@@ -138,4 +152,25 @@ func (p *Player) SetPosition(x, y float64) {
 	p.TargetX = x
 	p.TargetY = y
 	p.IsMoving = false
+}
+
+// isPositionWalkable checks if the player can walk on the tiles at the given position
+func (p *Player) isPositionWalkable(x, y float64, gameMap *Map) bool {
+	// Get the corners of the player rectangle at the new position
+	corners := []struct{ px, py float64 }{
+		{x, y},                           // Top-left
+		{x + p.Width, y},                 // Top-right
+		{x, y + p.Height},                // Bottom-left
+		{x + p.Width, y + p.Height},      // Bottom-right
+	}
+	
+	// Check if any corner of the player would be on a water tile
+	for _, corner := range corners {
+		tileX, tileY := gameMap.WorldToGrid(corner.px, corner.py)
+		if gameMap.GetTile(tileX, tileY) == TileWater {
+			return false
+		}
+	}
+	
+	return true
 }
