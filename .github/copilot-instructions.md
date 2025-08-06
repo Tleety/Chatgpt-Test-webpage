@@ -11,6 +11,7 @@ Before working with any code in this repository, reference the detailed coding g
 
 - **HTML/CSS/JavaScript**: Semantic HTML5, modern ES6+ features, separation of concerns
 - **Jekyll**: Convention-over-configuration, frontmatter usage, DRY principles
+- **Phaser 3**: CDN loading, proper game structure, modular code
 - **Go + WebAssembly**: Standard Go structure, lightweight modules, proper build flags
 - **Jest Testing**: Comprehensive coverage, jsdom environment, TDD approach
 
