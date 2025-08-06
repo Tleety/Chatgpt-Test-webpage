@@ -356,6 +356,29 @@
             testSuites: testSummary.testSuites?.length || 0
           });
           
+          // Validate test suite data integrity
+          if (testSummary.testSuites && testSummary.testSuites.length > 0) {
+            const suiteTestCounts = testSummary.testSuites.map(suite => ({
+              name: suite.name,
+              passing: suite.numPassingTests || 0,
+              failing: suite.numFailingTests || 0,
+              total: (suite.numPassingTests || 0) + (suite.numFailingTests || 0)
+            }));
+            
+            const totalFromSuites = suiteTestCounts.reduce((sum, suite) => sum + suite.total, 0);
+            console.log(`[Test Visualizer] Data validation:`, {
+              reportedTotal: testSummary.numTotalTests,
+              calculatedFromSuites: totalFromSuites,
+              suiteBreakdown: suiteTestCounts
+            });
+            
+            // Check for data inconsistency
+            if (testSummary.numTotalTests > 0 && totalFromSuites === 0) {
+              console.warn(`[Test Visualizer] Data inconsistency detected: Overall total is ${testSummary.numTotalTests} but all test suites show 0 tests`);
+              console.warn(`[Test Visualizer] This may indicate a data generation issue or file corruption`);
+            }
+          }
+          
           return testSummary;
           
         } catch (fetchError) {
@@ -423,6 +446,37 @@
           }
 
           console.log(`[Test Visualizer] Processing ${testResults.testSuites.length} test suites`);
+          
+          // Check for data integrity before processing
+          const hasValidSuiteData = testResults.testSuites.some(suite => 
+            (suite.numPassingTests || 0) + (suite.numFailingTests || 0) > 0
+          );
+          
+          if (testResults.numTotalTests > 0 && !hasValidSuiteData) {
+            console.warn(`[Test Visualizer] Data anomaly: Total tests = ${testResults.numTotalTests} but no test suite has individual test counts`);
+            
+            // Show warning message to user
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'error-message';
+            warningDiv.innerHTML = `
+              <h3>⚠️ Data Display Issue Detected</h3>
+              <p><strong>Issue:</strong> Test summary shows ${testResults.numTotalTests} total tests, but individual test suites are showing 0 tests each.</p>
+              <p><strong>Possible causes:</strong></p>
+              <ul>
+                <li>Test summary file was generated with incomplete data</li>
+                <li>File was partially corrupted during CI/CD pipeline</li>
+                <li>Browser loaded file while it was being written</li>
+              </ul>
+              <p><strong>What to try:</strong></p>
+              <ul>
+                <li>Refresh this page in a few minutes</li>
+                <li>Check if a new CI/CD pipeline run is in progress</li>
+                <li>Review browser console logs for additional details</li>
+              </ul>
+              <p>The overall test counts above are accurate, but individual suite breakdowns may not display correctly until this is resolved.</p>
+            `;
+            categoriesContainer.appendChild(warningDiv);
+          }
           
           testResults.testSuites.forEach((suite, index) => {
             console.log(`[Test Visualizer] Processing suite ${index + 1}: ${suite.name}`, {
