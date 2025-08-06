@@ -226,11 +226,7 @@ func recenterSquare(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-func keydown(this js.Value, args []js.Value) interface{} {
-	key := args[0].Get("key").String()
-	player.MoveByKeyboard(key, gameMap)
-	return nil
-}
+
 
 func click(this js.Value, args []js.Value) interface{} {
 	// Get mouse click coordinates relative to canvas
@@ -280,8 +276,7 @@ func main() {
 	// Initialize environment (trees and bushes positioned in world coordinates)
 	initializeEnvironment()
 
-	// Add event listeners
-	js.Global().Call("addEventListener", "keydown", js.FuncOf(keydown))
+	// Add event listeners - only mouse click, no keyboard
 	canvas.Call("addEventListener", "click", js.FuncOf(click))
 
 	// Expose recenter function to JavaScript

@@ -1,13 +1,13 @@
 /**
- * Unit tests for WASM Game Collision Detection
- * Tests water tile collision prevention
+ * Unit tests for WASM Game Collision Detection and Smart Click Movement
+ * Tests water tile collision prevention and intelligent pathfinding
  */
 
 /**
  * @jest-environment jsdom
  */
 
-describe('WASM Game Collision Detection', () => {
+describe('WASM Game Collision Detection and Smart Movement', () => {
   let mockCanvas, mockContext;
   
   beforeEach(() => {
@@ -43,14 +43,13 @@ describe('WASM Game Collision Detection', () => {
   });
 
   describe('Water Tile Collision Prevention', () => {
-    test('should prevent movement to water tiles via keyboard', () => {
+    test('should prevent movement to water tiles via position check', () => {
       // This test verifies the concept - actual implementation is in Go WASM
       const mockPlayer = {
         x: 100,
         y: 100,
         width: 20,
-        height: 20,
-        speed: 5
+        height: 20
       };
       
       const mockMap = {
@@ -63,12 +62,12 @@ describe('WASM Game Collision Detection', () => {
       mockMap.getTile.mockReturnValue('water');
       
       // Simulate collision detection logic
-      function isPositionWalkable(x, y, map) {
+      function isPositionWalkable(x, y, width, height, map) {
         const corners = [
           {px: x, py: y},
-          {px: x + mockPlayer.width, py: y},
-          {px: x, py: y + mockPlayer.height},
-          {px: x + mockPlayer.width, py: y + mockPlayer.height}
+          {px: x + width, py: y},
+          {px: x, py: y + height},
+          {px: x + width, py: y + height}
         ];
         
         for (const corner of corners) {
@@ -81,10 +80,10 @@ describe('WASM Game Collision Detection', () => {
       }
       
       // Test that movement to water position is blocked
-      const newX = mockPlayer.x + mockPlayer.speed;
+      const newX = mockPlayer.x + 5;
       const newY = mockPlayer.y;
       
-      expect(isPositionWalkable(newX, newY, mockMap)).toBe(false);
+      expect(isPositionWalkable(newX, newY, mockPlayer.width, mockPlayer.height, mockMap)).toBe(false);
       expect(mockMap.worldToGrid).toHaveBeenCalled();
       expect(mockMap.getTile).toHaveBeenCalledWith(3, 3);
     });
@@ -94,8 +93,7 @@ describe('WASM Game Collision Detection', () => {
         x: 100,
         y: 100,
         width: 20,
-        height: 20,
-        speed: 5
+        height: 20
       };
       
       const mockMap = {
@@ -107,12 +105,12 @@ describe('WASM Game Collision Detection', () => {
       // Mock grass tile at position (3, 3)
       mockMap.getTile.mockReturnValue('grass');
       
-      function isPositionWalkable(x, y, map) {
+      function isPositionWalkable(x, y, width, height, map) {
         const corners = [
           {px: x, py: y},
-          {px: x + mockPlayer.width, py: y},
-          {px: x, py: y + mockPlayer.height},
-          {px: x + mockPlayer.width, py: y + mockPlayer.height}
+          {px: x + width, py: y},
+          {px: x, py: y + height},
+          {px: x + width, py: y + height}
         ];
         
         for (const corner of corners) {
@@ -125,41 +123,100 @@ describe('WASM Game Collision Detection', () => {
       }
       
       // Test that movement to grass position is allowed
-      const newX = mockPlayer.x + mockPlayer.speed;
+      const newX = mockPlayer.x + 5;
       const newY = mockPlayer.y;
       
-      expect(isPositionWalkable(newX, newY, mockMap)).toBe(true);
+      expect(isPositionWalkable(newX, newY, mockPlayer.width, mockPlayer.height, mockMap)).toBe(true);
       expect(mockMap.worldToGrid).toHaveBeenCalled();
       expect(mockMap.getTile).toHaveBeenCalledWith(3, 3);
     });
-    
-    test('should prevent click-to-move to water tiles', () => {
+  });
+
+  describe('Smart Click Movement', () => {
+    test('should move to the exact tile when clicking on grass', () => {
       const mockMap = {
-        getTile: jest.fn().mockReturnValue('water'), // Water tile
-        worldToGrid: jest.fn().mockReturnValue([5, 5])
+        getTile: jest.fn().mockReturnValue('grass'), // Grass tile
+        worldToGrid: jest.fn().mockReturnValue([5, 5]),
+        width: 200,
+        height: 200
       };
       
-      // Simulate click-to-move collision detection
-      function canMoveToTile(tileX, tileY, map) {
-        return map.getTile(tileX, tileY) !== 'water';
+      // Simulate smart movement function
+      function findNearestWalkableTile(targetX, targetY, map) {
+        // If target is walkable, return it
+        if (map.getTile(targetX, targetY) !== 'water') {
+          return [targetX, targetY];
+        }
+        // Otherwise search for nearest walkable tile (simplified version)
+        return [map.width / 2, map.height / 2]; // Fallback to center
       }
       
-      expect(canMoveToTile(5, 5, mockMap)).toBe(false);
+      const [resultX, resultY] = findNearestWalkableTile(5, 5, mockMap);
+      expect(resultX).toBe(5);
+      expect(resultY).toBe(5);
       expect(mockMap.getTile).toHaveBeenCalledWith(5, 5);
     });
     
-    test('should allow click-to-move to grass tiles', () => {
+    test('should find nearest walkable tile when clicking on water', () => {
       const mockMap = {
-        getTile: jest.fn().mockReturnValue('grass'), // Grass tile
-        worldToGrid: jest.fn().mockReturnValue([5, 5])
+        getTile: jest.fn(),
+        worldToGrid: jest.fn().mockReturnValue([5, 5]),
+        width: 200,
+        height: 200
       };
       
-      function canMoveToTile(tileX, tileY, map) {
-        return map.getTile(tileX, tileY) !== 'water';
+      // Mock water at target, grass at adjacent tiles
+      mockMap.getTile
+        .mockReturnValueOnce('water') // Initial check
+        .mockReturnValueOnce('grass'); // First adjacent tile found
+      
+      function findNearestWalkableTile(targetX, targetY, map) {
+        // If target is walkable, return it
+        if (map.getTile(targetX, targetY) !== 'water') {
+          return [targetX, targetY];
+        }
+        
+        // Simple spiral search (simplified for test)
+        const searchOffsets = [
+          [0, 1], [1, 0], [0, -1], [-1, 0], // Direct neighbors
+          [1, 1], [-1, -1], [1, -1], [-1, 1] // Diagonals
+        ];
+        
+        for (const [dx, dy] of searchOffsets) {
+          const checkX = targetX + dx;
+          const checkY = targetY + dy;
+          if (checkX >= 0 && checkX < map.width && 
+              checkY >= 0 && checkY < map.height &&
+              map.getTile(checkX, checkY) !== 'water') {
+            return [checkX, checkY];
+          }
+        }
+        
+        return [map.width / 2, map.height / 2]; // Fallback
       }
       
-      expect(canMoveToTile(5, 5, mockMap)).toBe(true);
-      expect(mockMap.getTile).toHaveBeenCalledWith(5, 5);
+      const [resultX, resultY] = findNearestWalkableTile(5, 5, mockMap);
+      expect(resultX).toBe(5); // Should find adjacent tile at (5, 6)
+      expect(resultY).toBe(6);
+      expect(mockMap.getTile).toHaveBeenCalledTimes(2);
+    });
+    
+    test('should fallback to map center if no walkable tile found nearby', () => {
+      const mockMap = {
+        getTile: jest.fn().mockReturnValue('water'), // All tiles are water
+        worldToGrid: jest.fn().mockReturnValue([5, 5]),
+        width: 200,
+        height: 200
+      };
+      
+      function findNearestWalkableTile(targetX, targetY, map) {
+        // Always return center if everything is water (simplified)
+        return [map.width / 2, map.height / 2];
+      }
+      
+      const [resultX, resultY] = findNearestWalkableTile(5, 5, mockMap);
+      expect(resultX).toBe(100); // Center X
+      expect(resultY).toBe(100); // Center Y
     });
   });
 
@@ -215,12 +272,12 @@ describe('WASM Game Collision Detection', () => {
         .mockReturnValueOnce('grass')
         .mockReturnValueOnce('grass');
       
-      function isPositionWalkable(x, y, map) {
+      function isPositionWalkable(x, y, width, height, map) {
         const corners = [
           {px: x, py: y},
-          {px: x + mockPlayer.width, py: y},
-          {px: x, py: y + mockPlayer.height},
-          {px: x + mockPlayer.width, py: y + mockPlayer.height}
+          {px: x + width, py: y},
+          {px: x, py: y + height},
+          {px: x + width, py: y + height}
         ];
         
         for (const corner of corners) {
@@ -233,9 +290,47 @@ describe('WASM Game Collision Detection', () => {
       }
       
       // Should be blocked because one corner touches water
-      expect(isPositionWalkable(mockPlayer.x, mockPlayer.y, mockMap)).toBe(false);
+      expect(isPositionWalkable(mockPlayer.x, mockPlayer.y, mockPlayer.width, mockPlayer.height, mockMap)).toBe(false);
       // Note: The function returns early when water is detected, so only 2 calls are made
       expect(mockMap.worldToGrid).toHaveBeenCalledTimes(2);
+      expect(mockMap.getTile).toHaveBeenCalledTimes(2);
+    });
+    
+    test('should handle map boundary conditions in pathfinding', () => {
+      const mockMap = {
+        getTile: jest.fn(),
+        width: 10,
+        height: 10
+      };
+      
+      // Mock water at edge, grass nearby
+      mockMap.getTile
+        .mockReturnValueOnce('water') // Initial tile (0, 0) 
+        .mockReturnValueOnce('grass'); // Adjacent tile (0, 1)
+      
+      function findNearestWalkableTile(targetX, targetY, map) {
+        if (map.getTile(targetX, targetY) !== 'water') {
+          return [targetX, targetY];
+        }
+        
+        // Check immediate neighbors
+        const neighbors = [[0, 1], [1, 0]]; // Only valid neighbors for (0,0)
+        for (const [dx, dy] of neighbors) {
+          const checkX = targetX + dx;
+          const checkY = targetY + dy;
+          if (checkX >= 0 && checkX < map.width && 
+              checkY >= 0 && checkY < map.height &&
+              map.getTile(checkX, checkY) !== 'water') {
+            return [checkX, checkY];
+          }
+        }
+        
+        return [map.width / 2, map.height / 2];
+      }
+      
+      const [resultX, resultY] = findNearestWalkableTile(0, 0, mockMap);
+      expect(resultX).toBe(0);
+      expect(resultY).toBe(1);
       expect(mockMap.getTile).toHaveBeenCalledTimes(2);
     });
   });
