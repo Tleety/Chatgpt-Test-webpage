@@ -1,0 +1,59 @@
+name: Test PR Validation Workflow
+
+# This is a test to validate that the PR validation workflow works correctly
+on:
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'Simulate test failure for validation'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  test-validation:
+    runs-on: ubuntu-latest
+    name: Test PR Workflow
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests for validation
+      run: |
+        if [ "${{ inputs.simulate_failure }}" = "true" ]; then
+          echo "Simulating test failure for validation purposes"
+          exit 1
+        else
+          npm test
+        fi
+        
+    - name: Test summary validation
+      run: |
+        npm test -- --json --outputFile=tests/test-results.json
+        node -e "
+        const fs = require('fs');
+        try {
+          const testResults = JSON.parse(fs.readFileSync('tests/test-results.json', 'utf8'));
+          console.log('📊 Test Validation Summary:');
+          console.log('   Total Tests:', testResults.numTotalTests);
+          console.log('   Passed:', testResults.numPassedTests);
+          console.log('   Failed:', testResults.numFailedTests);
+          console.log('   Success:', testResults.success ? '✅' : '❌');
+          console.log('');
+          console.log('✅ PR validation workflow is working correctly');
+        } catch (error) {
+          console.log('❌ Failed to parse test results');
+          process.exit(1);
+        }
+        "
+      if: always() && !inputs.simulate_failure
