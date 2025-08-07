@@ -6,6 +6,7 @@ import (
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/game"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/units"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/ui"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 	gameMap      *world.Map
 	unitManager  *units.UnitManager
 	environment  *world.Environment
+	uiSystem     *ui.UISystem
 	cameraX      float64
 	cameraY      float64
 )
@@ -27,6 +29,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Get current canvas dimensions
 	canvasWidth = canvas.Get("width").Float()
 	canvasHeight = canvas.Get("height").Float()
+	
+	// Update UI system with current canvas size
+	uiSystem.UpdateCanvasSize(canvasWidth, canvasHeight)
 	
 	// Update player (handles movement animations with pathfinding and tile-based speed)
 	player.Update()
@@ -40,9 +45,12 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Get player position
 	playerX, playerY := player.GetPosition()
 	
+	// Calculate game area height (full canvas minus UI area)
+	gameAreaHeight := canvasHeight - uiSystem.GetUIAreaHeight()
+	
 	// Update camera to follow player (center player on screen)
 	cameraX = playerX - canvasWidth/2 + player.Width/2
-	cameraY = playerY - canvasHeight/2 + player.Height/2
+	cameraY = playerY - gameAreaHeight/2 + player.Height/2
 	
 	// Clamp camera to map bounds
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
@@ -57,8 +65,8 @@ func draw(this js.Value, args []js.Value) interface{} {
 	if cameraX > mapWorldWidth-canvasWidth {
 		cameraX = mapWorldWidth - canvasWidth
 	}
-	if cameraY > mapWorldHeight-canvasHeight {
-		cameraY = mapWorldHeight - canvasHeight
+	if cameraY > mapWorldHeight-gameAreaHeight {
+		cameraY = mapWorldHeight - gameAreaHeight
 	}
 	
 	// Update the game state with current camera position
@@ -67,11 +75,15 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	
-	// Use the new layer system to render everything
-	gameMap.RenderWithLayers(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+	// Use the new layer system to render everything (only in game area)
+	ctx.Call("save")
+	ctx.Call("rect", 0, 0, canvasWidth, gameAreaHeight)
+	ctx.Call("clip")
+	
+	gameMap.RenderWithLayers(ctx, cameraX, cameraY, canvasWidth, gameAreaHeight)
 
 	// Draw environment objects (trees and bushes)
-	environment.Render(ctx, cameraX, cameraY, canvasWidth, canvasHeight)
+	environment.Render(ctx, cameraX, cameraY, canvasWidth, gameAreaHeight)
 	
 	// Draw units
 	unitManager.Render(ctx, cameraX, cameraY)
@@ -79,20 +91,16 @@ func draw(this js.Value, args []js.Value) interface{} {
 	// Draw player
 	player.Draw(ctx, cameraX, cameraY)
 	
+	ctx.Call("restore")
+	
+	// Draw UI system (always on top)
+	uiSystem.Render(ctx)
+	
 	js.Global().Call("requestAnimationFrame", drawFunc)
 	return nil
 }
 
-// renderObjectsLayer renders objects (units) on the game map
-func renderObjectsLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight float64) {
-	unitManager.Render(ctx, cameraX, cameraY)
-}
 
-// initializeGameLayers sets up all game layers after game objects are created
-func initializeGameLayers() {
-	// Add objects layer (priority 10 - foreground)
-	gameMap.Layers.AddLayer("objects", 10, true, renderObjectsLayer)
-}
 
 func main() {
 	doc := js.Global().Get("document")
@@ -106,32 +114,26 @@ func main() {
 	// Initialize the map (200x200 tiles, 32px per tile)
 	gameMap = world.NewMap(200, 200, 32.0)
 	
-	// Initialize unit manager
-	unitManager = units.NewUnitManager(gameMap)
+	// Create game entities
+	player, unitManager, uiSystem = initializeGameEntities(gameMap)
+	
+	// Create environment  
+	environment = world.NewEnvironment(gameMap)
 	
 	// Create one initial unit for demonstration
 	unitManager.CreateUnit(entities.UnitWarrior, 95, 95, "")
+	uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
 	
-	// Calculate world dimensions and create player at center
-	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
-	mapWorldHeight := float64(gameMap.Height) * gameMap.TileSize
-
-	// Create player at center of map
-	centerX := (mapWorldWidth - 20) / 2
-	centerY := (mapWorldHeight - 20) / 2
-	player = entities.NewPlayer(centerX, centerY)
-  
-	environment = world.NewEnvironment(gameMap)
-
-	// Initialize game state for shared access
-	game.InitializeState(ctx, canvas, player, gameMap, unitManager, environment)
-
-	// Initialize game layers
-	initializeGameLayers()
-
-	// Initialize event handlers and JavaScript interface
+	// Initialize all game systems
+	initializeGameSystems(ctx, canvas, player, gameMap, unitManager, environment, uiSystem)
+	
+	// Initialize game event handlers
 	game.InitializeEventHandlers(canvas)
+	
+	// Initialize JavaScript interface
 	game.InitializeJSInterface()
+
+
 	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)
