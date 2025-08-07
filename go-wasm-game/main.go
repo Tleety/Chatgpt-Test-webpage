@@ -8,6 +8,7 @@ import (
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
+// Main game loop for the Go WebAssembly game with selective build optimization
 var (
 	ctx          js.Value
 	canvas       js.Value
