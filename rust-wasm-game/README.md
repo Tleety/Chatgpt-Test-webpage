@@ -1,98 +1,149 @@
-# Rust WASM Game
+# Rust WASM Game - Minimal Bevy Foundation
 
-An interactive bouncing ball game written in Rust and compiled to WebAssembly for high-performance browser execution.
+A minimal bouncing ball game foundation built with Rust and WebAssembly, designed to be expanded into a full Bevy game engine implementation.
 
-## Features
+## 🎮 Current Features
 
-- **High Performance**: Written in Rust and compiled to WebAssembly for near-native performance
-- **Interactive**: Click anywhere on the canvas to redirect the ball
-- **Smooth Animation**: 60 FPS animation with delta-time based movement
-- **Physics Simulation**: Realistic bouncing physics with collision detection
-- **Responsive Design**: Adapts to window resizing automatically
+- **Interactive Gameplay**: Click anywhere on the canvas to redirect the ball towards your cursor
+- **Smooth Animation**: 60 FPS physics simulation with collision detection
+- **Responsive Design**: Adapts to different screen sizes and orientations
+- **High Performance**: Rust compiled to WebAssembly for optimal browser performance
 
-## Game Controls
+## 🦀 Architecture Overview
 
-- **Click**: Click anywhere on the canvas to redirect the ball towards that position
-- **Random Velocity Button**: Adds random velocity to the ball for unpredictable movement
+This implementation provides a **minimal foundation** specifically designed for migration to the Bevy game engine:
 
-## Technical Implementation
+### Current Structure → Bevy Migration Path
 
-### Rust Components
+| Current Implementation | Bevy Equivalent | Migration Notes |
+|----------------------|-----------------|----------------|
+| `Ball` struct | Bevy Components (`Transform`, `Velocity`) | Split into ECS components |
+| `GameState` | Bevy `World` and `Resources` | Use Bevy's built-in state management |
+| `update()` method | Bevy Systems | Convert to system functions |
+| Manual rendering | Bevy Sprite Components | Use Bevy's rendering pipeline |
+| Event handling | Bevy Input Events | Use Bevy's input system |
 
-- **Game State Management**: Efficient state handling in Rust
-- **Canvas Rendering**: Direct manipulation of HTML5 Canvas via web-sys bindings
-- **Physics Engine**: Custom physics implementation with collision detection
-- **Event Handling**: Mouse click and window resize event processing
+### Planned Bevy Features
 
-### WASM Integration
+```rust
+// TODO: Migrate to Bevy ECS architecture
+#[derive(Component)]
+struct Ball;
 
-- **wasm-bindgen**: Seamless JavaScript-Rust interoperability
-- **web-sys**: Direct browser API access from Rust
-- **ES6 Modules**: Modern JavaScript module loading
+#[derive(Component)]
+struct Velocity(Vec2);
 
-### Performance Optimizations
-
-- **Release Build**: Optimized Rust compilation for size and speed
-- **Minimal Dependencies**: Only essential crates included
-- **Efficient Rendering**: Direct canvas operations without JavaScript overhead
-
-## Building
-
-To build the WASM module:
-
-```bash
-# Install Rust WASM target
-rustup target add wasm32-unknown-unknown
-
-# Install wasm-bindgen CLI
-cargo install wasm-bindgen-cli
-
-# Build the WASM module
-cargo build --target wasm32-unknown-unknown --release
-
-# Generate JavaScript bindings
-wasm-bindgen --out-dir pkg --target web target/wasm32-unknown-unknown/release/rust_wasm_game.wasm
+fn ball_movement_system(
+    mut query: Query<(&mut Transform, &Velocity), With<Ball>>,
+    time: Res<Time>,
+) {
+    // Bevy system implementation
+}
 ```
 
-## Project Structure
+## 🛠️ Technology Stack
+
+- **Rust**: High-performance systems programming language
+- **WebAssembly**: Near-native performance in web browsers  
+- **wasm-bindgen**: Rust-JavaScript interoperability
+- **web-sys**: Web API bindings for Rust
+- **Canvas 2D**: Direct rendering to HTML5 canvas
+
+**Future**: Bevy game engine with ECS architecture, WebGL rendering, and comprehensive game development features.
+
+## 🏗️ Building
+
+### Prerequisites
+
+- Rust (latest stable version)
+- wasm-pack
+
+### Build Steps
+
+1. **Install wasm-pack** (if not already installed):
+   ```bash
+   cargo install wasm-pack
+   ```
+
+2. **Build the project**:
+   ```bash
+   ./build.sh
+   ```
+
+   Or manually:
+   ```bash
+   wasm-pack build --target web --out-dir pkg --release
+   ```
+
+3. **Serve the game**:
+   ```bash
+   # Using Python 3
+   python -m http.server 8000
+   
+   # Using Node.js
+   npx serve .
+   ```
+
+4. **Open in browser**: Navigate to `http://localhost:8000`
+
+## 🎯 Game Controls
+
+- **Mouse Click**: Click anywhere on the canvas to redirect the ball towards your cursor
+- **Automatic Bouncing**: The ball bounces off the edges of the screen
+- **Restart**: Use the restart button to reload the game
+
+## 🔧 Project Structure
 
 ```
 rust-wasm-game/
 ├── src/
-│   └── lib.rs          # Main Rust game logic
-├── pkg/                # Generated WASM bindings
-│   ├── rust_wasm_game.js
-│   ├── rust_wasm_game_bg.wasm
-│   └── rust_wasm_game.d.ts
-├── Cargo.toml         # Rust dependencies and configuration
-└── index.html         # HTML game interface
+│   └── lib.rs           # Current web-sys implementation (Bevy foundation)
+├── pkg/                 # Generated WASM bindings (after build)
+├── Cargo.toml          # Rust dependencies and configuration
+├── index.html          # Game interface and HTML5 integration
+├── build.sh            # Build script for convenience
+└── README.md           # This file
 ```
 
-## Dependencies
+## 🚀 Migration to Bevy
 
-### Rust Crates
+This implementation is explicitly designed to facilitate migration to Bevy:
 
-- `wasm-bindgen` - JavaScript-Rust interop
-- `web-sys` - Browser API bindings
-- `js-sys` - JavaScript type bindings
-- `getrandom` - Random number generation (WASM compatible)
+### Phase 1: Current Implementation ✅
+- [x] Basic game loop with web-sys
+- [x] Ball physics and collision detection
+- [x] Mouse input handling
+- [x] Canvas rendering
+- [x] WASM compilation and browser integration
 
-### Browser Requirements
+### Phase 2: Bevy Integration (Planned)
+- [ ] Replace manual game loop with Bevy App
+- [ ] Convert Ball struct to Bevy Components
+- [ ] Implement ECS Systems for movement and rendering
+- [ ] Add Bevy's input handling system
+- [ ] Use Bevy's sprite rendering pipeline
+- [ ] Implement Bevy's time and scheduling systems
 
-- Modern browser with WebAssembly support
-- ES6 module support
-- HTML5 Canvas support
+### Phase 3: Enhanced Features (Future)
+- [ ] Advanced physics with Bevy_rapier
+- [ ] Multiple balls and complex interactions
+- [ ] Particle effects and visual enhancements
+- [ ] Audio integration with Bevy_audio
+- [ ] Scene management and game states
 
-## Game Logic
+## 📚 Learning Resources
 
-The game implements a simple but engaging physics simulation:
+- [Bevy Book](https://bevyengine.org/learn/book/introduction/)
+- [Rust and WebAssembly](https://rustwasm.github.io/docs/book/)
+- [wasm-pack Guide](https://rustwasm.github.io/wasm-pack/)
+- [ECS Pattern in Bevy](https://bevyengine.org/learn/book/getting-started/ecs/)
 
-1. **Ball State**: Position, velocity, and radius
-2. **Movement**: Delta-time based position updates
-3. **Collision Detection**: Boundary checking with canvas edges
-4. **User Interaction**: Click-to-redirect mechanics
-5. **Rendering**: Direct canvas drawing with visual effects
+## 🎯 Why This Approach?
 
-## Integration
+This foundation provides:
+1. **Working Implementation**: Functional game that can be built and played immediately
+2. **Clear Migration Path**: Code structure that maps directly to Bevy concepts
+3. **Learning Bridge**: Helps understand both low-level WASM and high-level Bevy approaches
+4. **Incremental Development**: Can be enhanced step-by-step toward full Bevy implementation
 
-This game is part of a larger GitHub Pages site showcasing various web technologies. It demonstrates how Rust can be used for high-performance web applications through WebAssembly compilation.
+The current implementation demonstrates Rust's WASM capabilities while providing a clear roadmap for expanding into a comprehensive Bevy-based game engine project.

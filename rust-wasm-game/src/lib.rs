@@ -1,161 +1,197 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, console};
-use js_sys::Math;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-// Import the `console.log` function from the browser console
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+// TODO: Replace this minimal implementation with Bevy game engine
+// This is a foundational structure that can be expanded into a full Bevy ECS game
+// 
+// Planned Bevy migration:
+// 1. Replace Ball struct with Bevy Components
+// 2. Convert update loop to Bevy Systems
+// 3. Use Bevy's Transform and Velocity components
+// 4. Implement proper ECS architecture
+// 5. Add Bevy's input handling and rendering systems
+
+#[derive(Clone)]
+struct Ball {
+    x: f64,
+    y: f64,
+    velocity_x: f64,
+    velocity_y: f64,
+    radius: f64,
 }
 
-// Define a macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! console_log {
-    ( $( $t:tt )* ) => {
-        log(&format!( $( $t )* ))
+impl Ball {
+    fn new(x: f64, y: f64) -> Self {
+        Ball {
+            x,
+            y,
+            velocity_x: 150.0,
+            velocity_y: 100.0,
+            radius: 20.0,
+        }
+    }
+
+    // Update ball position - will become a Bevy System
+    fn update(&mut self, delta_time: f64, canvas_width: f64, canvas_height: f64) {
+        self.x += self.velocity_x * delta_time;
+        self.y += self.velocity_y * delta_time;
+
+        // Bounce off walls
+        if self.x + self.radius > canvas_width || self.x - self.radius < 0.0 {
+            self.velocity_x = -self.velocity_x;
+        }
+        if self.y + self.radius > canvas_height || self.y - self.radius < 0.0 {
+            self.velocity_y = -self.velocity_y;
+        }
+
+        // Keep within bounds
+        self.x = self.x.clamp(self.radius, canvas_width - self.radius);
+        self.y = self.y.clamp(self.radius, canvas_height - self.radius);
+    }
+
+    // Render ball - will become a Bevy Sprite Component
+    fn render(&self, context: &CanvasRenderingContext2d) {
+        context.begin_path();
+        context.arc(self.x, self.y, self.radius, 0.0, 2.0 * std::f64::consts::PI).unwrap();
+        context.set_fill_style(&JsValue::from_str("#ff3333"));
+        context.fill();
+    }
+
+    // Redirect ball towards point - will become Bevy input handling
+    fn redirect_towards(&mut self, target_x: f64, target_y: f64) {
+        let dx = target_x - self.x;
+        let dy = target_y - self.y;
+        let distance = (dx * dx + dy * dy).sqrt();
+        
+        if distance > 0.0 {
+            let speed = 200.0;
+            self.velocity_x = (dx / distance) * speed;
+            self.velocity_y = (dy / distance) * speed;
+        }
     }
 }
 
-#[wasm_bindgen]
-pub struct RustWasmGame {
-    ctx: CanvasRenderingContext2d,
+// Game state - will become Bevy Resources and World
+struct GameState {
+    ball: Ball,
     canvas: HtmlCanvasElement,
-    ball_x: f64,
-    ball_y: f64,
-    ball_dx: f64,
-    ball_dy: f64,
-    ball_radius: f64,
-    width: f64,
-    height: f64,
-    last_time: f64,
+    context: CanvasRenderingContext2d,
+    last_frame_time: f64,
 }
 
-#[wasm_bindgen]
-impl RustWasmGame {
-    #[wasm_bindgen(constructor)]
-    pub fn new(canvas_id: &str) -> Result<RustWasmGame, JsValue> {
+impl GameState {
+    fn new() -> Result<Self, JsValue> {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
         let canvas = document
-            .get_element_by_id(canvas_id)
+            .get_element_by_id("game-canvas")
             .unwrap()
             .dyn_into::<HtmlCanvasElement>()?;
 
-        let ctx = canvas
+        let context = canvas
             .get_context("2d")?
             .unwrap()
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        let width = canvas.width() as f64;
-        let height = canvas.height() as f64;
+        let ball = Ball::new(canvas.width() as f64 / 2.0, canvas.height() as f64 / 2.0);
 
-        console_log!("Rust WASM Game initialized: {}x{}", width, height);
-
-        Ok(RustWasmGame {
-            ctx,
+        Ok(GameState {
+            ball,
             canvas,
-            ball_x: width / 2.0,
-            ball_y: height / 2.0,
-            ball_dx: 150.0, // pixels per second
-            ball_dy: 100.0, // pixels per second
-            ball_radius: 20.0,
-            width,
-            height,
-            last_time: 0.0,
+            context,
+            last_frame_time: 0.0,
         })
     }
 
-    #[wasm_bindgen]
-    pub fn update(&mut self, current_time: f64) {
-        if self.last_time == 0.0 {
-            self.last_time = current_time;
-            return;
-        }
+    // Main game loop - will become Bevy's Update schedule
+    fn update(&mut self, current_time: f64) {
+        let delta_time = if self.last_frame_time == 0.0 {
+            0.016 // ~60fps fallback
+        } else {
+            (current_time - self.last_frame_time) / 1000.0 // Convert to seconds
+        };
+        self.last_frame_time = current_time;
 
-        let delta_time = (current_time - self.last_time) / 1000.0; // Convert to seconds
-        self.last_time = current_time;
+        // Update game logic
+        self.ball.update(delta_time, self.canvas.width() as f64, self.canvas.height() as f64);
 
-        // Update ball position
-        self.ball_x += self.ball_dx * delta_time;
-        self.ball_y += self.ball_dy * delta_time;
-
-        // Bounce off walls
-        if self.ball_x + self.ball_radius > self.width || self.ball_x - self.ball_radius < 0.0 {
-            self.ball_dx = -self.ball_dx;
-            // Clamp to bounds
-            if self.ball_x + self.ball_radius > self.width {
-                self.ball_x = self.width - self.ball_radius;
-            } else {
-                self.ball_x = self.ball_radius;
-            }
-        }
-
-        if self.ball_y + self.ball_radius > self.height || self.ball_y - self.ball_radius < 0.0 {
-            self.ball_dy = -self.ball_dy;
-            // Clamp to bounds
-            if self.ball_y + self.ball_radius > self.height {
-                self.ball_y = self.height - self.ball_radius;
-            } else {
-                self.ball_y = self.ball_radius;
-            }
-        }
+        // Clear and render
+        self.context.clear_rect(0.0, 0.0, self.canvas.width().into(), self.canvas.height().into());
+        self.ball.render(&self.context);
     }
 
-    #[wasm_bindgen]
-    pub fn render(&self) {
-        // Clear canvas with a dark background
-        self.ctx.set_fill_style(&JsValue::from_str("#2c3e50"));
-        self.ctx.fill_rect(0.0, 0.0, self.width, self.height);
-
-        // Draw the bouncing ball
-        self.ctx.begin_path();
-        self.ctx.arc(self.ball_x, self.ball_y, self.ball_radius, 0.0, 2.0 * std::f64::consts::PI).unwrap();
-        self.ctx.set_fill_style(&JsValue::from_str("#e74c3c"));
-        self.ctx.fill();
-
-        // Add a white border to the ball
-        self.ctx.set_stroke_style(&JsValue::from_str("#ffffff"));
-        self.ctx.set_line_width(2.0);
-        self.ctx.stroke();
-
-        // Draw some decorative text
-        self.ctx.set_fill_style(&JsValue::from_str("#ecf0f1"));
-        self.ctx.set_font("16px Arial");
-        self.ctx.fill_text("Rust WASM Bouncing Ball", 10.0, 25.0).unwrap();
+    // Handle mouse input - will become Bevy input events
+    fn handle_click(&mut self, x: f64, y: f64) {
+        self.ball.redirect_towards(x, y);
         
-        let position_text = format!("Ball Position: ({:.0}, {:.0})", self.ball_x, self.ball_y);
-        self.ctx.fill_text(&position_text, 10.0, 45.0).unwrap();
+        // Log interaction for debugging
+        web_sys::console::log_1(&format!("Click at ({:.0}, {:.0}), ball heading towards it", x, y).into());
     }
+}
 
-    #[wasm_bindgen]
-    pub fn resize(&mut self, width: f64, height: f64) {
-        self.width = width;
-        self.height = height;
-        self.canvas.set_width(width as u32);
-        self.canvas.set_height(height as u32);
-        console_log!("Canvas resized to: {}x{}", width, height);
-    }
+// WASM bindings
+#[wasm_bindgen]
+pub struct Game {
+    state: Rc<RefCell<GameState>>,
+}
 
-    #[wasm_bindgen]
-    pub fn on_click(&mut self, x: f64, y: f64) {
-        // Move ball towards click position
-        let dx = x - self.ball_x;
-        let dy = y - self.ball_y;
-        let length = (dx * dx + dy * dy).sqrt();
+#[wasm_bindgen]
+impl Game {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Result<Game, JsValue> {
+        console_error_panic_hook::set_once();
         
-        if length > 0.0 {
-            self.ball_dx = (dx / length) * 200.0; // Normalize and set speed
-            self.ball_dy = (dy / length) * 200.0;
-        }
-        
-        console_log!("Click at ({}, {}), ball heading towards it", x, y);
+        let state = GameState::new()?;
+        let game = Game {
+            state: Rc::new(RefCell::new(state)),
+        };
+
+        web_sys::console::log_1(&"Minimal Rust Game initialized successfully (ready for Bevy migration)".into());
+        Ok(game)
     }
 
     #[wasm_bindgen]
-    pub fn add_random_velocity(&mut self) {
-        // Add some randomness to the ball movement
-        self.ball_dx += (Math::random() - 0.5) * 100.0;
-        self.ball_dy += (Math::random() - 0.5) * 100.0;
-        console_log!("Added random velocity, new velocity: ({}, {})", self.ball_dx, self.ball_dy);
+    pub fn start(&self) -> Result<(), JsValue> {
+        let state = self.state.clone();
+        
+        // Set up click handler
+        let click_state = state.clone();
+        let click_closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+            let canvas = &click_state.borrow().canvas;
+            let element: &web_sys::Element = canvas.as_ref();
+            let rect = element.get_bounding_client_rect();
+            let x = event.client_x() as f64 - rect.left();
+            let y = event.client_y() as f64 - rect.top();
+            click_state.borrow_mut().handle_click(x, y);
+        }) as Box<dyn FnMut(_)>);
+        
+        state.borrow().canvas.add_event_listener_with_callback("click", click_closure.as_ref().unchecked_ref())?;
+        click_closure.forget();
+
+        // Start game loop
+        let loop_state = state.clone();
+        let game_loop: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
+        let loop_clone = game_loop.clone();
+        
+        *loop_clone.borrow_mut() = Some(Closure::wrap(Box::new(move |time: f64| {
+            loop_state.borrow_mut().update(time);
+            
+            // Schedule next frame
+            let window = web_sys::window().unwrap();
+            window.request_animation_frame(game_loop.borrow().as_ref().unwrap().as_ref().unchecked_ref()).unwrap();
+        }) as Box<dyn FnMut(f64)>));
+
+        let window = web_sys::window().unwrap();
+        window.request_animation_frame(loop_clone.borrow().as_ref().unwrap().as_ref().unchecked_ref())?;
+
+        Ok(())
     }
+}
+
+// Initialize function
+#[wasm_bindgen(start)]
+pub fn main() {
+    console_error_panic_hook::set_once();
 }

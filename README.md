@@ -9,7 +9,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 - **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 - **ECS Game** – Entity-Component-System architecture demo using Ebiten game engine and Go WebAssembly.
-- **Rust WASM Game** – Interactive bouncing ball game written in Rust and compiled to WebAssembly for high performance.
+- **Rust Bevy Foundation Game**: Minimal Rust WASM game designed for expansion into Bevy ECS architecture
 
 ## Running locally
 
@@ -46,11 +46,14 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
-6. **Build the Rust WASM Game demo**
+6. **Build the Rust Bevy Foundation Game demo**
    ```
    cd rust-wasm-game
-   cargo build --target wasm32-unknown-unknown --release
-   wasm-bindgen --out-dir pkg --target web target/wasm32-unknown-unknown/release/rust_wasm_game.wasm
+   ./build.sh
+   ```
+   Or manually with wasm-pack:
+   ```
+   wasm-pack build --target web --out-dir pkg --release
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
@@ -80,7 +83,7 @@ npm test -- --coverage
 - **Version Update**: Tests for version management and update system
 - **WASM Game Refactoring**: Tests for code organization and module structure
 - **ECS Game**: Tests for Entity-Component-System architecture, Ebiten integration, and game logic
-- **Rust WASM Game**: Tests for Rust WebAssembly integration, game mechanics, and browser compatibility
+- **Rust Bevy Foundation Game**: Tests for Rust WASM implementation designed for Bevy ECS migration
 
 **Total: 286+ tests across 11+ test suites** (automatically synchronized with CI/CD pipeline)
 
@@ -123,7 +126,7 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - **Jekyll** - Ruby-based static site generator for the todo list project
 - **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
 - **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
-- **Rust + WebAssembly** - High-performance Rust code compiled to WASM for browser execution
+- **Rust + WebAssembly + Bevy Foundation** - Minimal game implementation designed for Bevy ECS migration
 - **Jest** - JavaScript testing framework with jsdom environment for unit testing
 - **GitHub Pages** - Static site hosting and deployment
 
@@ -155,12 +158,13 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - Provide clear build instructions with proper GOOS/GOARCH flags
 - Include necessary runtime files (`wasm_exec.js`)
 
-#### Rust + WebAssembly
-- Use Cargo for dependency management and building
-- Configure crate-type as "cdylib" for WASM output
-- Use wasm-bindgen for JavaScript interoperability
-- Minimize bundle size with selective feature compilation
-- Include getrandom with "js" feature for WASM compatibility
+#### Rust + WebAssembly + Bevy Foundation
+- Use minimal web-sys implementation as foundation for Bevy migration
+- Configure wasm-pack for web target ES6 module compatibility
+- Include console_error_panic_hook for better debugging in browser
+- Structure code to map directly to Bevy ECS concepts
+- Set optimization level to "s" for smaller binary size
+- Disable wasm-opt if network restrictions prevent optimization
 
 ### Unit Testing Guidelines
 
@@ -234,9 +238,9 @@ Our development workflow enforces quality through automated testing and deployme
 - Verify Go WASM builds work: 
   - `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
   - `cd ecs-game && GOOS=js GOARCH=wasm go build -o game.wasm`
-- Verify Rust WASM builds work:
-  - `cd rust-wasm-game && cargo build --target wasm32-unknown-unknown --release`
-  - `cd rust-wasm-game && wasm-bindgen --out-dir pkg --target web target/wasm32-unknown-unknown/release/rust_wasm_game.wasm`
+- Verify Rust Bevy Foundation builds work:
+  - `cd rust-wasm-game && ./build.sh`
+  - `cd rust-wasm-game && wasm-pack build --target web --out-dir pkg --release`
 - Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
 
 ### Test Visualization
