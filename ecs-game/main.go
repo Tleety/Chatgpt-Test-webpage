@@ -18,11 +18,12 @@ const (
 
 // Game represents the main game state
 type Game struct {
-	world         *ecs.World
-	inputSystem   *systems.InputSystem
-	movementSystem *systems.MovementSystem
-	aiSystem      *systems.AISystem
-	lastUpdate    time.Time
+	world             *ecs.World
+	inputSystem       *systems.InputSystem
+	movementSystem    *systems.MovementSystem
+	aiSystem          *systems.AISystem
+	clickToMoveSystem *systems.ClickToMoveSystem
+	lastUpdate        time.Time
 }
 
 // NewGame creates a new game instance
@@ -30,11 +31,12 @@ func NewGame() *Game {
 	world := ecs.NewWorld()
 	
 	game := &Game{
-		world:         world,
-		inputSystem:   systems.NewInputSystem(world),
-		movementSystem: systems.NewMovementSystem(world),
-		aiSystem:      systems.NewAISystem(world),
-		lastUpdate:    time.Now(),
+		world:             world,
+		inputSystem:       systems.NewInputSystem(world),
+		movementSystem:    systems.NewMovementSystem(world),
+		aiSystem:          systems.NewAISystem(world),
+		clickToMoveSystem: systems.NewClickToMoveSystem(world),
+		lastUpdate:        time.Now(),
 	}
 
 	game.initEntities()
@@ -51,7 +53,7 @@ func (g *Game) initEntities() {
 	player.AddComponent(components.Player{})
 
 	// Create AI entities
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		ai := g.world.NewEntity()
 		x := float64(100 + i*200)
 		y := float64(100 + i*100)
@@ -59,6 +61,17 @@ func (g *Game) initEntities() {
 		ai.AddComponent(components.Velocity{X: 0, Y: 0})
 		ai.AddComponent(components.Sprite{ColorR: 255, ColorG: 100, ColorB: 100, Width: 15, Height: 15})
 		ai.AddComponent(components.AI{TargetX: x + 100, TargetY: y + 100, Speed: 50})
+	}
+
+	// Create ClickToMove entities (blue squares)
+	for i := 0; i < 3; i++ {
+		clickEntity := g.world.NewEntity()
+		x := float64(150 + i*150)
+		y := float64(400)
+		clickEntity.AddComponent(components.Position{X: x, Y: y})
+		clickEntity.AddComponent(components.Velocity{X: 0, Y: 0})
+		clickEntity.AddComponent(components.Sprite{ColorR: 100, ColorG: 100, ColorB: 255, Width: 18, Height: 18})
+		clickEntity.AddComponent(components.ClickToMove{Speed: 120, HasTarget: false})
 	}
 }
 
@@ -72,6 +85,7 @@ func (g *Game) Update() error {
 	g.inputSystem.Update()
 	g.movementSystem.Update(dt)
 	g.aiSystem.Update(dt)
+	g.clickToMoveSystem.Update(dt)
 
 	return nil
 }
@@ -97,7 +111,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	})
 
 	// Draw instructions
-	ebitenutil.DebugPrint(screen, "ECS Game Demo\nArrow keys or WASD to move green player\nClick mouse to move towards cursor\nRed squares are AI entities")
+	ebitenutil.DebugPrint(screen, "ECS Game Demo\nArrow keys or WASD to move green player\nClick mouse to move blue squares to cursor\nRed squares are AI entities")
 }
 
 // Layout returns the game's screen size

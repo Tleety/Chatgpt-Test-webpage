@@ -24,3 +24,10 @@ type AI struct {
 	TargetX, TargetY float64
 	Speed            float64
 }
+
+// ClickToMove makes an entity move to where the user clicks
+type ClickToMove struct {
+	TargetX, TargetY float64
+	Speed            float64
+	HasTarget        bool
+}

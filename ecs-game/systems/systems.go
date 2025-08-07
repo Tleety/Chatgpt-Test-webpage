@@ -19,7 +19,29 @@ func NewInputSystem(world *ecs.World) *InputSystem {
 }
 
 func (s *InputSystem) Update() {
-	// Find player entity
+	// Handle mouse clicks for ClickToMove entities
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		mx, my := ebiten.CursorPosition()
+		
+		s.world.ForEachEntity(func(e *ecs.Entity) {
+			if !e.HasComponent(components.ClickToMove{}) {
+				return
+			}
+
+			clickComp, exists := e.GetComponent(components.ClickToMove{})
+			if !exists {
+				return
+			}
+			
+			clickToMove := clickComp.(components.ClickToMove)
+			clickToMove.TargetX = float64(mx)
+			clickToMove.TargetY = float64(my)
+			clickToMove.HasTarget = true
+			e.AddComponent(clickToMove)
+		})
+	}
+
+	// Find player entity for keyboard input
 	s.world.ForEachEntity(func(e *ecs.Entity) {
 		if !e.HasComponent(components.Player{}) {
 			return
@@ -47,8 +69,8 @@ func (s *InputSystem) Update() {
 			velocity.Y = 200
 		}
 
-		// Handle mouse input
-		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		// Handle mouse input for player (existing behavior)
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && e.HasComponent(components.Player{}) {
 			mx, my := ebiten.CursorPosition()
 			pos, exists := e.GetComponent(components.Position{})
 			if !exists {
@@ -154,6 +176,61 @@ func (s *AISystem) Update(dt float64) {
 			// Move towards target
 			vel.X = (dx / dist) * ai.Speed
 			vel.Y = (dy / dist) * ai.Speed
+			e.AddComponent(vel)
+		}
+	})
+}
+
+// ClickToMoveSystem handles entities that move to click positions
+type ClickToMoveSystem struct {
+	world *ecs.World
+}
+
+func NewClickToMoveSystem(world *ecs.World) *ClickToMoveSystem {
+	return &ClickToMoveSystem{world: world}
+}
+
+func (s *ClickToMoveSystem) Update(dt float64) {
+	s.world.ForEachEntity(func(e *ecs.Entity) {
+		if !e.HasComponent(components.ClickToMove{}) || !e.HasComponent(components.Position{}) {
+			return
+		}
+
+		clickComp, _ := e.GetComponent(components.ClickToMove{})
+		posComp, _ := e.GetComponent(components.Position{})
+		velComp, exists := e.GetComponent(components.Velocity{})
+		if !exists {
+			return
+		}
+		
+		clickToMove := clickComp.(components.ClickToMove)
+		pos := posComp.(components.Position)
+		vel := velComp.(components.Velocity)
+
+		// Only move if we have a target
+		if !clickToMove.HasTarget {
+			vel.X = 0
+			vel.Y = 0
+			e.AddComponent(vel)
+			return
+		}
+
+		// Calculate direction to target
+		dx := clickToMove.TargetX - pos.X
+		dy := clickToMove.TargetY - pos.Y
+		dist := math.Sqrt(dx*dx + dy*dy)
+
+		// If close to target, stop moving
+		if dist < 5 {
+			vel.X = 0
+			vel.Y = 0
+			clickToMove.HasTarget = false
+			e.AddComponent(clickToMove)
+			e.AddComponent(vel)
+		} else {
+			// Move towards target
+			vel.X = (dx / dist) * clickToMove.Speed
+			vel.Y = (dy / dist) * clickToMove.Speed
 			e.AddComponent(vel)
 		}
 	})
