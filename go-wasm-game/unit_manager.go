@@ -49,6 +49,10 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 		name = fmt.Sprintf("%s #%d", typeDef.Name, um.nextUnitID-1)
 	}
 
+	// Calculate world position from tile coordinates
+	worldX, worldY := um.gameMap.GridToWorld(tileX, tileY)
+	unitWidth, unitHeight := 16.0, 16.0 // Standard unit size
+
 	// Create and register unit
 	unit := &Unit{
 		ID:           unitID,
@@ -64,6 +68,19 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 		Status:       "idle",
 		CreatedAt:    time.Now(),
 		LastMoved:    time.Now(),
+		MovableEntity: MovableEntity{
+			X:         worldX - unitWidth/2,
+			Y:         worldY - unitHeight/2,
+			Width:     unitWidth,
+			Height:    unitHeight,
+			TargetX:   worldX - unitWidth/2,
+			TargetY:   worldY - unitHeight/2,
+			IsMovingFlag: false,
+			MoveSpeed: 2.0, // Slightly slower than player
+			Path:      nil,
+			PathStep:  0,
+		},
+		movementSystem: NewMovementSystem(um.gameMap),
 	}
 
 	um.units[unitID] = unit
@@ -118,7 +135,7 @@ func (um *UnitManager) IsPositionOccupied(tileX, tileY int) bool {
 	return um.spatialIndex.IsPositionOccupied(tileX, tileY)
 }
 
-// MoveUnit moves a unit to a new tile position
+// MoveUnit moves a unit to a new tile position using the unified movement system
 func (um *UnitManager) MoveUnit(unitID string, tileX, tileY int) error {
 	unit := um.units[unitID]
 	if unit == nil {
@@ -134,17 +151,25 @@ func (um *UnitManager) MoveUnit(unitID string, tileX, tileY int) error {
 		return nil
 	}
 
-	// Validate new position
-	if err := um.validatePosition(tileX, tileY); err != nil {
-		return err
-	}
-
-	// Update position
-	oldX, oldY := unit.TileX, unit.TileY
-	um.spatialIndex.UpdateUnitPosition(unit, oldX, oldY, tileX, tileY)
+	// Use the unified movement system for pathfinding-based movement
+	unit.MoveToTile(tileX, tileY)
 	unit.LastMoved = time.Now()
 
 	return nil
+}
+
+// Update all units using the unified movement system
+func (um *UnitManager) Update() {
+	for _, unit := range um.units {
+		if unit.IsAlive {
+			oldX, oldY := unit.TileX, unit.TileY
+			unit.Update()
+			// Update spatial index if position changed
+			if unit.TileX != oldX || unit.TileY != oldY {
+				um.spatialIndex.UpdateUnitPosition(unit, oldX, oldY, unit.TileX, unit.TileY)
+			}
+		}
+	}
 }
 
 // RemoveUnit removes a unit from the game
