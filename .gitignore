@@ -2,6 +2,9 @@ node_modules/
 coverage/
 go-wasm-game/game.wasm
 go-wasm-game/test.wasm
+bevy-game/target/
+bevy-game/pkg/
+bevy-game/Cargo.lock
 jekyll-site/_site/
 jekyll-site/.sass-cache/
 jekyll-site/.jekyll-cache/
