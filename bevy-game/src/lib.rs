@@ -11,7 +11,6 @@ extern "C" {
 pub struct BevyGame {
     canvas: HtmlCanvasElement,
     ctx: CanvasRenderingContext2d,
-    animation_id: Option<i32>,
     time: f64,
     sprites: Vec<Sprite>,
 }
@@ -80,40 +79,14 @@ impl BevyGame {
         Ok(BevyGame {
             canvas,
             ctx,
-            animation_id: None,
             time: 0.0,
             sprites,
         })
     }
 
     #[wasm_bindgen]
-    pub fn start(&mut self) {
-        log("Starting Bevy-style game loop...");
-        self.render_loop();
-    }
-
-    #[wasm_bindgen]
-    pub fn stop(&mut self) {
-        if let Some(id) = self.animation_id {
-            window().unwrap().cancel_animation_frame(id).unwrap();
-            self.animation_id = None;
-        }
-    }
-
-    fn render_loop(&mut self) {
-        let closure = Closure::wrap(Box::new(move |time: f64| {
-            // This will be handled by the JavaScript animation frame callback
-        }) as Box<dyn FnMut(f64)>);
-
+    pub fn render_frame(&mut self) {
         self.update_and_render();
-        
-        let window = window().unwrap();
-        let request_id = window
-            .request_animation_frame(closure.as_ref().unchecked_ref())
-            .unwrap();
-        
-        self.animation_id = Some(request_id);
-        closure.forget();
     }
 
     fn update_and_render(&mut self) {
@@ -147,8 +120,8 @@ impl BevyGame {
 
             // Render sprite
             self.ctx.save();
-            self.ctx.translate(sprite.x, sprite.y);
-            self.ctx.rotate(sprite.rotation);
+            let _ = self.ctx.translate(sprite.x, sprite.y);
+            let _ = self.ctx.rotate(sprite.rotation);
             self.ctx.set_fill_style(&JsValue::from_str(&sprite.color));
             self.ctx.fill_rect(-sprite.size/2.0, -sprite.size/2.0, sprite.size, sprite.size);
             self.ctx.restore();

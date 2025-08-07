@@ -90,6 +90,15 @@
     </main>
 
     <script type="module">
+        let game = null;
+        
+        function animationLoop() {
+            if (game) {
+                game.render_frame();
+                requestAnimationFrame(animationLoop);
+            }
+        }
+        
         async function run() {
             try {
                 const module = await import('./pkg/bevy_game.js');
@@ -98,8 +107,10 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('bevy-game-canvas').style.display = 'block';
                 
-                const game = new module.BevyGame('bevy-game-canvas');
-                game.start();
+                game = new module.BevyGame('bevy-game-canvas');
+                
+                // Start the animation loop from JavaScript
+                animationLoop();
                 
                 // Store game instance for potential cleanup
                 window.bevyGame = game;
@@ -116,7 +127,8 @@
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (window.bevyGame) {
-                window.bevyGame.stop();
+                // Game cleanup is now handled by JavaScript animation loop
+                game = null;
             }
         });
     </script>

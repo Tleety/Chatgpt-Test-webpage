@@ -97,7 +97,7 @@ describe('Bevy Game Foundation', () => {
       
       // Check for system-like functions
       expect(libContent).toContain('update_and_render');
-      expect(libContent).toContain('animation_id');
+      expect(libContent).toContain('render_frame');
     });
 
     test('should have physics simulation features', () => {
