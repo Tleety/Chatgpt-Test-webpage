@@ -93,10 +93,10 @@ func (ms *MovementSystem) isMovingToTarget(entity Movable) bool {
 	dx := targetX - x
 	dy := targetY - y
 	distance := math.Sqrt(dx*dx + dy*dy)
-	moveSpeed := entity.GetMoveSpeed()
 	// Use a small threshold to prevent floating point precision issues
-	const precisionThreshold = 0.5
-	return distance >= math.Max(moveSpeed, precisionThreshold)
+	// This should be smaller than snapThreshold to avoid dead zones
+	const precisionThreshold = 0.1
+	return distance > precisionThreshold
 }
 
 // moveTowardTargetWithTileSpeed moves the entity toward the current target position with tile-based speed
@@ -106,13 +106,6 @@ func (ms *MovementSystem) moveTowardTargetWithTileSpeed(entity Movable) {
 	dx := targetX - x
 	dy := targetY - y
 	distance := math.Sqrt(dx*dx + dy*dy)
-	
-	// If we're very close to the target, snap to it to prevent floating point issues
-	const snapThreshold = 1.0
-	if distance <= snapThreshold {
-		entity.SetPosition(targetX, targetY)
-		return
-	}
 	
 	// Get current tile and apply speed multiplier
 	width, height := entity.GetSize()
@@ -127,11 +120,20 @@ func (ms *MovementSystem) moveTowardTargetWithTileSpeed(entity Movable) {
 	// Apply tile speed multiplier to base movement speed
 	adjustedSpeed := entity.GetMoveSpeed() * tileDef.WalkSpeed
 	
+	// Use a smaller snap threshold to prevent dead zones
+	const snapThreshold = 0.2
+	if distance <= snapThreshold {
+		entity.SetPosition(targetX, targetY)
+		return
+	}
+	
+	// Move towards target with tile-adjusted speed
+	// Ensure we don't overshoot the target
 	if distance < adjustedSpeed {
-		// Snap to target
+		// If we would overshoot, move exactly to the target
 		entity.SetPosition(targetX, targetY)
 	} else {
-		// Move towards target with tile-adjusted speed
+		// Normal movement
 		newX := x + (dx / distance) * adjustedSpeed
 		newY := y + (dy / distance) * adjustedSpeed
 		entity.SetPosition(newX, newY)
