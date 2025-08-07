@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rust WASM Game - My GitHub Page</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../style.css">
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      main {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding-top: 60px; /* Account for top bar height */
+        display: flex;
+        flex-direction: column;
+      }
+      .hero {
+        position: absolute;
+        top: 70px;
+        left: 10px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .hero h1 {
+        margin: 0 0 5px 0;
+        font-size: 1.2em;
+      }
+      .game-instructions {
+        margin: 0;
+        color: #666;
+        font-size: 0.9em;
+        line-height: 1.4;
+        max-width: 300px;
+      }
+
+      canvas {
+        display: block;
+        background: #2c3e50;
+        border: none;
+        cursor: crosshair;
+      }
+
+      .controls {
+        position: absolute;
+        top: 70px;
+        right: 10px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .controls button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin: 2px;
+      }
+
+      .controls button:hover {
+        background: #2980b9;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="../top-bar.js"></script>
+    <main>
+      <div class="hero">
+        <h1>Rust WASM Bouncing Ball</h1>
+        <p class="game-instructions">Click anywhere to redirect the ball! This interactive bouncing ball demo is written in Rust and compiled to WebAssembly for high performance in the browser.</p>
+      </div>
+
+      <div class="controls">
+        <button id="randomize-btn">🎲 Random Velocity</button>
+      </div>
+      
+      <canvas id="rust-canvas"></canvas>
+    </main>
+    
+    <script type="module">
+      import init, { RustWasmGame } from './pkg/rust_wasm_game.js';
+
+      let game = null;
+      let animationId = null;
+
+      async function run() {
+        // Initialize the wasm module
+        await init();
+
+        const canvas = document.getElementById('rust-canvas');
+        
+        function resizeCanvas() {
+          // Get the available space (full viewport minus top bar)
+          const topBar = document.querySelector('.top-bar');
+          const topBarHeight = topBar ? topBar.offsetHeight : 60; // fallback to 60px
+          const width = window.innerWidth;
+          const height = window.innerHeight - topBarHeight;
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          if (game) {
+            game.resize(width, height);
+          }
+        }
+
+        // Wait for top bar to be created before resizing
+        function waitForTopBarAndResize() {
+          const topBar = document.querySelector('.top-bar');
+          if (topBar) {
+            resizeCanvas();
+            return true;
+          } else {
+            setTimeout(waitForTopBarAndResize, 100);
+            return false;
+          }
+        }
+
+        // Initialize canvas sizing
+        waitForTopBarAndResize();
+
+        // Create the game instance
+        try {
+          game = new RustWasmGame('rust-canvas');
+          console.log('Rust WASM Game initialized successfully');
+        } catch (error) {
+          console.error('Failed to initialize Rust WASM Game:', error);
+          return;
+        }
+
+        // Set up event listeners
+        canvas.addEventListener('click', (event) => {
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          game.on_click(x, y);
+        });
+
+        // Random velocity button
+        document.getElementById('randomize-btn').addEventListener('click', () => {
+          game.add_random_velocity();
+        });
+
+        // Resize handler
+        window.addEventListener('resize', resizeCanvas);
+
+        // Animation loop
+        function animate(currentTime) {
+          game.update(currentTime);
+          game.render();
+          animationId = requestAnimationFrame(animate);
+        }
+
+        // Start the animation loop
+        animationId = requestAnimationFrame(animate);
+      }
+
+      // Error handling
+      window.addEventListener('error', (event) => {
+        console.error('Runtime error:', event.error);
+      });
+
+      // Initialize everything in proper sequence
+      function initialize() {
+        run().catch(console.error);
+      }
+
+      document.addEventListener('DOMContentLoaded', initialize);
+      
+      // Fallback initialization after a delay
+      setTimeout(initialize, 500);
+    </script>
+  </body>
+</html>

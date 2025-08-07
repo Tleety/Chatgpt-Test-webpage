@@ -1,0 +1,1 @@
+/home/runner/work/Chatgpt-Test-webpage/Chatgpt-Test-webpage/rust-wasm-game/target/wasm32-unknown-unknown/release/rust_wasm_game.wasm: /home/runner/work/Chatgpt-Test-webpage/Chatgpt-Test-webpage/rust-wasm-game/src/lib.rs

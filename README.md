@@ -9,6 +9,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 - **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 - **ECS Game** – Entity-Component-System architecture demo using Ebiten game engine and Go WebAssembly.
+- **Rust WASM Game** – Interactive bouncing ball game written in Rust and compiled to WebAssembly for high performance.
 
 ## Running locally
 
@@ -45,6 +46,14 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
+6. **Build the Rust WASM Game demo**
+   ```
+   cd rust-wasm-game
+   cargo build --target wasm32-unknown-unknown --release
+   wasm-bindgen --out-dir pkg --target web target/wasm32-unknown-unknown/release/rust_wasm_game.wasm
+   ```
+   After building, serve the folder with any static web server and open `index.html` in a browser.
+
 ## Testing
 
 Unit tests are available for multiple projects and are **required to pass** for all deployments and merges:
@@ -71,8 +80,9 @@ npm test -- --coverage
 - **Version Update**: Tests for version management and update system
 - **WASM Game Refactoring**: Tests for code organization and module structure
 - **ECS Game**: Tests for Entity-Component-System architecture, Ebiten integration, and game logic
+- **Rust WASM Game**: Tests for Rust WebAssembly integration, game mechanics, and browser compatibility
 
-**Total: 286 tests across 10 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 286+ tests across 11+ test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
@@ -113,6 +123,7 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - **Jekyll** - Ruby-based static site generator for the todo list project
 - **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
 - **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
+- **Rust + WebAssembly** - High-performance Rust code compiled to WASM for browser execution
 - **Jest** - JavaScript testing framework with jsdom environment for unit testing
 - **GitHub Pages** - Static site hosting and deployment
 
@@ -143,6 +154,13 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - Keep WASM modules focused and lightweight
 - Provide clear build instructions with proper GOOS/GOARCH flags
 - Include necessary runtime files (`wasm_exec.js`)
+
+#### Rust + WebAssembly
+- Use Cargo for dependency management and building
+- Configure crate-type as "cdylib" for WASM output
+- Use wasm-bindgen for JavaScript interoperability
+- Minimize bundle size with selective feature compilation
+- Include getrandom with "js" feature for WASM compatibility
 
 ### Unit Testing Guidelines
 
@@ -216,6 +234,9 @@ Our development workflow enforces quality through automated testing and deployme
 - Verify Go WASM builds work: 
   - `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
   - `cd ecs-game && GOOS=js GOARCH=wasm go build -o game.wasm`
+- Verify Rust WASM builds work:
+  - `cd rust-wasm-game && cargo build --target wasm32-unknown-unknown --release`
+  - `cd rust-wasm-game && wasm-bindgen --out-dir pkg --target web target/wasm32-unknown-unknown/release/rust_wasm_game.wasm`
 - Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
 
 ### Test Visualization
