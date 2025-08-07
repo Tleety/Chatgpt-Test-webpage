@@ -7,9 +7,57 @@ on:
     branches: [ main ]
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    name: Detect Changes
+    outputs:
+      wasm_changed: ${{ steps.changes.outputs.wasm_changed }}
+      jekyll_changed: ${{ steps.changes.outputs.jekyll_changed }}
+      snake_changed: ${{ steps.changes.outputs.snake_changed }}
+      main_site_changed: ${{ steps.changes.outputs.main_site_changed }}
+      tests_changed: ${{ steps.changes.outputs.tests_changed }}
+      ci_changed: ${{ steps.changes.outputs.ci_changed }}
+      build_strategy: ${{ steps.changes.outputs.build_strategy }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Detect component changes
+      id: changes
+      run: |
+        chmod +x scripts/detect-changes.sh
+        
+        # For pull requests, compare against target branch
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          BASE_REF="${{ github.event.pull_request.base.sha }}"
+        else
+          # For pushes, compare against previous commit
+          BASE_REF="HEAD~1"
+        fi
+        
+        # Run change detection
+        output=$(./scripts/detect-changes.sh "$BASE_REF")
+        echo "$output"
+        
+        # Extract variables from output
+        eval $(echo "$output" | grep -E '^(WASM_CHANGED|JEKYLL_CHANGED|SNAKE_CHANGED|MAIN_SITE_CHANGED|TESTS_CHANGED|CI_CHANGED|BUILD_STRATEGY)=')
+        
+        # Set outputs for subsequent jobs
+        echo "wasm_changed=$WASM_CHANGED" >> $GITHUB_OUTPUT
+        echo "jekyll_changed=$JEKYLL_CHANGED" >> $GITHUB_OUTPUT
+        echo "snake_changed=$SNAKE_CHANGED" >> $GITHUB_OUTPUT
+        echo "main_site_changed=$MAIN_SITE_CHANGED" >> $GITHUB_OUTPUT
+        echo "tests_changed=$TESTS_CHANGED" >> $GITHUB_OUTPUT
+        echo "ci_changed=$CI_CHANGED" >> $GITHUB_OUTPUT
+        echo "build_strategy=$BUILD_STRATEGY" >> $GITHUB_OUTPUT
+
   test:
     runs-on: ubuntu-latest
-    name: Unit Tests
+    name: Selective Tests
+    needs: detect-changes
     
     steps:
     - name: Checkout code
@@ -24,22 +72,34 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Setup Go for WASM build
+    - name: Setup Go for WASM (if needed)
+      if: needs.detect-changes.outputs.wasm_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
         
-    - name: Build Go WASM module for tests
+    - name: Build Go WASM module for tests (if needed)
+      if: needs.detect-changes.outputs.wasm_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       run: |
         cd go-wasm-game
         GOOS=js GOARCH=wasm go build -o game.wasm
       
-    - name: Run unit tests
-      run: npm test
+    - name: Run selective tests
+      run: |
+        chmod +x scripts/selective-test.sh
+        ./scripts/selective-test.sh "${{ needs.detect-changes.outputs.build_strategy }}"
       
     - name: Generate test results for test visualizer
       run: |
-        npm test -- --json --outputFile=tests/test-results.json
+        strategy="${{ needs.detect-changes.outputs.build_strategy }}"
+        if [[ "$strategy" == "full" ]]; then
+          npm test -- --json --outputFile=tests/test-results.json
+        else
+          echo "Skipping full test results generation for selective build strategy: $strategy"
+          # Create a minimal test results file
+          echo '{"success": true, "numTotalTests": 0, "numPassedTests": 0, "numFailedTests": 0, "testResults": []}' > tests/test-results.json
+        fi
+        
         node -e "
         const fs = require('fs');
         try {
@@ -50,6 +110,7 @@ jobs:
             numTotalTests: testResults.numTotalTests,
             numPassedTests: testResults.numPassedTests,
             numFailedTests: testResults.numFailedTests,
+            buildStrategy: '${{ needs.detect-changes.outputs.build_strategy }}',
             testSuites: testResults.testResults.map(suite => ({
               name: suite.name.replace(/.*\//, '').replace('.test.js', ''),
               status: suite.status,
@@ -68,6 +129,7 @@ jobs:
             numTotalTests: 0,
             numPassedTests: 0,
             numFailedTests: 0,
+            buildStrategy: '${{ needs.detect-changes.outputs.build_strategy }}',
             testSuites: [],
             error: 'Failed to parse test results'
           }, null, 2));
@@ -75,10 +137,10 @@ jobs:
         "
       if: always()
 
-  build:
+  selective-build:
     runs-on: ubuntu-latest
-    name: Build Project
-    needs: test
+    name: Selective Build
+    needs: [detect-changes, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
@@ -94,34 +156,42 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Setup Go for WASM build
+    - name: Setup Go for WASM (if needed)
+      if: needs.detect-changes.outputs.wasm_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
         
-    - name: Build Go WASM module
-      run: |
-        cd go-wasm-game
-        GOOS=js GOARCH=wasm go build -o game.wasm
-        
-    - name: Setup Ruby for Jekyll
+    - name: Setup Ruby for Jekyll (if needed)
+      if: needs.detect-changes.outputs.jekyll_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.0'
         bundler-cache: true
         working-directory: ./jekyll-site
         
-    - name: Build Jekyll site
+    - name: Run selective build
       run: |
-        cd jekyll-site
-        gem install bundler jekyll
-        bundle install
-        bundle exec jekyll build
+        chmod +x scripts/selective-build.sh
+        ./scripts/selective-build.sh "${{ needs.detect-changes.outputs.build_strategy }}"
+        
+    - name: Log build summary
+      run: |
+        echo "=========================================="
+        echo "Build completed with strategy: ${{ needs.detect-changes.outputs.build_strategy }}"
+        echo "Components changed:"
+        echo "  WASM: ${{ needs.detect-changes.outputs.wasm_changed }}"
+        echo "  Jekyll: ${{ needs.detect-changes.outputs.jekyll_changed }}"
+        echo "  Snake: ${{ needs.detect-changes.outputs.snake_changed }}"
+        echo "  Main Site: ${{ needs.detect-changes.outputs.main_site_changed }}"
+        echo "  Tests: ${{ needs.detect-changes.outputs.tests_changed }}"
+        echo "  CI/CD: ${{ needs.detect-changes.outputs.ci_changed }}"
+        echo "=========================================="
 
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to GitHub Pages
-    needs: [test, build]
+    needs: [detect-changes, test, selective-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: github-pages
@@ -144,7 +214,14 @@ jobs:
       
     - name: Run tests and generate results for deployment
       run: |
-        npm test -- --json --outputFile=tests/test-results.json || echo "Tests failed but continuing deployment"
+        strategy="${{ needs.detect-changes.outputs.build_strategy }}"
+        if [[ "$strategy" == "full" ]]; then
+          npm test -- --json --outputFile=tests/test-results.json || echo "Tests failed but continuing deployment"
+        else
+          echo "Skipping full test execution for deployment with strategy: $strategy"
+          echo '{"success": true, "numTotalTests": 0, "numPassedTests": 0, "numFailedTests": 0, "testResults": []}' > tests/test-results.json
+        fi
+        
         node -e "
         const fs = require('fs');
         try {
@@ -155,6 +232,7 @@ jobs:
             numTotalTests: testResults.numTotalTests,
             numPassedTests: testResults.numPassedTests,
             numFailedTests: testResults.numFailedTests,
+            buildStrategy: '${{ needs.detect-changes.outputs.build_strategy }}',
             testSuites: testResults.testResults.map(suite => ({
               name: suite.name.replace(/.*\//, '').replace('.test.js', ''),
               status: suite.status,
@@ -173,6 +251,7 @@ jobs:
             numTotalTests: 0,
             numPassedTests: 0,
             numFailedTests: 0,
+            buildStrategy: '${{ needs.detect-changes.outputs.build_strategy }}',
             testSuites: [],
             error: 'Failed to parse test results'
           }, null, 2));
@@ -195,24 +274,28 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v3
       
-    - name: Setup Go for WASM build
+    - name: Setup Go for WASM (if needed for deployment)
+      if: needs.detect-changes.outputs.wasm_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
         
-    - name: Build Go WASM module
+    - name: Build Go WASM module (if needed for deployment)
+      if: needs.detect-changes.outputs.wasm_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       run: |
         cd go-wasm-game
         GOOS=js GOARCH=wasm go build -o game.wasm
         
-    - name: Setup Ruby for Jekyll
+    - name: Setup Ruby for Jekyll (if needed for deployment)
+      if: needs.detect-changes.outputs.jekyll_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.0'
         bundler-cache: true
         working-directory: ./jekyll-site
         
-    - name: Build Jekyll site
+    - name: Build Jekyll site (if needed for deployment)
+      if: needs.detect-changes.outputs.jekyll_changed == 'true' || needs.detect-changes.outputs.build_strategy == 'full'
       run: |
         cd jekyll-site
         gem install bundler jekyll
@@ -226,6 +309,8 @@ jobs:
         if [ -f deployment.json ]; then
           cp deployment.json _deployment/deployment.json
         fi
+        
+        echo "Deployment prepared with strategy: ${{ needs.detect-changes.outputs.build_strategy }}"
         
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
