@@ -33,6 +33,21 @@ jobs:
       run: |
         cd go-wasm-game
         GOOS=js GOARCH=wasm go build -o game.wasm
+        
+    - name: Setup Rust for Bevy WASM build
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-unknown-unknown
+        override: true
+        
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
+    - name: Build Bevy WASM module for tests
+      run: |
+        cd bevy-game
+        wasm-pack build --target web --out-dir pkg --no-typescript
       
     - name: Run unit tests
       run: npm test
@@ -103,6 +118,21 @@ jobs:
       run: |
         cd go-wasm-game
         GOOS=js GOARCH=wasm go build -o game.wasm
+        
+    - name: Setup Rust for Bevy WASM build
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-unknown-unknown
+        override: true
+        
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
+    - name: Build Bevy WASM module
+      run: |
+        cd bevy-game
+        wasm-pack build --target web --out-dir pkg --no-typescript
         
     - name: Setup Ruby for Jekyll
       uses: ruby/setup-ruby@v1
@@ -206,6 +236,21 @@ jobs:
       run: |
         cd go-wasm-game
         GOOS=js GOARCH=wasm go build -o game.wasm
+        
+    - name: Setup Rust for Bevy WASM build
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-unknown-unknown
+        override: true
+        
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      
+    - name: Build Bevy WASM module
+      run: |
+        cd bevy-game
+        wasm-pack build --target web --out-dir pkg --no-typescript
         
     - name: Setup Ruby for Jekyll
       uses: ruby/setup-ruby@v1
