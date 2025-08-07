@@ -1,517 +1,531 @@
+//go:build !js
+// +build !js
+
 package main
 
 import (
-	"errors"
-	"fmt"
 	"testing"
+	"math"
 )
 
-// Basic pathfinding algorithm test - simplified version without WASM dependencies
-type TestTileType int
+// Copy the exact types and functions we want to test from systems package
+// This allows us to test the core logic without WASM dependencies
 
-const (
-	TestTileGrass TestTileType = 0
-	TestTileWater TestTileType = 1
-	TestTileStone TestTileType = 2
-)
-
-type TestMap struct {
-	Width    int
-	Height   int
-	TileSize float64
-	Tiles    [][]TestTileType
+// Path represents a sequence of grid coordinates
+type Path []struct {
+	X, Y int
 }
 
-func NewTestMap(width, height int, tileSize float64) *TestMap {
-	tiles := make([][]TestTileType, height)
-	for y := range tiles {
-		tiles[y] = make([]TestTileType, width)
+// GetNextPathStep returns the next step in the path, or current position if no path
+func GetNextPathStep(path Path, currentStep int) (int, int, bool) {
+	if currentStep >= len(path) {
+		return 0, 0, false // Path completed
 	}
-	return &TestMap{
-		Width:    width,
-		Height:   height,
-		TileSize: tileSize,
-		Tiles:    tiles,
-	}
+	
+	step := path[currentStep]
+	return step.X, step.Y, true
 }
 
-func (m *TestMap) SetTile(x, y int, tileType TestTileType) {
-	if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
-		m.Tiles[y][x] = tileType
-	}
+// IsPathComplete checks if we've reached the end of the path
+func IsPathComplete(path Path, currentStep int) bool {
+	return currentStep >= len(path)
 }
 
-func (m *TestMap) GetTile(x, y int) TestTileType {
-	if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
-		return m.Tiles[y][x]
-	}
-	return TestTileWater // Treat out of bounds as impassable
+// PathLength returns the number of steps in the path
+func PathLength(path Path) int {
+	return len(path)
 }
 
-func (m *TestMap) IsWalkable(x, y int) bool {
-	if x < 0 || x >= m.Width || y < 0 || y >= m.Height {
-		return false
-	}
-	tile := m.GetTile(x, y)
-	return tile == TestTileGrass || tile == TestTileStone
+// MovableEntity provides a base implementation of the Movable interface
+type MovableEntity struct {
+	X, Y       float64
+	Width      float64
+	Height     float64
+	TargetX    float64
+	TargetY    float64
+	IsMovingFlag bool
+	MoveSpeed  float64
+	Path       Path
+	PathStep   int
 }
 
-// Simple pathfinding using breadth-first search
-type TestPathNode struct {
-	X, Y   int
-	Parent *TestPathNode
+// Implement Movable interface for MovableEntity
+func (me *MovableEntity) GetPosition() (float64, float64) { return me.X, me.Y }
+func (me *MovableEntity) SetPosition(x, y float64) { me.X, me.Y = x, y }
+func (me *MovableEntity) GetSize() (float64, float64) { return me.Width, me.Height }
+func (me *MovableEntity) GetMoveSpeed() float64 { return me.MoveSpeed }
+func (me *MovableEntity) SetTarget(x, y float64) { me.TargetX, me.TargetY = x, y }
+func (me *MovableEntity) GetTarget() (float64, float64) { return me.TargetX, me.TargetY }
+func (me *MovableEntity) IsMoving() bool { return me.IsMovingFlag }
+func (me *MovableEntity) SetMoving(moving bool) { me.IsMovingFlag = moving }
+func (me *MovableEntity) GetPath() Path { return me.Path }
+func (me *MovableEntity) SetPath(path Path) { me.Path = path }
+func (me *MovableEntity) GetPathStep() int { return me.PathStep }
+func (me *MovableEntity) SetPathStep(step int) { me.PathStep = step }
+
+// hasReachedTarget checks if entity has reached the current target
+func hasReachedTarget(entity *MovableEntity) bool {
+	x, y := entity.GetPosition()
+	targetX, targetY := entity.GetTarget()
+	dx := targetX - x
+	dy := targetY - y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	
+	const arrivalThreshold = 0.5
+	return distance <= arrivalThreshold
 }
 
-func FindSimplePath(gameMap *TestMap, startX, startY, goalX, goalY int) []TestPathNode {
-	if !gameMap.IsWalkable(startX, startY) || !gameMap.IsWalkable(goalX, goalY) {
-		return nil
-	}
+// executeMovement performs the actual movement towards the target
+func executeMovement(entity *MovableEntity) {
+	x, y := entity.GetPosition()
+	targetX, targetY := entity.GetTarget()
+	dx := targetX - x
+	dy := targetY - y
+	distance := math.Sqrt(dx*dx + dy*dy)
 	
-	if startX == goalX && startY == goalY {
-		return []TestPathNode{{X: startX, Y: startY, Parent: nil}}
-	}
-	
-	visited := make(map[int]bool)
-	queue := []*TestPathNode{{X: startX, Y: startY, Parent: nil}}
-	
-	directions := [][]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}} // N, E, S, W
-	
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
-		
-		if current.X == goalX && current.Y == goalY {
-			// Reconstruct path
-			path := []TestPathNode{}
-			for node := current; node != nil; node = node.Parent {
-				path = append([]TestPathNode{{X: node.X, Y: node.Y, Parent: nil}}, path...)
-			}
-			return path
-		}
-		
-		key := current.Y*gameMap.Width + current.X
-		if visited[key] {
-			continue
-		}
-		visited[key] = true
-		
-		for _, dir := range directions {
-			newX := current.X + dir[0]
-			newY := current.Y + dir[1]
-			
-			if gameMap.IsWalkable(newX, newY) {
-				newKey := newY*gameMap.Width + newX
-				if !visited[newKey] {
-					queue = append(queue, &TestPathNode{
-						X: newX, Y: newY, Parent: current,
-					})
-				}
-			}
-		}
-	}
-	
-	return nil // No path found
-}
-
-// Unit management logic test - simplified version
-type TestUnit struct {
-	ID       string
-	Name     string
-	TileX    int
-	TileY    int
-	IsAlive  bool
-	UnitType int
-}
-
-type TestUnitManager struct {
-	units      map[string]*TestUnit
-	nextUnitID int
-	gameMap    *TestMap
-}
-
-func NewTestUnitManager(gameMap *TestMap) *TestUnitManager {
-	return &TestUnitManager{
-		units:      make(map[string]*TestUnit),
-		nextUnitID: 1,
-		gameMap:    gameMap,
-	}
-}
-
-func (um *TestUnitManager) CreateUnit(unitType int, tileX, tileY int, name string) (*TestUnit, error) {
-	if !um.gameMap.IsWalkable(tileX, tileY) {
-		return nil, errors.New("position is not walkable")
-	}
-	
-	unit := &TestUnit{
-		ID:       fmt.Sprintf("unit_%d", um.nextUnitID),
-		Name:     name,
-		TileX:    tileX,
-		TileY:    tileY,
-		IsAlive:  true,
-		UnitType: unitType,
-	}
-	
-	um.units[unit.ID] = unit
-	um.nextUnitID++
-	
-	return unit, nil
-}
-
-func (um *TestUnitManager) GetAllUnits() []*TestUnit {
-	units := make([]*TestUnit, 0, len(um.units))
-	for _, unit := range um.units {
-		if unit.IsAlive {
-			units = append(units, unit)
-		}
-	}
-	return units
-}
-
-func (um *TestUnitManager) MoveUnit(unitID string, tileX, tileY int) error {
-	unit, exists := um.units[unitID]
-	if !exists || !unit.IsAlive {
-		return errors.New("unit not found")
-	}
-	
-	if !um.gameMap.IsWalkable(tileX, tileY) {
-		return errors.New("target position is not walkable")
-	}
-	
-	unit.TileX = tileX
-	unit.TileY = tileY
-	return nil
-}
-
-func (um *TestUnitManager) RemoveUnit(unitID string) error {
-	unit, exists := um.units[unitID]
-	if !exists {
-		return errors.New("unit not found")
-	}
-	
-	unit.IsAlive = false
-	return nil
-}
-
-
-
-// Tests for pathfinding
-func TestBasicPathfinding(t *testing.T) {
-	gameMap := NewTestMap(5, 5, 32.0)
-	
-	// Set all tiles to grass (walkable)
-	for x := 0; x < 5; x++ {
-		for y := 0; y < 5; y++ {
-			gameMap.SetTile(x, y, TestTileGrass)
-		}
-	}
-
-	tests := []struct {
-		name    string
-		startX  int
-		startY  int
-		goalX   int
-		goalY   int
-		wantLen int
-	}{
-		{
-			name:    "Direct horizontal path",
-			startX:  0,
-			startY:  0,
-			goalX:   4,
-			goalY:   0,
-			wantLen: 5,
-		},
-		{
-			name:    "Direct vertical path",
-			startX:  0,
-			startY:  0,
-			goalX:   0,
-			goalY:   4,
-			wantLen: 5,
-		},
-		{
-			name:    "Same position",
-			startX:  2,
-			startY:  2,
-			goalX:   2,
-			goalY:   2,
-			wantLen: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			path := FindSimplePath(gameMap, tt.startX, tt.startY, tt.goalX, tt.goalY)
-			
-			if len(path) != tt.wantLen {
-				t.Errorf("Expected path length %d, got %d", tt.wantLen, len(path))
-			}
-			
-			if len(path) > 0 {
-				// Verify start position
-				if path[0].X != tt.startX || path[0].Y != tt.startY {
-					t.Errorf("Path should start at (%d,%d), got (%d,%d)", 
-						tt.startX, tt.startY, path[0].X, path[0].Y)
-				}
-				
-				// Verify end position
-				lastNode := path[len(path)-1]
-				if lastNode.X != tt.goalX || lastNode.Y != tt.goalY {
-					t.Errorf("Path should end at (%d,%d), got (%d,%d)", 
-						tt.goalX, tt.goalY, lastNode.X, lastNode.Y)
-				}
-			}
-		})
-	}
-}
-
-func TestPathfindingWithObstacles(t *testing.T) {
-	gameMap := NewTestMap(5, 5, 32.0)
-	
-	// Set all tiles to grass (walkable)
-	for x := 0; x < 5; x++ {
-		for y := 0; y < 5; y++ {
-			gameMap.SetTile(x, y, TestTileGrass)
-		}
-	}
-	
-	// Create a wall
-	gameMap.SetTile(2, 0, TestTileWater)
-	gameMap.SetTile(2, 1, TestTileWater)
-	gameMap.SetTile(2, 2, TestTileWater)
-	gameMap.SetTile(2, 3, TestTileWater)
-	// Leave (2,4) open
-
-	path := FindSimplePath(gameMap, 0, 0, 4, 0)
-	
-	if len(path) == 0 {
-		t.Error("Should find path around obstacle")
+	// If we're very close to target, snap exactly to it
+	if distance < 0.1 {
+		entity.SetPosition(targetX, targetY)
 		return
 	}
 	
-	// Verify no path goes through water
-	for _, node := range path {
-		tile := gameMap.GetTile(node.X, node.Y)
-		if tile == TestTileWater {
-			t.Errorf("Path goes through water tile at (%d,%d)", node.X, node.Y)
-		}
+	moveSpeed := entity.GetMoveSpeed()
+	
+	// Move towards target, but never overshoot
+	if distance <= moveSpeed {
+		// If we would overshoot, move exactly to target
+		entity.SetPosition(targetX, targetY)
+	} else {
+		// Normal movement step
+		newX := x + (dx / distance) * moveSpeed
+		newY := y + (dy / distance) * moveSpeed
+		entity.SetPosition(newX, newY)
 	}
 }
 
-// Tests for unit management
-func TestUnitCreation(t *testing.T) {
-	gameMap := NewTestMap(10, 10, 32.0)
-	
-	// Set all tiles to grass
-	for x := 0; x < 10; x++ {
-		for y := 0; y < 10; y++ {
-			gameMap.SetTile(x, y, TestTileGrass)
-		}
-	}
-	
-	um := NewTestUnitManager(gameMap)
-
-	tests := []struct {
-		name      string
-		unitType  int
-		tileX     int
-		tileY     int
-		unitName  string
-		expectErr bool
-	}{
-		{
-			name:      "Create valid unit",
-			unitType:  1,
-			tileX:     5,
-			tileY:     5,
-			unitName:  "TestWarrior",
-			expectErr: false,
-		},
-		{
-			name:      "Create unit on water",
-			unitType:  1,
-			tileX:     1,
-			tileY:     1,
-			unitName:  "Invalid",
-			expectErr: true,
-		},
-	}
-	
-	// Set tile (1,1) to water for second test
-	gameMap.SetTile(1, 1, TestTileWater)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			unit, err := um.CreateUnit(tt.unitType, tt.tileX, tt.tileY, tt.unitName)
-			
-			if tt.expectErr {
-				if err == nil {
-					t.Error("Expected error but got none")
-				}
-				return
-			}
-			
-			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
-				return
-			}
-			
-			if unit.TileX != tt.tileX || unit.TileY != tt.tileY {
-				t.Errorf("Unit position incorrect: expected (%d,%d), got (%d,%d)",
-					tt.tileX, tt.tileY, unit.TileX, unit.TileY)
-			}
-			
-			if unit.Name != tt.unitName {
-				t.Errorf("Unit name incorrect: expected %s, got %s", tt.unitName, unit.Name)
-			}
-		})
-	}
+// heuristic calculates the Euclidean distance heuristic for A*
+func heuristic(x1, y1, x2, y2 int) float64 {
+	dx := float64(absInt(x2 - x1))
+	dy := float64(absInt(y2 - y1))
+	return math.Sqrt(dx*dx + dy*dy)
 }
 
-func TestUnitMovement(t *testing.T) {
-	gameMap := NewTestMap(5, 5, 32.0)
-	
-	// Set all tiles to grass except (3,3)
-	for x := 0; x < 5; x++ {
-		for y := 0; y < 5; y++ {
-			gameMap.SetTile(x, y, TestTileGrass)
-		}
+// absInt returns the absolute value of an integer
+func absInt(x int) int {
+	if x < 0 {
+		return -x
 	}
-	gameMap.SetTile(3, 3, TestTileWater)
-	
-	um := NewTestUnitManager(gameMap)
-	
-	unit, err := um.CreateUnit(1, 1, 1, "TestUnit")
-	if err != nil {
-		t.Fatalf("Failed to create unit: %v", err)
-	}
+	return x
+}
 
+// Tests for pathfinding core functions
+func TestGetNextPathStep(t *testing.T) {
+	path := Path{
+		{X: 0, Y: 0},
+		{X: 1, Y: 0},
+		{X: 2, Y: 0},
+	}
+	
 	tests := []struct {
-		name      string
-		targetX   int
-		targetY   int
-		expectErr bool
+		name        string
+		currentStep int
+		expectX     int
+		expectY     int
+		expectNext  bool
 	}{
 		{
-			name:      "Move to valid position",
-			targetX:   2,
-			targetY:   2,
-			expectErr: false,
+			name:        "First step",
+			currentStep: 0,
+			expectX:     0,
+			expectY:     0,
+			expectNext:  true,
 		},
 		{
-			name:      "Move to water",
-			targetX:   3,
-			targetY:   3,
-			expectErr: true,
+			name:        "Second step",
+			currentStep: 1,
+			expectX:     1,
+			expectY:     0,
+			expectNext:  true,
+		},
+		{
+			name:        "Last step",
+			currentStep: 2,
+			expectX:     2,
+			expectY:     0,
+			expectNext:  true,
+		},
+		{
+			name:        "Beyond path",
+			currentStep: 3,
+			expectX:     0,
+			expectY:     0,
+			expectNext:  false,
 		},
 	}
-
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := um.MoveUnit(unit.ID, tt.targetX, tt.targetY)
+			x, y, hasNext := GetNextPathStep(path, tt.currentStep)
 			
-			if tt.expectErr {
-				if err == nil {
-					t.Error("Expected error but got none")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				} else {
-					// Check unit moved to correct position
-					if unit.TileX != tt.targetX || unit.TileY != tt.targetY {
-						t.Errorf("Unit not moved to correct position: expected (%d,%d), got (%d,%d)",
-							tt.targetX, tt.targetY, unit.TileX, unit.TileY)
-					}
+			if hasNext != tt.expectNext {
+				t.Errorf("Expected hasNext=%v, got hasNext=%v", tt.expectNext, hasNext)
+			}
+			
+			if tt.expectNext {
+				if x != tt.expectX || y != tt.expectY {
+					t.Errorf("Expected step (%d,%d), got (%d,%d)", tt.expectX, tt.expectY, x, y)
 				}
 			}
 		})
 	}
 }
 
-func TestUnitRemoval(t *testing.T) {
-	gameMap := NewTestMap(5, 5, 32.0)
-	
-	// Set all tiles to grass
-	for x := 0; x < 5; x++ {
-		for y := 0; y < 5; y++ {
-			gameMap.SetTile(x, y, TestTileGrass)
-		}
+func TestIsPathComplete(t *testing.T) {
+	path := Path{
+		{X: 0, Y: 0},
+		{X: 1, Y: 0},
+		{X: 2, Y: 0},
 	}
 	
-	um := NewTestUnitManager(gameMap)
-	
-	unit, err := um.CreateUnit(1, 2, 2, "TestUnit")
-	if err != nil {
-		t.Fatalf("Failed to create unit: %v", err)
+	tests := []struct {
+		name        string
+		currentStep int
+		expectDone  bool
+	}{
+		{
+			name:        "At beginning",
+			currentStep: 0,
+			expectDone:  false,
+		},
+		{
+			name:        "In middle",
+			currentStep: 1,
+			expectDone:  false,
+		},
+		{
+			name:        "At end",
+			currentStep: 3,
+			expectDone:  true,
+		},
+		{
+			name:        "Beyond end",
+			currentStep: 5,
+			expectDone:  true,
+		},
 	}
 	
-	// Verify unit exists and is alive
-	units := um.GetAllUnits()
-	if len(units) != 1 {
-		t.Fatalf("Expected 1 unit, got %d", len(units))
-	}
-	
-	// Remove unit
-	err = um.RemoveUnit(unit.ID)
-	if err != nil {
-		t.Errorf("Unexpected error removing unit: %v", err)
-	}
-	
-	// Verify unit is no longer alive
-	units = um.GetAllUnits()
-	if len(units) != 0 {
-		t.Errorf("Expected 0 alive units after removal, got %d", len(units))
-	}
-	
-	// Try to remove non-existent unit
-	err = um.RemoveUnit("nonexistent")
-	if err == nil {
-		t.Error("Expected error when removing non-existent unit")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isDone := IsPathComplete(path, tt.currentStep)
+			if isDone != tt.expectDone {
+				t.Errorf("Expected IsPathComplete=%v, got %v", tt.expectDone, isDone)
+			}
+		})
 	}
 }
 
-// Test for WASM interface logic (without actual WASM)
-func TestWASMInterfaceLogic(t *testing.T) {
-	t.Run("Error response format", func(t *testing.T) {
-		// Test the error response structure we expect from WASM interface
-		errorResponse := map[string]interface{}{
-			"success": false,
-			"error":   "test error message",
-		}
-		
-		if errorResponse["success"].(bool) != false {
-			t.Error("Error response should have success: false")
-		}
-		
-		if errorResponse["error"].(string) != "test error message" {
-			t.Error("Error response should include error message")
-		}
-	})
-	
-	t.Run("Success response format", func(t *testing.T) {
-		// Test the success response structure we expect from WASM interface
-		successResponse := map[string]interface{}{
-			"success": true,
-			"data": map[string]interface{}{
-				"id":     "unit_1",
-				"name":   "TestUnit",
-				"tileX":  5,
-				"tileY":  5,
-				"health": 100,
+func TestPathLength(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       Path
+		expectLen  int
+	}{
+		{
+			name:      "Empty path",
+			path:      Path{},
+			expectLen: 0,
+		},
+		{
+			name: "Single step",
+			path: Path{
+				{X: 0, Y: 0},
 			},
-		}
-		
-		if successResponse["success"].(bool) != true {
-			t.Error("Success response should have success: true")
-		}
-		
-		if data, ok := successResponse["data"].(map[string]interface{}); !ok {
-			t.Error("Success response should include data")
-		} else {
-			if data["id"].(string) != "unit_1" {
-				t.Error("Success response data should include unit ID")
+			expectLen: 1,
+		},
+		{
+			name: "Multi step",
+			path: Path{
+				{X: 0, Y: 0},
+				{X: 1, Y: 0},
+				{X: 2, Y: 0},
+			},
+			expectLen: 3,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			length := PathLength(tt.path)
+			if length != tt.expectLen {
+				t.Errorf("Expected length %d, got %d", tt.expectLen, length)
 			}
+		})
+	}
+}
+
+func TestHeuristic(t *testing.T) {
+	tests := []struct {
+		name     string
+		x1, y1   int
+		x2, y2   int
+		expected float64
+	}{
+		{
+			name:     "Same position",
+			x1: 0, y1: 0,
+			x2: 0, y2: 0,
+			expected: 0.0,
+		},
+		{
+			name:     "Horizontal distance",
+			x1: 0, y1: 0,
+			x2: 3, y2: 0,
+			expected: 3.0,
+		},
+		{
+			name:     "Vertical distance",
+			x1: 0, y1: 0,
+			x2: 0, y2: 4,
+			expected: 4.0,
+		},
+		{
+			name:     "Diagonal distance",
+			x1: 0, y1: 0,
+			x2: 3, y2: 4,
+			expected: 5.0, // 3-4-5 triangle
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := heuristic(tt.x1, tt.y1, tt.x2, tt.y2)
+			if math.Abs(result - tt.expected) > 0.001 {
+				t.Errorf("Expected heuristic %.3f, got %.3f", tt.expected, result)
+			}
+		})
+	}
+}
+
+// Tests for MovableEntity
+func TestMovableEntity(t *testing.T) {
+	entity := &MovableEntity{
+		X:         10,
+		Y:         20,
+		Width:     16,
+		Height:    16,
+		MoveSpeed: 2.5,
+	}
+	
+	t.Run("GetPosition", func(t *testing.T) {
+		x, y := entity.GetPosition()
+		if x != 10 || y != 20 {
+			t.Errorf("Expected position (10,20), got (%.1f,%.1f)", x, y)
 		}
 	})
+	
+	t.Run("SetPosition", func(t *testing.T) {
+		entity.SetPosition(30, 40)
+		x, y := entity.GetPosition()
+		if x != 30 || y != 40 {
+			t.Errorf("Expected position (30,40), got (%.1f,%.1f)", x, y)
+		}
+	})
+	
+	t.Run("GetSize", func(t *testing.T) {
+		width, height := entity.GetSize()
+		if width != 16 || height != 16 {
+			t.Errorf("Expected size (16,16), got (%.1f,%.1f)", width, height)
+		}
+	})
+	
+	t.Run("GetMoveSpeed", func(t *testing.T) {
+		speed := entity.GetMoveSpeed()
+		if speed != 2.5 {
+			t.Errorf("Expected move speed 2.5, got %.1f", speed)
+		}
+	})
+	
+	t.Run("SetTarget and GetTarget", func(t *testing.T) {
+		entity.SetTarget(50, 60)
+		x, y := entity.GetTarget()
+		if x != 50 || y != 60 {
+			t.Errorf("Expected target (50,60), got (%.1f,%.1f)", x, y)
+		}
+	})
+	
+	t.Run("SetMoving and IsMoving", func(t *testing.T) {
+		entity.SetMoving(true)
+		if !entity.IsMoving() {
+			t.Error("Expected entity to be moving")
+		}
+		
+		entity.SetMoving(false)
+		if entity.IsMoving() {
+			t.Error("Expected entity to not be moving")
+		}
+	})
+	
+	t.Run("SetPath and GetPath", func(t *testing.T) {
+		path := Path{
+			{X: 1, Y: 2},
+			{X: 3, Y: 4},
+		}
+		entity.SetPath(path)
+		
+		retrievedPath := entity.GetPath()
+		if len(retrievedPath) != 2 {
+			t.Errorf("Expected path length 2, got %d", len(retrievedPath))
+		}
+		
+		if retrievedPath[0].X != 1 || retrievedPath[0].Y != 2 {
+			t.Errorf("Expected first step (1,2), got (%d,%d)", retrievedPath[0].X, retrievedPath[0].Y)
+		}
+	})
+	
+	t.Run("SetPathStep and GetPathStep", func(t *testing.T) {
+		entity.SetPathStep(5)
+		step := entity.GetPathStep()
+		if step != 5 {
+			t.Errorf("Expected path step 5, got %d", step)
+		}
+	})
+}
+
+// Tests for movement logic functions
+func TestHasReachedTarget(t *testing.T) {
+	entity := &MovableEntity{
+		X: 10,
+		Y: 10,
+	}
+	
+	tests := []struct {
+		name     string
+		targetX  float64
+		targetY  float64
+		expected bool
+	}{
+		{
+			name:     "At exact target",
+			targetX:  10,
+			targetY:  10,
+			expected: true,
+		},
+		{
+			name:     "Close to target",
+			targetX:  10.2,
+			targetY:  10.3,
+			expected: true, // Distance is less than 0.5 threshold
+		},
+		{
+			name:     "Far from target",
+			targetX:  15,
+			targetY:  15,
+			expected: false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			entity.SetTarget(tt.targetX, tt.targetY)
+			result := hasReachedTarget(entity)
+			if result != tt.expected {
+				t.Errorf("Expected hasReachedTarget=%v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestExecuteMovement(t *testing.T) {
+	entity := &MovableEntity{
+		X:         0,
+		Y:         0,
+		MoveSpeed: 5.0,
+	}
+	
+	t.Run("Move towards distant target", func(t *testing.T) {
+		entity.SetPosition(0, 0)
+		entity.SetTarget(10, 0) // 10 units away horizontally
+		
+		executeMovement(entity)
+		
+		x, y := entity.GetPosition()
+		// Should move 5 units (moveSpeed) towards target
+		if x != 5.0 || y != 0.0 {
+			t.Errorf("Expected position (5,0), got (%.1f,%.1f)", x, y)
+		}
+	})
+	
+	t.Run("Snap to close target", func(t *testing.T) {
+		entity.SetPosition(0, 0)
+		entity.SetTarget(0.05, 0) // Very close target
+		
+		executeMovement(entity)
+		
+		x, y := entity.GetPosition()
+		// Should snap exactly to target
+		if x != 0.05 || y != 0.0 {
+			t.Errorf("Expected position (0.05,0), got (%.1f,%.1f)", x, y)
+		}
+	})
+	
+	t.Run("Move to target within move speed", func(t *testing.T) {
+		entity.SetPosition(0, 0)
+		entity.SetTarget(3, 0) // 3 units away, less than moveSpeed of 5
+		
+		executeMovement(entity)
+		
+		x, y := entity.GetPosition()
+		// Should move exactly to target, not overshoot
+		if x != 3.0 || y != 0.0 {
+			t.Errorf("Expected position (3,0), got (%.1f,%.1f)", x, y)
+		}
+	})
+	
+	t.Run("Move diagonally", func(t *testing.T) {
+		entity.SetPosition(0, 0)
+		entity.SetTarget(6, 8) // 10 units away diagonally (6-8-10 triangle)
+		
+		executeMovement(entity)
+		
+		x, y := entity.GetPosition()
+		// Should move 5 units towards target, maintaining direction
+		// Direction vector: (6,8)/10 = (0.6, 0.8)
+		// New position: (0,0) + 5 * (0.6, 0.8) = (3, 4)
+		if math.Abs(x - 3.0) > 0.001 || math.Abs(y - 4.0) > 0.001 {
+			t.Errorf("Expected position (3,4), got (%.1f,%.1f)", x, y)
+		}
+	})
+}
+
+func TestAbsInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    int
+		expected int
+	}{
+		{
+			name:     "Positive number",
+			input:    5,
+			expected: 5,
+		},
+		{
+			name:     "Negative number",
+			input:    -3,
+			expected: 3,
+		},
+		{
+			name:     "Zero",
+			input:    0,
+			expected: 0,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := absInt(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected absInt(%d)=%d, got %d", tt.input, tt.expected, result)
+			}
+		})
+	}
 }
