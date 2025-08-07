@@ -114,7 +114,16 @@ describe('Top Bar Component', () => {
         if (url.includes('/releases/latest')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ tag_name: 'v2.1.0' })
+            json: () => Promise.resolve({ 
+              tag_name: 'v2.1.0',
+              published_at: '2023-12-15T10:30:00.000Z'
+            })
+          });
+        }
+        if (url.includes('/actions/runs')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ workflow_runs: [] })
           });
         }
         return Promise.reject(new Error('Not found'));
@@ -135,7 +144,20 @@ describe('Top Bar Component', () => {
         if (url.includes('/commits/main')) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ sha: 'abcdef123456789' })
+            json: () => Promise.resolve({ 
+              sha: 'abcdef123456789',
+              commit: {
+                committer: {
+                  date: '2023-12-15T10:30:00.000Z'
+                }
+              }
+            })
+          });
+        }
+        if (url.includes('/actions/runs')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ workflow_runs: [] })
           });
         }
         return Promise.reject(new Error('Not found'));

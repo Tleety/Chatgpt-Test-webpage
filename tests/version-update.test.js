@@ -174,6 +174,10 @@ describe('Version Update System', () => {
         .mockResolvedValueOnce({                        // ../../deployment.json
           ok: true,
           json: () => Promise.resolve({ version: 'deploy-100' })
+        })
+        .mockResolvedValueOnce({                        // GitHub Actions API for deployment status
+          ok: true,
+          json: () => Promise.resolve({ workflow_runs: [] })
         });
 
       // Load and execute top-bar.js
@@ -183,7 +187,7 @@ describe('Version Update System', () => {
       const topBarHTML = await createTopBar();
       
       expect(topBarHTML).toContain('#100');
-      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(global.fetch).toHaveBeenCalledTimes(4); // Updated to account for deployment status check
     });
   });
 

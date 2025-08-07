@@ -6,11 +6,11 @@
  */
 
 // Cache for version to avoid multiple fetches
-let cachedVersion = null;
+let cachedVersionInfo = null;
 
-async function getVersion() {
-  if (cachedVersion) {
-    return cachedVersion;
+async function getVersionInfo() {
+  if (cachedVersionInfo) {
+    return cachedVersionInfo;
   }
   
   // Get repository info from current URL or fallback to known repo
@@ -31,10 +31,21 @@ async function getVersion() {
         const response = await fetch(path);
         if (response.ok) {
           const deploymentInfo = await response.json();
+          
+          // Check if there's a deployment in progress
+          const isDeploymentInProgress = await checkDeploymentInProgress(repoOwner, repoName);
+          
           // Extract just the number from deploy-xxx format for cleaner display
           const versionNumber = deploymentInfo.version.replace('deploy-', '');
-          cachedVersion = `#${versionNumber}`;
-          return cachedVersion;
+          const timestamp = new Date(deploymentInfo.timestamp);
+          
+          cachedVersionInfo = {
+            version: `#${versionNumber}`,
+            timestamp: timestamp,
+            isInProgress: isDeploymentInProgress,
+            deployedAt: deploymentInfo.deployedAt
+          };
+          return cachedVersionInfo;
         }
       } catch (e) {
         continue;
@@ -50,8 +61,14 @@ async function getVersion() {
     if (releaseResponse.ok) {
       const releaseData = await releaseResponse.json();
       if (releaseData.tag_name) {
-        cachedVersion = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
-        return cachedVersion;
+        const version = releaseData.tag_name.startsWith('v') ? releaseData.tag_name : `v${releaseData.tag_name}`;
+        cachedVersionInfo = {
+          version: version,
+          timestamp: new Date(releaseData.published_at || Date.now()),
+          isInProgress: false,
+          deployedAt: new Date(releaseData.published_at || Date.now()).getTime()
+        };
+        return cachedVersionInfo;
       }
     } else if (releaseResponse.status === 404) {
       // Repository has no releases yet, this is expected - don't log as error
@@ -68,8 +85,14 @@ async function getVersion() {
       const commitData = await commitResponse.json();
       if (commitData.sha) {
         const shortSha = commitData.sha.substring(0, 7);
-        cachedVersion = `commit-${shortSha}`;
-        return cachedVersion;
+        const version = `commit-${shortSha}`;
+        cachedVersionInfo = {
+          version: version,
+          timestamp: new Date(commitData.commit.committer.date || Date.now()),
+          isInProgress: false,
+          deployedAt: new Date(commitData.commit.committer.date || Date.now()).getTime()
+        };
+        return cachedVersionInfo;
       }
     }
   } catch (error) {
@@ -77,8 +100,36 @@ async function getVersion() {
   }
   
   // Final fallback to default version
-  cachedVersion = 'v1.0.0';
-  return cachedVersion;
+  cachedVersionInfo = {
+    version: 'v1.0.0',
+    timestamp: new Date(Date.now()),
+    isInProgress: false,
+    deployedAt: Date.now()
+  };
+  return cachedVersionInfo;
+}
+
+async function checkDeploymentInProgress(repoOwner, repoName) {
+  try {
+    // Check if there are any running workflows
+    const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/actions/runs?status=in_progress&per_page=10`);
+    if (response.ok) {
+      const data = await response.json();
+      // Check if any running workflows are the CI/CD pipeline
+      const hasRunningDeployment = data.workflow_runs.some(run => 
+        run.name === 'CI/CD Pipeline' && run.status === 'in_progress'
+      );
+      return hasRunningDeployment;
+    }
+  } catch (error) {
+    console.warn('Could not check deployment status:', error);
+  }
+  return false;
+}
+
+async function getVersion() {
+  const versionInfo = await getVersionInfo();
+  return versionInfo.version;
 }
 
 async function createTopBar(options = {}) {
@@ -97,15 +148,32 @@ async function createTopBar(options = {}) {
     basePath = getBasePath();
   }
   
-  // Get version dynamically
-  const version = await getVersion();
+  // Get version info (includes timestamp and deployment status)
+  const versionInfo = await getVersionInfo();
+  
+  // Format timestamp for display
+  const timestampFormatted = versionInfo.timestamp.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  // Create the deployment status indicator
+  const statusIndicator = versionInfo.isInProgress 
+    ? '<span class="deployment-status in-progress" title="Deployment in progress"></span>' 
+    : '';
   
   // Create the top bar HTML
   const topBarHTML = `
     <header class="top-bar">
       <img src="${basePath}favicon.svg" alt="Site logo" class="logo">
       <span class="title">My GitHub Page</span>
-      <span class="version">${version}</span>
+      <div class="version-info">
+        <span class="version">${versionInfo.version}</span>
+        ${statusIndicator}
+        <span class="timestamp" title="Deployed: ${versionInfo.timestamp.toLocaleString()}">${timestampFormatted}</span>
+      </div>
       <nav class="navigation">
         <a href="${basePath}index.html#hero">Home</a>
         <a href="${basePath}index.html#projects">Projects</a>
