@@ -1,13 +1,7 @@
-# Todo List Jekyll Site
+# ChatGPT Test Webpage
 
-This Jekyll site demonstrates a simple todo list implementation with the selective build system.
-
-## Features
-
-- Add, complete, and delete todo items
-- Local storage persistence
-- Responsive design
-- Optimized CI/CD with selective building
+This repository hosts a small GitHub Pages site that links to a few minimal web projects.
+View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 
 ## Projects
 
