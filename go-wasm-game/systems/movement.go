@@ -1,4 +1,4 @@
-package main
+package systems
 
 import (
 	"math"
@@ -23,14 +23,19 @@ type Movable interface {
 
 // MovementSystem handles unified movement logic for both players and units
 type MovementSystem struct {
-	gameMap *Map
+	gameMap *world.Map
 }
 
 // NewMovementSystem creates a new movement system
-func NewMovementSystem(gameMap *Map) *MovementSystem {
+func NewMovementSystem(gameMap *world.Map) *MovementSystem {
 	return &MovementSystem{
 		gameMap: gameMap,
 	}
+}
+
+// GetGameMap returns the game map (getter for accessing unexported field)
+func (ms *MovementSystem) GetGameMap() *world.Map {
+	return ms.gameMap
 }
 
 // Update handles movement logic with pathfinding and tile-based speed adjustment

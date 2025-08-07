@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"syscall/js"
@@ -44,7 +44,7 @@ func createUnit(this js.Value, args []js.Value) interface{} {
 		name = args[3].String()
 	}
 
-	unit, err := unitManager.CreateUnit(unitType, tileX, tileY, name)
+	unit, err := State.UnitManager.CreateUnit(unitType, tileX, tileY, name)
 	if err != nil {
 		return jsError(err.Error())
 	}
@@ -61,7 +61,7 @@ func createUnit(this js.Value, args []js.Value) interface{} {
 }
 
 func getUnits(this js.Value, args []js.Value) interface{} {
-	units := unitManager.GetAllUnits()
+	units := State.UnitManager.GetAllUnits()
 	result := make([]interface{}, 0, len(units))
 
 	for _, unit := range units {
@@ -90,7 +90,7 @@ func moveUnit(this js.Value, args []js.Value) interface{} {
 		return jsError("moveUnit requires unitId, tileX, tileY")
 	}
 
-	err := unitManager.MoveUnit(args[0].String(), args[1].Int(), args[2].Int())
+	err := State.UnitManager.MoveUnit(args[0].String(), args[1].Int(), args[2].Int())
 	if err != nil {
 		return jsError(err.Error())
 	}
@@ -103,7 +103,7 @@ func removeUnit(this js.Value, args []js.Value) interface{} {
 		return jsError("removeUnit requires unitId")
 	}
 
-	err := unitManager.RemoveUnit(args[0].String())
+	err := State.UnitManager.RemoveUnit(args[0].String())
 	if err != nil {
 		return jsError(err.Error())
 	}
@@ -112,7 +112,7 @@ func removeUnit(this js.Value, args []js.Value) interface{} {
 }
 
 // initializeJSInterface sets up JavaScript function bindings
-func initializeJSInterface() {
+func InitializeJSInterface() {
 	// Expose unit management functions to JavaScript
 	createUnitFunc = js.FuncOf(createUnit)
 	js.Global().Set("createUnit", createUnitFunc)

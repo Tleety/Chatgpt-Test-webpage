@@ -1,10 +1,11 @@
-package main
+package units
 
 import (
 	"fmt"
 	"syscall/js"
 	"time"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/systems"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
@@ -12,14 +13,14 @@ import (
 type UnitManager struct {
 	units        map[string]*Unit
 	nextUnitID   int
-	gameMap      *Map
+	gameMap      *world.Map
 	spatialIndex *UnitSpatialIndex
 	combatSystem *UnitCombatSystem
 	renderer     *UnitRenderer
 }
 
 // NewUnitManager creates a new unit manager
-func NewUnitManager(gameMap *Map) *UnitManager {
+func NewUnitManager(gameMap *world.Map) *UnitManager {
 	return &UnitManager{
 		units:        make(map[string]*Unit),
 		nextUnitID:   1,
@@ -70,7 +71,7 @@ func (um *UnitManager) CreateUnit(unitType entities.UnitType, tileX, tileY int, 
 		Status:       "idle",
 		CreatedAt:    time.Now(),
 		LastMoved:    time.Now(),
-		MovableEntity: MovableEntity{
+		MovableEntity: systems.MovableEntity{
 			X:         worldX - unitWidth/2,
 			Y:         worldY - unitHeight/2,
 			Width:     unitWidth,
@@ -82,7 +83,7 @@ func (um *UnitManager) CreateUnit(unitType entities.UnitType, tileX, tileY int, 
 			Path:      nil,
 			PathStep:  0,
 		},
-		movementSystem: NewMovementSystem(um.gameMap),
+		movementSystem: systems.NewMovementSystem(um.gameMap),
 	}
 
 	um.units[unitID] = unit

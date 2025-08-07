@@ -1,4 +1,4 @@
-package main
+package systems
 
 import (
 	"container/heap"
@@ -54,7 +54,7 @@ type Path []struct {
 }
 
 // FindPath uses A* algorithm to find the shortest walkable path between two grid points
-func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
+func FindPath(startX, startY, endX, endY int, gameMap *world.Map) Path {
 	// Check if start and end are within bounds
 	if startX < 0 || startX >= gameMap.Width || startY < 0 || startY >= gameMap.Height ||
 	   endX < 0 || endX >= gameMap.Width || endY < 0 || endY >= gameMap.Height {

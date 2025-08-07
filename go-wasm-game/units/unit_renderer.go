@@ -1,19 +1,20 @@
-package main
+package units
 
 import (
 	"fmt"
 	"math"
 	"syscall/js"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // UnitRenderer handles rendering of units on the screen
 type UnitRenderer struct {
-	gameMap *Map
+	gameMap *world.Map
 }
 
 // NewUnitRenderer creates a new unit renderer
-func NewUnitRenderer(gameMap *Map) *UnitRenderer {
+func NewUnitRenderer(gameMap *world.Map) *UnitRenderer {
 	return &UnitRenderer{
 		gameMap: gameMap,
 	}
@@ -45,6 +46,11 @@ func (renderer *UnitRenderer) renderUnit(ctx js.Value, unit *Unit, cameraX, came
 		return
 	}
 
+	// Get canvas dimensions from context
+	canvas := ctx.Get("canvas")
+	canvasWidth := canvas.Get("width").Float()
+	canvasHeight := canvas.Get("height").Float()
+	
 	// Only draw if on screen (with some margin)
 	margin := 50.0
 	if screenX < -margin || screenX > canvasWidth+margin || screenY < -margin || screenY > canvasHeight+margin {

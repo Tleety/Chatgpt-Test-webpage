@@ -1,12 +1,14 @@
-package main
+package units
 
 import (
 	"time"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/systems"
 )
 
 // Unit represents an individual unit instance
 type Unit struct {
+	systems.MovableEntity         // Embed the unified movement system first
 	ID             string
 	TypeID         entities.UnitType
 	Name           string
@@ -20,8 +22,7 @@ type Unit struct {
 	Status         string
 	CreatedAt      time.Time
 	LastMoved      time.Time
-	MovableEntity         // Embed the unified movement system
-	movementSystem *MovementSystem
+	movementSystem *systems.MovementSystem
 }
 
 // GetTypeDef returns the type definition for this unit
@@ -58,7 +59,7 @@ func (u *Unit) SetPosition(x, y float64) {
 	u.MovableEntity.SetPosition(x, y)
 	// Update tile position based on world position
 	if u.movementSystem != nil {
-		tileX, tileY := u.movementSystem.gameMap.WorldToGrid(x + u.Width/2, y + u.Height/2)
+		tileX, tileY := u.movementSystem.GetGameMap().WorldToGrid(x + u.Width/2, y + u.Height/2)
 		u.TileX = tileX
 		u.TileY = tileY
 	}
@@ -69,7 +70,7 @@ func (u *Unit) Update() {
 		u.movementSystem.Update(u)
 		// Sync tile position with world position
 		x, y := u.MovableEntity.GetPosition()
-		tileX, tileY := u.movementSystem.gameMap.WorldToGrid(x + u.Width/2, y + u.Height/2)
+		tileX, tileY := u.movementSystem.GetGameMap().WorldToGrid(x + u.Width/2, y + u.Height/2)
 		u.TileX = tileX
 		u.TileY = tileY
 	}

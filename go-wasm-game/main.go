@@ -3,6 +3,9 @@ package main
 import (
 	"syscall/js"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/game"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/units"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 var (
@@ -11,9 +14,9 @@ var (
 	player       *entities.Player
 	canvasWidth  float64
 	canvasHeight float64
-	gameMap      *Map
-	unitManager  *UnitManager
-	environment  *Environment
+	gameMap      *world.Map
+	unitManager  *units.UnitManager
+	environment  *world.Environment
 	cameraX      float64
 	cameraY      float64
 )
@@ -58,6 +61,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 		cameraY = mapWorldHeight - canvasHeight
 	}
 	
+	// Update the game state with current camera position
+	game.State.UpdateCamera(cameraX, cameraY)
+	
 	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
 	
@@ -98,10 +104,10 @@ func main() {
 	canvasHeight = canvas.Get("height").Float()
 
 	// Initialize the map (200x200 tiles, 32px per tile)
-	gameMap = NewMap(200, 200, 32.0)
+	gameMap = world.NewMap(200, 200, 32.0)
 	
 	// Initialize unit manager
-	unitManager = NewUnitManager(gameMap)
+	unitManager = units.NewUnitManager(gameMap)
 	
 	// Create one initial unit for demonstration
 	unitManager.CreateUnit(entities.UnitWarrior, 95, 95, "")
@@ -115,14 +121,17 @@ func main() {
 	centerY := (mapWorldHeight - 20) / 2
 	player = entities.NewPlayer(centerX, centerY)
   
-	environment = NewEnvironment(gameMap)
+	environment = world.NewEnvironment(gameMap)
+
+	// Initialize game state for shared access
+	game.InitializeState(ctx, canvas, player, gameMap, unitManager, environment)
 
 	// Initialize game layers
 	initializeGameLayers()
 
 	// Initialize event handlers and JavaScript interface
-	initializeEventHandlers(canvas)
-	initializeJSInterface()
+	game.InitializeEventHandlers(canvas)
+	game.InitializeJSInterface()
 	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)

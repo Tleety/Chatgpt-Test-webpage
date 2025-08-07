@@ -1,10 +1,9 @@
-package main
+package world
 
 import (
 	"math"
 	"sort"
 	"syscall/js"
-	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // Map represents a grid-based map with tiles
@@ -12,7 +11,7 @@ type Map struct {
 	Width    int
 	Height   int
 	TileSize float64
-	Tiles    [][]world.TileType
+	Tiles    [][]TileType
 	Layers *Layers
 }
 
@@ -35,13 +34,13 @@ func NewMap(width, height int, tileSize float64) *Map {
 		Width:    width,
 		Height:   height,
 		TileSize: tileSize,
-		Tiles:    make([][]world.TileType, height),
+		Tiles:    make([][]TileType, height),
 		Layers: NewLayers(),
 	}
 	
 	// Initialize the 2D slice
 	for i := range m.Tiles {
-		m.Tiles[i] = make([]world.TileType, width)
+		m.Tiles[i] = make([]TileType, width)
 	}
 	
 	// Generate the map with a simple pattern
@@ -57,15 +56,15 @@ func NewMap(width, height int, tileSize float64) *Map {
 }
 
 // GetTile returns the tile type at the given grid coordinates
-func (m *Map) GetTile(x, y int) world.TileType {
+func (m *Map) GetTile(x, y int) TileType {
 	if x < 0 || x >= m.Width || y < 0 || y >= m.Height {
-		return world.TileWater // Out of bounds is water
+		return TileWater // Out of bounds is water
 	}
 	return m.Tiles[y][x]
 }
 
 // SetTile sets the tile type at the given grid coordinates
-func (m *Map) SetTile(x, y int, tileType world.TileType) {
+func (m *Map) SetTile(x, y int, tileType TileType) {
 	if x >= 0 && x < m.Width && y >= 0 && y < m.Height {
 		m.Tiles[y][x] = tileType
 	}
@@ -89,10 +88,10 @@ func (m *Map) Render(ctx js.Value, cameraX, cameraY, canvasWidth, canvasHeight f
 			screenY := float64(y)*m.TileSize - cameraY
 			
 			// Get tile definition and set color
-			tileDef, exists := world.TileDefinitions[tileType]
+			tileDef, exists := TileDefinitions[tileType]
 			if !exists {
 				// Fallback to grass if tile type not found
-				tileDef = world.TileDefinitions[world.TileGrass]
+				tileDef = TileDefinitions[TileGrass]
 			}
 			
 			// For now, we'll use color (image support can be added later)
@@ -225,10 +224,10 @@ func (m *Map) renderTilesLayer(ctx js.Value, cameraX, cameraY, canvasWidth, canv
 			screenY := float64(y)*m.TileSize - cameraY
 			
 			// Get tile definition and set color
-			tileDef, exists := world.TileDefinitions[tileType]
+			tileDef, exists := TileDefinitions[tileType]
 			if !exists {
 				// Fallback to grass if tile type not found
-				tileDef = world.TileDefinitions[world.TileGrass]
+				tileDef = TileDefinitions[TileGrass]
 			}
 			
 			// For now, we'll use color (image support can be added later)
