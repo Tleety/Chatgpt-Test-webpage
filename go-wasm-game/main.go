@@ -2,8 +2,6 @@ package main
 
 import (
 	"syscall/js"
-	"math/rand"
-	"time"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/game"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/units"
@@ -113,57 +111,21 @@ func initializeGameLayers() {
 	gameMap.Layers.AddLayer("objects", 10, true, renderObjectsLayer)
 }
 
-// spawnUnit creates a new unit at a random valid location
-func spawnUnit() {
-	// Find a random walkable position
-	maxAttempts := 50
-	for attempts := 0; attempts < maxAttempts; attempts++ {
-		x := rand.Intn(gameMap.Width)
-		y := rand.Intn(gameMap.Height)
-		
-		// Check if the position is walkable and not occupied
-		tileType := gameMap.GetTile(x, y)
-		tileDef, exists := world.TileDefinitions[tileType]
-		if exists && tileDef.Walkable && !unitManager.IsPositionOccupied(x, y) {
-			// Create a random unit type
-			unitTypes := []entities.UnitType{
-				entities.UnitWarrior,
-				entities.UnitArcher,
-				entities.UnitMage,
-				entities.UnitScout,
-			}
-			randomType := unitTypes[rand.Intn(len(unitTypes))]
-			
-			_, err := unitManager.CreateUnit(randomType, x, y, "")
-			if err == nil {
-				// Update UI with new unit count
-				uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
-				return
-			}
-		}
+// spawnUnitHandler handles UI spawn button clicks
+func spawnUnitHandler() {
+	err := unitManager.SpawnRandomUnit()
+	if err == nil {
+		// Update UI with new unit count
+		uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
 	}
 }
 
-// removeUnit removes the most recently created unit
-func removeUnit() {
-	allUnits := unitManager.GetAllUnits()
-	var newestUnit *units.Unit
-	var newestTime time.Time
-	
-	// Find the newest unit
-	for _, unit := range allUnits {
-		if unit.IsAlive && (newestUnit == nil || unit.CreatedAt.After(newestTime)) {
-			newestUnit = unit
-			newestTime = unit.CreatedAt
-		}
-	}
-	
-	if newestUnit != nil {
-		err := unitManager.RemoveUnit(newestUnit.ID)
-		if err == nil {
-			// Update UI with new unit count
-			uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
-		}
+// removeUnitHandler handles UI remove button clicks
+func removeUnitHandler() {
+	err := unitManager.RemoveNewestUnit()
+	if err == nil {
+		// Update UI with new unit count
+		uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
 	}
 }
 
@@ -171,9 +133,6 @@ func main() {
 	doc := js.Global().Get("document")
 	canvas = doc.Call("getElementById", "game")
 	ctx = canvas.Call("getContext", "2d")
-
-	// Initialize random seed
-	rand.Seed(time.Now().UnixNano())
 
 	// Get initial canvas dimensions
 	canvasWidth = canvas.Get("width").Float()
@@ -204,8 +163,8 @@ func main() {
 	uiSystem.SetUnitCount(unitManager.GetTotalUnitCount())
 	
 	// Set up UI callbacks
-	ui.SpawnUnitCallback = spawnUnit
-	ui.RemoveUnitCallback = removeUnit
+	ui.SpawnUnitCallback = spawnUnitHandler
+	ui.RemoveUnitCallback = removeUnitHandler
 
 	// Initialize game state for shared access
 	game.InitializeState(ctx, canvas, player, gameMap, unitManager, environment)

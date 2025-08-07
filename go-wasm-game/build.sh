@@ -3,5 +3,5 @@
 # This compiles the Go source code to WebAssembly
 
 echo "Building Go WASM game..."
-GOOS=js GOARCH=wasm go build -o main.wasm
-echo "Build complete! main.wasm created successfully."
+GOOS=js GOARCH=wasm go build -o game.wasm
+echo "Build complete! game.wasm created successfully."
