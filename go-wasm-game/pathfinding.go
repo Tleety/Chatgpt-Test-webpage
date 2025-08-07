@@ -88,8 +88,7 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	closedSet := make(map[int]bool)
 	
 	// Add search limit to prevent infinite loops in extreme cases
-	// Increased limit to handle larger rivers and complex terrain
-	const maxSearchIterations = 50000
+	const maxSearchIterations = 10000
 	searchIterations := 0
 	
 	// Helper function to get unique key for coordinates
@@ -154,18 +153,13 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 				continue
 			}
 			
-			// Calculate movement cost (diagonal moves cost more + terrain cost)
-			baseCost := 1.0
+			// Calculate movement cost (diagonal moves cost more)
+			moveCost := 1.0
 			if dir.dx != 0 && dir.dy != 0 {
-				baseCost = 1.414 // sqrt(2) for diagonal movement
+				moveCost = 1.414 // sqrt(2) for diagonal movement
 			}
 			
-			// Factor in terrain movement cost (slower terrain = higher pathfinding cost)
-			// This encourages pathfinding through faster terrain when available
-			tileDef := TileDefinitions[neighborTile]
-			terrainCost := baseCost / tileDef.WalkSpeed // Invert speed to get cost
-			
-			tentativeGCost := current.GCost + terrainCost
+			tentativeGCost := current.GCost + moveCost
 			
 			// Check if we found a better path to this neighbor
 			neighbor, exists := allNodes[neighborKey]
@@ -194,9 +188,8 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 		}
 	}
 	
-	// No path found - return nil to indicate no valid path exists
-	// This prevents the player from getting stuck trying to follow an impossible path
-	return nil
+	// No path found, return direct path to destination as fallback
+	return Path{{X: endX, Y: endY}}
 }
 
 // heuristic calculates the Euclidean distance heuristic for A*
