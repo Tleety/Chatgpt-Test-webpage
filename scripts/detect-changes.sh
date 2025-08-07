@@ -11,7 +11,7 @@ check_component_changes() {
     local paths="$2"
     local base_ref="${3:-HEAD~1}"
     
-    echo "Checking changes for $component_name..."
+    echo "Checking changes for $component_name..." >&2
     
     # Try different comparison strategies
     if git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
