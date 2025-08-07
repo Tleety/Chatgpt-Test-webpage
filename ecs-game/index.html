@@ -19,6 +19,8 @@
         padding-top: 60px; /* Account for top bar height */
         display: flex;
         flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
       }
       .hero {
         position: absolute;
@@ -47,6 +49,8 @@
         background: #32325A;
         border: none;
         cursor: crosshair;
+        max-width: 100%;
+        max-height: calc(100vh - 120px); /* Account for top bar and some padding */
       }
     </style>
   </head>
@@ -72,26 +76,30 @@
       const go = new Go();
 
       function resizeCanvas() {
-        // Get the available space (full viewport minus top bar)
+        // Set canvas to fixed game size to match Go game expectations
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        // Center the canvas in the viewport
         const topBar = document.querySelector('.top-bar');
-        const topBarHeight = topBar ? topBar.offsetHeight : 60; // fallback to 60px
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - topBarHeight;
+        const topBarHeight = topBar ? topBar.offsetHeight : 60;
+        canvas.style.marginTop = `${Math.max(0, (window.innerHeight - topBarHeight - 600) / 2)}px`;
       }
 
-      // Wait for top bar to be created before resizing
-      function waitForTopBarAndResize() {
+      // Wait for top bar to be created before resizing, with timeout to prevent infinite waiting
+      function waitForTopBarAndResize(attempts = 0) {
+        const maxAttempts = 50; // 5 seconds maximum wait
         const topBar = document.querySelector('.top-bar');
-        if (topBar) {
+        if (topBar || attempts >= maxAttempts) {
           resizeCanvas();
           return true;
         } else {
-          setTimeout(waitForTopBarAndResize, 100);
+          setTimeout(() => waitForTopBarAndResize(attempts + 1), 100);
           return false;
         }
       }
 
-      // Resize canvas on load and window resize
+      // Resize canvas on window resize (but keep fixed game size)
       window.addEventListener('resize', () => {
         resizeCanvas();
       });
@@ -102,29 +110,49 @@
           go.run(result.instance);
         } catch (err) {
           console.log('Streaming instantiation failed, trying alternative:', err);
-          const response = await fetch("game.wasm");
-          const bytes = await response.arrayBuffer();
-          const result = await WebAssembly.instantiate(bytes, go.importObject);
-          go.run(result.instance);
+          try {
+            const response = await fetch("game.wasm");
+            const bytes = await response.arrayBuffer();
+            const result = await WebAssembly.instantiate(bytes, go.importObject);
+            go.run(result.instance);
+          } catch (fallbackErr) {
+            console.error('Failed to load WASM:', fallbackErr);
+            // Show error message to user
+            const canvas = document.getElementById('game');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Failed to load game', canvas.width/2, canvas.height/2);
+          }
         }
       }
 
-      // Initialize everything in proper sequence
+      // Initialize everything in proper sequence with timeout protection
+      let initializationStarted = false;
       function initialize() {
+        if (initializationStarted) {
+          return; // Prevent multiple initialization attempts
+        }
+        initializationStarted = true;
+        
         // First, ensure canvas is properly sized
         if (waitForTopBarAndResize()) {
           // Canvas is sized, now load WASM
           loadWasm();
-        } else {
-          // Top bar not ready yet, wait and try again
-          setTimeout(initialize, 100);
         }
       }
 
       document.addEventListener('DOMContentLoaded', initialize);
       
-      // Fallback initialization after a delay
-      setTimeout(initialize, 500);
+      // Single fallback initialization after a reasonable delay
+      setTimeout(() => {
+        if (!initializationStarted) {
+          initialize();
+        }
+      }, 1000);
     </script>
   </body>
 </html>
