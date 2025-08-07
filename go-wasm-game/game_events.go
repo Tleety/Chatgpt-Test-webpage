@@ -45,7 +45,7 @@ func click(this js.Value, args []js.Value) interface{} {
 	// Check if the tile is within map bounds
 	if tileX >= 0 && tileX < gameMap.Width && tileY >= 0 && tileY < gameMap.Height {
 		// Move player to the clicked tile
-		player.MoveToTile(gameMap, tileX, tileY)
+		player.MoveToTile(tileX, tileY)
 	}
 	
 	return nil

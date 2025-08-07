@@ -2,12 +2,13 @@ package main
 
 import (
 	"syscall/js"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
 )
 
 var (
 	ctx          js.Value
 	canvas       js.Value
-	player       *Player
+	player       *entities.Player
 	canvasWidth  float64
 	canvasHeight float64
 	gameMap      *Map
@@ -25,13 +26,13 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasHeight = canvas.Get("height").Float()
 	
 	// Update player (handles movement animations with pathfinding and tile-based speed)
-	player.Update(gameMap)
+	player.Update()
 	
 	// Update all units using the unified movement system
 	unitManager.Update()
 	
 	// Keep player within world bounds (map bounds)
-	player.ClampToMapBounds(gameMap)
+	player.ClampToMapBounds(float64(gameMap.Width), float64(gameMap.Height), gameMap.TileSize)
 	
 	// Get player position
 	playerX, playerY := player.GetPosition()
@@ -103,7 +104,7 @@ func main() {
 	unitManager = NewUnitManager(gameMap)
 	
 	// Create one initial unit for demonstration
-	unitManager.CreateUnit(UnitWarrior, 95, 95, "")
+	unitManager.CreateUnit(entities.UnitWarrior, 95, 95, "")
 	
 	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
@@ -112,7 +113,7 @@ func main() {
 	// Create player at center of map
 	centerX := (mapWorldWidth - 20) / 2
 	centerY := (mapWorldHeight - 20) / 2
-	player = NewPlayer(centerX, centerY, gameMap)
+	player = entities.NewPlayer(centerX, centerY)
   
 	environment = NewEnvironment(gameMap)
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"syscall/js"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
 )
 
 // UnitRenderer handles rendering of units on the screen
@@ -39,7 +40,7 @@ func (renderer *UnitRenderer) renderUnit(ctx js.Value, unit *Unit, cameraX, came
 	screenY := worldY - cameraY
 
 	// Get unit type definition
-	typeDef, exists := UnitTypeDefinitions[unit.TypeID]
+	typeDef, exists := entities.UnitTypeDefinitions[unit.TypeID]
 	if !exists {
 		return
 	}

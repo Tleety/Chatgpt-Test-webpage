@@ -1,6 +1,9 @@
 package main
 
-import "syscall/js"
+import (
+	"syscall/js"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+)
 
 // JavaScript interface functions for unit management
 
@@ -33,7 +36,7 @@ func createUnit(this js.Value, args []js.Value) interface{} {
 		return jsError("createUnit requires unitType, tileX, tileY")
 	}
 
-	unitType := UnitType(args[0].Int())
+	unitType := entities.UnitType(args[0].Int())
 	tileX := args[1].Int()
 	tileY := args[2].Int()
 	name := ""

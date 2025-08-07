@@ -2,17 +2,18 @@ package main
 
 import (
 	"time"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
 )
 
 // Unit represents an individual unit instance
 type Unit struct {
 	ID             string
-	TypeID         UnitType
+	TypeID         entities.UnitType
 	Name           string
 	TileX          int
 	TileY          int
-	CurrentStats   UnitStats
-	MaxStats       UnitStats
+	CurrentStats   entities.UnitStats
+	MaxStats       entities.UnitStats
 	Level          int
 	Experience     int
 	IsAlive        bool
@@ -24,8 +25,8 @@ type Unit struct {
 }
 
 // GetTypeDef returns the type definition for this unit
-func (u *Unit) GetTypeDef() (UnitTypeDef, bool) {
-	typeDef, exists := UnitTypeDefinitions[u.TypeID]
+func (u *Unit) GetTypeDef() (entities.UnitTypeDef, bool) {
+	typeDef, exists := entities.UnitTypeDefinitions[u.TypeID]
 	return typeDef, exists
 }
 
