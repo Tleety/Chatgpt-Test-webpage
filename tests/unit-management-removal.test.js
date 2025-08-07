@@ -107,10 +107,10 @@ describe('Unit Management Removal', () => {
       expect(createUnitMatches).toHaveLength(1);
       
       // Verify only Warrior unit is created
-      expect(mainGoContent).toContain('CreateUnit(UnitWarrior, 95, 95, "")');
-      expect(mainGoContent).not.toContain('CreateUnit(UnitArcher');
-      expect(mainGoContent).not.toContain('CreateUnit(UnitMage');
-      expect(mainGoContent).not.toContain('CreateUnit(UnitScout');
+      expect(mainGoContent).toContain('CreateUnit(entities.UnitWarrior, 95, 95, "")');
+      expect(mainGoContent).not.toContain('CreateUnit(entities.UnitArcher');
+      expect(mainGoContent).not.toContain('CreateUnit(entities.UnitMage');
+      expect(mainGoContent).not.toContain('CreateUnit(entities.UnitScout');
     });
 
     test('should have updated comment for single unit', () => {
