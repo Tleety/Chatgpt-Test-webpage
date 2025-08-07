@@ -87,10 +87,9 @@ func (ms *MovementSystem) isMovingToTarget(entity Movable) bool {
 	dx := targetX - x
 	dy := targetY - y
 	distance := math.Sqrt(dx*dx + dy*dy)
-	moveSpeed := entity.GetMoveSpeed()
 	// Use a small threshold to prevent floating point precision issues
 	const precisionThreshold = 0.5
-	return distance >= math.Max(moveSpeed, precisionThreshold)
+	return distance >= precisionThreshold
 }
 
 // moveTowardTargetWithTileSpeed moves the entity toward the current target position with tile-based speed
