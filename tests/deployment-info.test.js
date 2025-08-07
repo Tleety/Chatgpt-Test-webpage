@@ -226,7 +226,7 @@ describe('Deployment Info Generation', () => {
       
       expect(ciWorkflow).toContain('Generate deployment info');
       expect(ciWorkflow).toContain('npm run generate-deployment-info');
-      expect(ciWorkflow).toContain('git add -f deployment.json tests/test-summary.json');
+      expect(ciWorkflow).toContain('git add -f deployment.json go-wasm-game/deployment.json tests/test-summary.json');
       expect(ciWorkflow).toContain('git commit -m "chore: update deployment info and test results [skip ci]"');
     });
 
