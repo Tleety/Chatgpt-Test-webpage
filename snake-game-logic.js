@@ -99,10 +99,11 @@ class SnakeGameLogic {
   }
 
   /**
-   * Checks if position collides with snake body
+   * Checks if position collides with snake body (excluding the head)
    */
   isSelfCollision(x, y) {
-    return this.snake.some(segment => segment.x === x && segment.y === y);
+    // Skip the first segment (head) when checking for self collision
+    return this.snake.slice(1).some(segment => segment.x === x && segment.y === y);
   }
 
   /**
