@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"syscall/js"
 	"time"
-	"math/rand"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/systems"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
@@ -234,54 +233,6 @@ func (um *UnitManager) GetTotalUnitCount() int {
 		}
 	}
 	return count
-}
-
-// SpawnRandomUnit creates a new unit at a random valid location
-func (um *UnitManager) SpawnRandomUnit() error {
-	// Find a random walkable position
-	maxAttempts := 50
-	for attempts := 0; attempts < maxAttempts; attempts++ {
-		x := rand.Intn(um.gameMap.Width)
-		y := rand.Intn(um.gameMap.Height)
-		
-		// Check if the position is walkable and not occupied
-		tileType := um.gameMap.GetTile(x, y)
-		tileDef, exists := world.TileDefinitions[tileType]
-		if exists && tileDef.Walkable && !um.IsPositionOccupied(x, y) {
-			// Create a random unit type
-			unitTypes := []entities.UnitType{
-				entities.UnitWarrior,
-				entities.UnitArcher,
-				entities.UnitMage,
-				entities.UnitScout,
-			}
-			randomType := unitTypes[rand.Intn(len(unitTypes))]
-			
-			_, err := um.CreateUnit(randomType, x, y, "")
-			return err
-		}
-	}
-	return fmt.Errorf("failed to find valid spawn location after %d attempts", maxAttempts)
-}
-
-// RemoveNewestUnit removes the most recently created unit
-func (um *UnitManager) RemoveNewestUnit() error {
-	var newestUnit *Unit
-	var newestTime time.Time
-	
-	// Find the newest unit
-	for _, unit := range um.units {
-		if unit.IsAlive && (newestUnit == nil || unit.CreatedAt.After(newestTime)) {
-			newestUnit = unit
-			newestTime = unit.CreatedAt
-		}
-	}
-	
-	if newestUnit == nil {
-		return fmt.Errorf("no units found to remove")
-	}
-	
-	return um.RemoveUnit(newestUnit.ID)
 }
 
 // Render draws all units on the screen

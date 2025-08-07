@@ -1,9 +1,7 @@
 package ui
-
 import (
 	"syscall/js"
 )
-
 // UIElement represents a clickable UI element
 type UIElement struct {
 	X, Y, Width, Height float64
@@ -16,7 +14,6 @@ type UIElement struct {
 	OnClick             func()
 	IsHovered           bool
 }
-
 // UISystem manages the game's user interface
 type UISystem struct {
 	elements       []UIElement
@@ -26,7 +23,6 @@ type UISystem struct {
 	unitCount      int
 	maxUnits       int
 }
-
 // NewUISystem creates a new UI system
 func NewUISystem() *UISystem {
 	return &UISystem{
@@ -36,14 +32,12 @@ func NewUISystem() *UISystem {
 		maxUnits:        10,
 	}
 }
-
 // UpdateCanvasSize updates the UI system with current canvas dimensions
 func (ui *UISystem) UpdateCanvasSize(width, height float64) {
 	ui.canvasWidth = width
 	ui.canvasHeight = height
 	ui.updateUILayout()
 }
-
 // updateUILayout repositions UI elements based on canvas size
 func (ui *UISystem) updateUILayout() {
 	if ui.canvasWidth == 0 || ui.canvasHeight == 0 {
@@ -97,34 +91,6 @@ func (ui *UISystem) updateUILayout() {
 	
 	ui.elements = append(ui.elements, spawnButton, removeButton)
 }
-
-// HandleMouseMove updates hover states for UI elements
-func (ui *UISystem) HandleMouseMove(x, y float64) {
-	for i := range ui.elements {
-		element := &ui.elements[i]
-		element.IsHovered = ui.isPointInElement(x, y, element)
-	}
-}
-
-// HandleMouseClick processes mouse clicks on UI elements
-func (ui *UISystem) HandleMouseClick(x, y float64) bool {
-	for _, element := range ui.elements {
-		if element.Enabled && ui.isPointInElement(x, y, &element) {
-			if element.OnClick != nil {
-				element.OnClick()
-			}
-			return true // Click was handled by UI
-		}
-	}
-	return false // Click was not handled by UI
-}
-
-// isPointInElement checks if a point is within an element's bounds
-func (ui *UISystem) isPointInElement(x, y float64, element *UIElement) bool {
-	return x >= element.X && x <= element.X+element.Width &&
-		   y >= element.Y && y <= element.Y+element.Height
-}
-
 // Render draws the UI system
 func (ui *UISystem) Render(ctx js.Value) {
 	if ui.canvasWidth == 0 || ui.canvasHeight == 0 {
@@ -142,7 +108,6 @@ func (ui *UISystem) Render(ctx js.Value) {
 	// Draw unit counter (right side)
 	ui.drawUnitCounter(ctx)
 }
-
 // drawBottomBar draws the bottom bar background
 func (ui *UISystem) drawBottomBar(ctx js.Value) {
 	barY := ui.canvasHeight - ui.bottomBarHeight
@@ -159,7 +124,6 @@ func (ui *UISystem) drawBottomBar(ctx js.Value) {
 	ctx.Call("lineTo", ui.canvasWidth, barY)
 	ctx.Call("stroke")
 }
-
 // drawElement draws a single UI element (button)
 func (ui *UISystem) drawElement(ctx js.Value, element UIElement) {
 	// Determine background color
@@ -224,7 +188,6 @@ func (ui *UISystem) drawElement(ctx js.Value, element UIElement) {
 		ctx.Call("fillText", element.Icon, centerX, centerY)
 	}
 }
-
 // drawUnitCounter draws the unit count display on the right side
 func (ui *UISystem) drawUnitCounter(ctx js.Value) {
 	barY := ui.canvasHeight - ui.bottomBarHeight
@@ -234,10 +197,9 @@ func (ui *UISystem) drawUnitCounter(ctx js.Value) {
 	ctx.Set("textAlign", "right")
 	ctx.Set("textBaseline", "middle")
 	
-	unitText := "Units: " + ui.intToString(ui.unitCount)
+	unitText := "Units: " + intToString(ui.unitCount)
 	ctx.Call("fillText", unitText, ui.canvasWidth-20, barY+ui.bottomBarHeight/2)
 }
-
 // drawRoundedRect draws a rounded rectangle path
 func (ui *UISystem) drawRoundedRect(ctx js.Value, x, y, width, height, radius float64) {
 	ctx.Call("beginPath")
@@ -252,70 +214,17 @@ func (ui *UISystem) drawRoundedRect(ctx js.Value, x, y, width, height, radius fl
 	ctx.Call("arcTo", x, y, x+radius, y, radius)
 	ctx.Call("closePath")
 }
-
 // measureText measures the width of text
 func (ui *UISystem) measureText(ctx js.Value, text string) float64 {
 	metrics := ctx.Call("measureText", text)
 	return metrics.Get("width").Float()
 }
-
-// intToString converts an integer to string (simple implementation)
-func (ui *UISystem) intToString(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	
-	var result string
-	negative := n < 0
-	if negative {
-		n = -n
-	}
-	
-	for n > 0 {
-		digit := n % 10
-		result = string(rune('0'+digit)) + result
-		n /= 10
-	}
-	
-	if negative {
-		result = "-" + result
-	}
-	
-	return result
-}
-
-// GetUIAreaHeight returns the height reserved for UI
-func (ui *UISystem) GetUIAreaHeight() float64 {
-	return ui.bottomBarHeight
-}
-
 // SetUnitCount updates the unit count and refreshes UI
 func (ui *UISystem) SetUnitCount(count int) {
 	ui.unitCount = count
 	ui.updateUILayout() // Refresh button states
 }
-
 // GetUnitCount returns the current unit count
 func (ui *UISystem) GetUnitCount() int {
 	return ui.unitCount
-}
-
-// Callback functions (to be set by the game)
-var (
-	SpawnUnitCallback  func()
-	RemoveUnitCallback func()
-)
-
-// onSpawnUnit handles spawn button clicks
-func (ui *UISystem) onSpawnUnit() {
-	if ui.unitCount < ui.maxUnits && SpawnUnitCallback != nil {
-		SpawnUnitCallback()
-	}
-}
-
-// onRemoveUnit handles remove button clicks
-func (ui *UISystem) onRemoveUnit() {
-	if ui.unitCount > 1 && RemoveUnitCallback != nil {
-		RemoveUnitCallback()
-	}
 }
