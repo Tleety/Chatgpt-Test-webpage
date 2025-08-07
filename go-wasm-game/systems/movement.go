@@ -22,6 +22,7 @@ type Movable interface {
 }
 
 // MovementSystem handles unified movement logic for both players and units
+// Redesigned from scratch to eliminate dead zones and complex threshold logic
 type MovementSystem struct {
 	gameMap *world.Map
 }
@@ -38,7 +39,8 @@ func (ms *MovementSystem) GetGameMap() *world.Map {
 	return ms.gameMap
 }
 
-// Update handles movement logic with pathfinding and tile-based speed adjustment
+// Update handles movement logic with simplified, robust movement execution
+// Redesigned to eliminate dead zones and ensure smooth movement to targets
 func (ms *MovementSystem) Update(entity Movable) {
 	if !entity.IsMoving() {
 		return
@@ -50,31 +52,11 @@ func (ms *MovementSystem) Update(entity Movable) {
 		return
 	}
 
-	// Check if we need to move to the next step in the path
-	if !ms.isMovingToTarget(entity) {
-		// We've reached the current target, move to next step in path
-		currentStep := entity.GetPathStep()
-		nextStep := currentStep + 1
-		entity.SetPathStep(nextStep)
-		
-		if IsPathComplete(path, nextStep) {
-			// Path completed
-			entity.SetMoving(false)
-			entity.SetPath(nil)
-			entity.SetPathStep(0)
-			return
-		}
-		
-		// Set next target from path
-		stepX, stepY, hasNext := GetNextPathStep(path, nextStep)
-		if hasNext {
-			worldX, worldY := ms.gameMap.GridToWorld(stepX, stepY)
-			width, height := entity.GetSize()
-			targetX := worldX - width/2
-			targetY := worldY - height/2
-			entity.SetTarget(targetX, targetY)
-		} else {
-			// No next step available, stop movement to prevent getting stuck
+	// Check if we've reached the current target
+	if ms.hasReachedTarget(entity) {
+		// Move to next step in path
+		if !ms.advanceToNextPathStep(entity) {
+			// Path completed or no more steps
 			entity.SetMoving(false)
 			entity.SetPath(nil)
 			entity.SetPathStep(0)
@@ -82,65 +64,105 @@ func (ms *MovementSystem) Update(entity Movable) {
 		}
 	}
 	
-	// Move towards current target with tile-based speed adjustment
-	ms.moveTowardTargetWithTileSpeed(entity)
+	// Execute movement towards current target
+	ms.executeMovement(entity)
 }
 
-// isMovingToTarget checks if entity is still moving toward the current target
-func (ms *MovementSystem) isMovingToTarget(entity Movable) bool {
-	x, y := entity.GetPosition()
-	targetX, targetY := entity.GetTarget()
-	dx := targetX - x
-	dy := targetY - y
-	distance := math.Sqrt(dx*dx + dy*dy)
-	// Use a small threshold to prevent floating point precision issues
-	// This should be smaller than snapThreshold to avoid dead zones
-	const precisionThreshold = 0.1
-	return distance > precisionThreshold
-}
-
-// moveTowardTargetWithTileSpeed moves the entity toward the current target position with tile-based speed
-func (ms *MovementSystem) moveTowardTargetWithTileSpeed(entity Movable) {
+// hasReachedTarget checks if entity has reached the current target
+// Uses a simple, small threshold to avoid any dead zones
+func (ms *MovementSystem) hasReachedTarget(entity Movable) bool {
 	x, y := entity.GetPosition()
 	targetX, targetY := entity.GetTarget()
 	dx := targetX - x
 	dy := targetY - y
 	distance := math.Sqrt(dx*dx + dy*dy)
 	
-	// Get current tile and apply speed multiplier
+	// Use a very small threshold to determine if we've reached the target
+	// This eliminates the dead zone problem entirely
+	const arrivalThreshold = 0.5
+	return distance <= arrivalThreshold
+}
+
+// advanceToNextPathStep moves to the next step in the path
+// Returns true if there's a next step, false if path is complete
+func (ms *MovementSystem) advanceToNextPathStep(entity Movable) bool {
+	path := entity.GetPath()
+	currentStep := entity.GetPathStep()
+	nextStep := currentStep + 1
+	
+	if IsPathComplete(path, nextStep) {
+		return false // Path completed
+	}
+	
+	// Get next target from path
+	stepX, stepY, hasNext := GetNextPathStep(path, nextStep)
+	if !hasNext {
+		return false // No next step available
+	}
+	
+	// Set new target and advance path step
+	worldX, worldY := ms.gameMap.GridToWorld(stepX, stepY)
 	width, height := entity.GetSize()
-	currentTileX, currentTileY := ms.gameMap.WorldToGrid(x + width/2, y + height/2)
-	currentTileType := ms.gameMap.GetTile(currentTileX, currentTileY)
-	tileDef, exists := world.TileDefinitions[currentTileType]
-	if !exists {
-		// If tile definition not found, assume it's grass
-		tileDef = world.TileDefinitions[world.TileGrass]
-	}
+	targetX := worldX - width/2
+	targetY := worldY - height/2
+	entity.SetTarget(targetX, targetY)
+	entity.SetPathStep(nextStep)
 	
-	// Apply tile speed multiplier to base movement speed
-	adjustedSpeed := entity.GetMoveSpeed() * tileDef.WalkSpeed
+	return true
+}
+
+// executeMovement performs the actual movement towards the target
+// Simplified logic that ensures smooth movement without dead zones
+func (ms *MovementSystem) executeMovement(entity Movable) {
+	x, y := entity.GetPosition()
+	targetX, targetY := entity.GetTarget()
+	dx := targetX - x
+	dy := targetY - y
+	distance := math.Sqrt(dx*dx + dy*dy)
 	
-	// Use a smaller snap threshold to prevent dead zones
-	const snapThreshold = 0.2
-	if distance <= snapThreshold {
+	// If we're very close to target, snap exactly to it
+	if distance < 0.1 {
 		entity.SetPosition(targetX, targetY)
 		return
 	}
 	
-	// Move towards target with tile-adjusted speed
-	// Ensure we don't overshoot the target
-	if distance < adjustedSpeed {
-		// If we would overshoot, move exactly to the target
+	// Calculate terrain-adjusted movement speed
+	moveSpeed := ms.getTerrainAdjustedSpeed(entity)
+	
+	// Move towards target, but never overshoot
+	if distance <= moveSpeed {
+		// If we would overshoot, move exactly to target
 		entity.SetPosition(targetX, targetY)
 	} else {
-		// Normal movement
-		newX := x + (dx / distance) * adjustedSpeed
-		newY := y + (dy / distance) * adjustedSpeed
+		// Normal movement step
+		newX := x + (dx / distance) * moveSpeed
+		newY := y + (dy / distance) * moveSpeed
 		entity.SetPosition(newX, newY)
 	}
 }
 
+// getTerrainAdjustedSpeed calculates movement speed based on current terrain
+func (ms *MovementSystem) getTerrainAdjustedSpeed(entity Movable) float64 {
+	x, y := entity.GetPosition()
+	width, height := entity.GetSize()
+	
+	// Get current tile based on entity center
+	currentTileX, currentTileY := ms.gameMap.WorldToGrid(x + width/2, y + height/2)
+	currentTileType := ms.gameMap.GetTile(currentTileX, currentTileY)
+	
+	// Get tile definition for speed multiplier
+	tileDef, exists := world.TileDefinitions[currentTileType]
+	if !exists {
+		// Default to grass if tile definition not found
+		tileDef = world.TileDefinitions[world.TileGrass]
+	}
+	
+	// Apply terrain speed multiplier to base movement speed
+	return entity.GetMoveSpeed() * tileDef.WalkSpeed
+}
+
 // MoveToTile initiates pathfinding-based movement to a specific tile
+// Uses existing pathfinding but with simplified movement execution
 func (ms *MovementSystem) MoveToTile(entity Movable, tileX, tileY int) {
 	// Get current entity position in grid coordinates
 	x, y := entity.GetPosition()
@@ -155,7 +177,15 @@ func (ms *MovementSystem) MoveToTile(entity Movable, tileX, tileY int) {
 		return
 	}
 	
-	// Find path from current position to target
+	// Ensure the destination is walkable - if not, find nearest walkable tile
+	endTileType := ms.gameMap.GetTile(tileX, tileY)
+	tileDef, exists := world.TileDefinitions[endTileType]
+	if !exists || !tileDef.Walkable {
+		// Find nearest walkable tile
+		tileX, tileY = FindNearestWalkableTile(tileX, tileY, ms.gameMap)
+	}
+	
+	// Find path from current position to target using existing pathfinding
 	path := FindPath(currentX, currentY, tileX, tileY, ms.gameMap)
 	
 	if path == nil || len(path) == 0 {
@@ -163,22 +193,7 @@ func (ms *MovementSystem) MoveToTile(entity Movable, tileX, tileY int) {
 		return
 	}
 	
-	// Ensure the destination is walkable - if not, find nearest walkable tile
-	endTileType := ms.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := world.TileDefinitions[endTileType]
-	if !exists || !tileDef.Walkable {
-		// Find nearest walkable tile
-		adjustedX, adjustedY := FindNearestWalkableTile(tileX, tileY, ms.gameMap)
-		if adjustedX != tileX || adjustedY != tileY {
-			// Recalculate path to the adjusted destination
-			path = FindPath(currentX, currentY, adjustedX, adjustedY, ms.gameMap)
-			if path == nil || len(path) == 0 {
-				return
-			}
-		}
-	}
-	
-	// Set up pathfinding movement
+	// Set up pathfinding movement with simplified system
 	entity.SetPath(path)
 	entity.SetPathStep(0)
 	entity.SetMoving(true)
