@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entity-Based Game Engine Demo</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        main {
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 60px);
+        }
+        
+        #gameContainer {
+            margin: 20px 0;
+            border: 2px solid #333;
+            background: #000;
+        }
+        
+        #controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .control-button:hover {
+            background: #45a049;
+        }
+        
+        .control-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        #stats {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: #f9f9f9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        #info {
+            max-width: 800px;
+            text-align: left;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        #info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        #info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        #info li {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        code {
+            background: #e8e8e8;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <script src="top-bar.js"></script>
+    
+    <main>
+        <h1>Entity-Based Game Engine Demo</h1>
+        <p>A demonstration of the new Entity-Component-System (ECS) architecture</p>
+        
+        <div id="stats">
+            <div class="stat-item">FPS: <span id="fps">0</span></div>
+            <div class="stat-item">Entities: <span id="entityCount">0</span></div>
+            <div class="stat-item">Systems: <span id="systemCount">0</span></div>
+            <div class="stat-item">Engine: <span id="engineState">Stopped</span></div>
+        </div>
+        
+        <canvas id="gameContainer" width="800" height="600"></canvas>
+        
+        <div id="controls">
+            <button class="control-button" id="startBtn">Start Engine</button>
+            <button class="control-button" id="pauseBtn" disabled>Pause</button>
+            <button class="control-button" id="resumeBtn" disabled>Resume</button>
+            <button class="control-button" id="stopBtn" disabled>Stop</button>
+            <button class="control-button" id="addEntityBtn">Add Entity</button>
+            <button class="control-button" id="clearBtn">Clear All</button>
+        </div>
+        
+        <div id="info">
+            <h3>🎮 Entity-Component-System (ECS) Architecture Demo</h3>
+            <p>This demo showcases a full entity-based game engine built with ECS principles:</p>
+            
+            <h4>Core Features:</h4>
+            <ul>
+                <li><strong>Entity Management:</strong> Create/destroy game entities with unique IDs</li>
+                <li><strong>Component System:</strong> Position, Velocity, and Renderable components</li>
+                <li><strong>System Processing:</strong> Movement and Render systems operating on entities</li>
+                <li><strong>Real-time Updates:</strong> 60 FPS game loop with delta time calculations</li>
+                <li><strong>Camera System:</strong> World-to-screen coordinate transformation</li>
+                <li><strong>Event System:</strong> Inter-system communication via events</li>
+            </ul>
+            
+            <h4>How to Use:</h4>
+            <ul>
+                <li><strong>Start Engine:</strong> Begin the game loop and system processing</li>
+                <li><strong>Add Entity:</strong> Create new game objects with random properties</li>
+                <li><strong>Mouse Click:</strong> Click on the canvas to create entities at that position</li>
+                <li><strong>WASD Keys:</strong> Move the camera around the world</li>
+                <li><strong>Mouse Wheel:</strong> Zoom in/out of the world</li>
+            </ul>
+            
+            <h4>Technical Architecture:</h4>
+            <ul>
+                <li><strong>EntityManager:</strong> Central registry for all entities and components</li>
+                <li><strong>SystemManager:</strong> Executes systems in priority order each frame</li>
+                <li><strong>MovementSystem:</strong> Updates entity positions based on velocity</li>
+                <li><strong>RenderSystem:</strong> Draws entities with transform and camera support</li>
+                <li><strong>Components:</strong> Data-only containers (Position, Velocity, Renderable)</li>
+            </ul>
+            
+            <p><em>This engine architecture is scalable and can be extended with additional components and systems like Physics, Audio, AI, Collision Detection, and more.</em></p>
+        </div>
+    </main>
+    
+    <script>
+        // Simple ECS Demo Engine (Embedded for simplicity)
+        
+        // Basic Component
+        class Component {
+            constructor(type) {
+                this.type = type;
+                this.entityId = null;
+            }
+        }
+        
+        // Position Component
+        class Position extends Component {
+            constructor(x = 0, y = 0) {
+                super('Position');
+                this.x = x;
+                this.y = y;
+            }
+            
+            setPosition(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+            
+            translate(dx, dy) {
+                this.x += dx;
+                this.y += dy;
+            }
+        }
+        
+        // Velocity Component
+        class Velocity extends Component {
+            constructor(vx = 0, vy = 0, maxSpeed = 100) {
+                super('Velocity');
+                this.vx = vx;
+                this.vy = vy;
+                this.maxSpeed = maxSpeed;
+                this.friction = 0;
+            }
+            
+            setVelocity(vx, vy) {
+                this.vx = vx;
+                this.vy = vy;
+                this.clampToMaxSpeed();
+            }
+            
+            addVelocity(dvx, dvy) {
+                this.vx += dvx;
+                this.vy += dvy;
+                this.clampToMaxSpeed();
+            }
+            
+            getSpeed() {
+                return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            }
+            
+            isMoving(threshold = 0.001) {
+                return this.getSpeed() > threshold;
+            }
+            
+            applyFriction() {
+                if (this.friction > 0) {
+                    const frictionFactor = 1 - this.friction;
+                    this.vx *= frictionFactor;
+                    this.vy *= frictionFactor;
+                }
+            }
+            
+            stop() {
+                this.vx = 0;
+                this.vy = 0;
+            }
+            
+            clampToMaxSpeed() {
+                if (this.maxSpeed !== Infinity) {
+                    const speed = this.getSpeed();
+                    if (speed > this.maxSpeed) {
+                        const factor = this.maxSpeed / speed;
+                        this.vx *= factor;
+                        this.vy *= factor;
+                    }
+                }
+            }
+        }
+        
+        // Renderable Component
+        class Renderable extends Component {
+            constructor(options = {}) {
+                super('Renderable');
+                this.visible = options.visible !== undefined ? options.visible : true;
+                this.width = options.width || 20;
+                this.height = options.height || 20;
+                this.color = options.color || '#00ff00';
+                this.shape = options.shape || 'rectangle';
+            }
+            
+            setColor(color) {
+                this.color = color;
+            }
+            
+            setSize(width, height) {
+                this.width = width;
+                this.height = height;
+            }
+        }
+        
+        // Entity Manager
+        class EntityManager {
+            constructor() {
+                this.nextEntityId = 1;
+                this.entities = new Set();
+                this.components = new Map();
+                this.componentsByType = new Map();
+            }
+            
+            createEntity() {
+                const entityId = this.nextEntityId++;
+                this.entities.add(entityId);
+                this.components.set(entityId, new Map());
+                return entityId;
+            }
+            
+            destroyEntity(entityId) {
+                if (!this.entities.has(entityId)) return false;
+                
+                const entityComponents = this.components.get(entityId);
+                if (entityComponents) {
+                    for (const [componentType, component] of entityComponents) {
+                        this.removeComponent(entityId, componentType);
+                    }
+                }
+                
+                this.entities.delete(entityId);
+                this.components.delete(entityId);
+                return true;
+            }
+            
+            addComponent(entityId, component) {
+                component.entityId = entityId;
+                const componentType = component.type;
+                
+                this.components.get(entityId).set(componentType, component);
+                
+                if (!this.componentsByType.has(componentType)) {
+                    this.componentsByType.set(componentType, new Map());
+                }
+                this.componentsByType.get(componentType).set(entityId, component);
+                
+                return this;
+            }
+            
+            removeComponent(entityId, componentType) {
+                const entityComponents = this.components.get(entityId);
+                const component = entityComponents?.get(componentType);
+                
+                if (component) {
+                    entityComponents.delete(componentType);
+                    
+                    const typeMap = this.componentsByType.get(componentType);
+                    if (typeMap) {
+                        typeMap.delete(entityId);
+                        if (typeMap.size === 0) {
+                            this.componentsByType.delete(componentType);
+                        }
+                    }
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            getComponent(entityId, componentType) {
+                const entityComponents = this.components.get(entityId);
+                return entityComponents ? entityComponents.get(componentType) : null;
+            }
+            
+            hasComponent(entityId, componentType) {
+                const entityComponents = this.components.get(entityId);
+                return entityComponents ? entityComponents.has(componentType) : false;
+            }
+            
+            getEntitiesWithComponents(...componentTypes) {
+                if (componentTypes.length === 0) return [];
+                
+                const firstType = componentTypes[0];
+                const typeMap = this.componentsByType.get(firstType);
+                const candidates = typeMap ? Array.from(typeMap.keys()) : [];
+                
+                if (componentTypes.length === 1) return candidates;
+                
+                return candidates.filter(entityId => {
+                    return componentTypes.every(type => this.hasComponent(entityId, type));
+                });
+            }
+            
+            getAllEntities() {
+                return Array.from(this.entities);
+            }
+            
+            clear() {
+                const entities = Array.from(this.entities);
+                entities.forEach(entityId => this.destroyEntity(entityId));
+                this.nextEntityId = 1;
+            }
+        }
+        
+        // Movement System
+        class MovementSystem {
+            constructor() {
+                this.name = 'MovementSystem';
+                this.entityManager = null;
+            }
+            
+            init(entityManager) {
+                this.entityManager = entityManager;
+            }
+            
+            update(deltaTime) {
+                const entities = this.entityManager.getEntitiesWithComponents('Position', 'Velocity');
+                const deltaSeconds = deltaTime / 1000;
+                
+                for (const entityId of entities) {
+                    const position = this.entityManager.getComponent(entityId, 'Position');
+                    const velocity = this.entityManager.getComponent(entityId, 'Velocity');
+                    
+                    if (!position || !velocity) continue;
+                    
+                    velocity.applyFriction();
+                    
+                    if (velocity.isMoving()) {
+                        const dx = velocity.vx * deltaSeconds;
+                        const dy = velocity.vy * deltaSeconds;
+                        position.translate(dx, dy);
+                    }
+                }
+            }
+        }
+        
+        // Render System
+        class RenderSystem {
+            constructor(canvas, context) {
+                this.name = 'RenderSystem';
+                this.canvas = canvas;
+                this.ctx = context;
+                this.camera = { x: 0, y: 0, zoom: 1 };
+                this.entityManager = null;
+            }
+            
+            init(entityManager) {
+                this.entityManager = entityManager;
+            }
+            
+            setCamera(x, y, zoom = 1) {
+                this.camera.x = x;
+                this.camera.y = y;
+                this.camera.zoom = zoom;
+            }
+            
+            getCamera() {
+                return { ...this.camera };
+            }
+            
+            update(deltaTime) {
+                if (!this.ctx) return;
+                
+                this.clearCanvas();
+                
+                const entities = this.entityManager.getEntitiesWithComponents('Position', 'Renderable');
+                
+                for (const entityId of entities) {
+                    const position = this.entityManager.getComponent(entityId, 'Position');
+                    const renderable = this.entityManager.getComponent(entityId, 'Renderable');
+                    
+                    if (!position || !renderable || !renderable.visible) continue;
+                    
+                    this.renderEntity(position, renderable);
+                }
+            }
+            
+            clearCanvas() {
+                this.ctx.save();
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.restore();
+            }
+            
+            renderEntity(position, renderable) {
+                this.ctx.save();
+                
+                const screenX = (position.x - this.camera.x) * this.camera.zoom;
+                const screenY = (position.y - this.camera.y) * this.camera.zoom;
+                
+                this.ctx.translate(screenX, screenY);
+                this.ctx.scale(this.camera.zoom, this.camera.zoom);
+                
+                this.ctx.fillStyle = renderable.color;
+                
+                if (renderable.shape === 'circle') {
+                    const radius = Math.min(renderable.width, renderable.height) / 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else {
+                    this.ctx.fillRect(-renderable.width/2, -renderable.height/2, renderable.width, renderable.height);
+                }
+                
+                this.ctx.restore();
+            }
+        }
+        
+        // Simple Game Engine
+        class SimpleGameEngine {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas ? canvas.getContext('2d') : null;
+                
+                this.entityManager = new EntityManager();
+                this.systems = [];
+                
+                this.running = false;
+                this.paused = false;
+                this.lastTime = 0;
+                this.frameCount = 0;
+                this.fps = 0;
+                this.fpsUpdateTime = 0;
+                
+                this.eventCallbacks = new Map();
+                
+                this.initializeSystems();
+                this.update = this.update.bind(this);
+            }
+            
+            initializeSystems() {
+                this.movementSystem = new MovementSystem();
+                this.renderSystem = new RenderSystem(this.canvas, this.ctx);
+                
+                this.systems = [this.movementSystem, this.renderSystem];
+                this.systems.forEach(system => system.init(this.entityManager));
+            }
+            
+            start() {
+                if (this.running) return;
+                
+                this.running = true;
+                this.paused = false;
+                this.lastTime = performance.now();
+                this.frameCount = 0;
+                
+                this.emit('engineStarted');
+                requestAnimationFrame(this.update);
+            }
+            
+            stop() {
+                this.running = false;
+                this.emit('engineStopped');
+            }
+            
+            pause() {
+                this.paused = true;
+                this.emit('enginePaused');
+            }
+            
+            resume() {
+                if (this.paused) {
+                    this.paused = false;
+                    this.lastTime = performance.now();
+                    this.emit('engineResumed');
+                }
+            }
+            
+            update(currentTime) {
+                if (!this.running) return;
+                
+                const deltaTime = Math.min(currentTime - this.lastTime, 33); // Cap at 30 FPS
+                this.lastTime = currentTime;
+                
+                this.updateFPS(currentTime);
+                
+                if (!this.paused) {
+                    this.systems.forEach(system => system.update(deltaTime));
+                    this.emit('update', { deltaTime, currentTime });
+                }
+                
+                requestAnimationFrame(this.update);
+            }
+            
+            updateFPS(currentTime) {
+                this.frameCount++;
+                
+                if (currentTime - this.fpsUpdateTime >= 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.fpsUpdateTime = currentTime;
+                    this.emit('fpsUpdate', { fps: this.fps });
+                }
+            }
+            
+            createEntity(components = []) {
+                const entityId = this.entityManager.createEntity();
+                
+                for (const component of components) {
+                    this.entityManager.addComponent(entityId, component);
+                }
+                
+                return entityId;
+            }
+            
+            createGameObject(x, y, options = {}) {
+                const position = new Position(x, y);
+                const velocity = new Velocity(0, 0, options.maxSpeed || 100);
+                const renderable = new Renderable({
+                    width: options.width || 20,
+                    height: options.height || 20,
+                    color: options.color || '#00ff00',
+                    shape: options.shape || 'rectangle'
+                });
+                
+                if (options.friction !== undefined) {
+                    velocity.friction = options.friction;
+                }
+                
+                return this.createEntity([position, velocity, renderable]);
+            }
+            
+            setEntityVelocity(entityId, vx, vy) {
+                const velocity = this.entityManager.getComponent(entityId, 'Velocity');
+                if (velocity) {
+                    velocity.setVelocity(vx, vy);
+                }
+            }
+            
+            setCamera(x, y, zoom = 1) {
+                this.renderSystem.setCamera(x, y, zoom);
+            }
+            
+            getCamera() {
+                return this.renderSystem.getCamera();
+            }
+            
+            getStats() {
+                return {
+                    running: this.running,
+                    paused: this.paused,
+                    fps: this.fps,
+                    entityCount: this.entityManager.getAllEntities().length,
+                    systemCount: this.systems.length
+                };
+            }
+            
+            clear() {
+                this.entityManager.clear();
+                this.frameCount = 0;
+                this.fps = 0;
+                this.emit('engineCleared');
+            }
+            
+            on(event, callback) {
+                if (!this.eventCallbacks.has(event)) {
+                    this.eventCallbacks.set(event, new Set());
+                }
+                this.eventCallbacks.get(event).add(callback);
+            }
+            
+            emit(event, data = {}) {
+                const callbacks = this.eventCallbacks.get(event);
+                if (callbacks) {
+                    for (const callback of callbacks) {
+                        callback(data);
+                    }
+                }
+            }
+        }
+        
+        // Initialize the demo
+        const canvas = document.getElementById('gameContainer');
+        const engine = new SimpleGameEngine(canvas);
+        
+        // UI elements
+        const fpsElement = document.getElementById('fps');
+        const entityCountElement = document.getElementById('entityCount');
+        const systemCountElement = document.getElementById('systemCount');
+        const engineStateElement = document.getElementById('engineState');
+        
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const addEntityBtn = document.getElementById('addEntityBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        // Engine event handlers
+        engine.on('fpsUpdate', (data) => {
+            fpsElement.textContent = data.fps;
+        });
+        
+        engine.on('update', () => {
+            const stats = engine.getStats();
+            entityCountElement.textContent = stats.entityCount;
+            systemCountElement.textContent = stats.systemCount;
+        });
+        
+        engine.on('engineStarted', () => {
+            engineStateElement.textContent = 'Running';
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            stopBtn.disabled = false;
+        });
+        
+        engine.on('enginePaused', () => {
+            engineStateElement.textContent = 'Paused';
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = false;
+        });
+        
+        engine.on('engineResumed', () => {
+            engineStateElement.textContent = 'Running';
+            pauseBtn.disabled = false;
+            resumeBtn.disabled = true;
+        });
+        
+        engine.on('engineStopped', () => {
+            engineStateElement.textContent = 'Stopped';
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            stopBtn.disabled = true;
+        });
+        
+        // Button event handlers
+        startBtn.addEventListener('click', () => engine.start());
+        pauseBtn.addEventListener('click', () => engine.pause());
+        resumeBtn.addEventListener('click', () => engine.resume());
+        stopBtn.addEventListener('click', () => engine.stop());
+        clearBtn.addEventListener('click', () => engine.clear());
+        
+        // Add random entity function
+        function addRandomEntity() {
+            const x = Math.random() * 800;
+            const y = Math.random() * 600;
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const shapes = ['rectangle', 'circle'];
+            
+            const entityId = engine.createGameObject(x, y, {
+                width: 15 + Math.random() * 25,
+                height: 15 + Math.random() * 25,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                shape: shapes[Math.floor(Math.random() * shapes.length)],
+                maxSpeed: 50 + Math.random() * 100,
+                friction: 0.02 + Math.random() * 0.05
+            });
+            
+            // Give it some initial velocity
+            const vx = (Math.random() - 0.5) * 100;
+            const vy = (Math.random() - 0.5) * 100;
+            engine.setEntityVelocity(entityId, vx, vy);
+            
+            return entityId;
+        }
+        
+        addEntityBtn.addEventListener('click', addRandomEntity);
+        
+        // Mouse click to add entities
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Convert screen coordinates to world coordinates
+            const camera = engine.getCamera();
+            const worldX = x / camera.zoom + camera.x;
+            const worldY = y / camera.zoom + camera.y;
+            
+            const entityId = engine.createGameObject(worldX, worldY, {
+                width: 20,
+                height: 20,
+                color: '#ffffff',
+                maxSpeed: 80
+            });
+            
+            // Add some random velocity
+            const vx = (Math.random() - 0.5) * 60;
+            const vy = (Math.random() - 0.5) * 60;
+            engine.setEntityVelocity(entityId, vx, vy);
+        });
+        
+        // Camera controls with WASD
+        const keys = {};
+        const cameraSpeed = 200;
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        // Update camera based on input
+        engine.on('update', (data) => {
+            const deltaSeconds = data.deltaTime / 1000;
+            const camera = engine.getCamera();
+            let dx = 0, dy = 0;
+            
+            if (keys['KeyW'] || keys['ArrowUp']) dy -= cameraSpeed * deltaSeconds;
+            if (keys['KeyS'] || keys['ArrowDown']) dy += cameraSpeed * deltaSeconds;
+            if (keys['KeyA'] || keys['ArrowLeft']) dx -= cameraSpeed * deltaSeconds;
+            if (keys['KeyD'] || keys['ArrowRight']) dx += cameraSpeed * deltaSeconds;
+            
+            if (dx !== 0 || dy !== 0) {
+                engine.setCamera(camera.x + dx, camera.y + dy, camera.zoom);
+            }
+        });
+        
+        // Mouse wheel zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const camera = engine.getCamera();
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.1, Math.min(3, camera.zoom * zoomFactor));
+            engine.setCamera(camera.x, camera.y, newZoom);
+        });
+        
+        // Initialize with a few entities
+        for (let i = 0; i < 5; i++) {
+            addRandomEntity();
+        }
+        
+        // Update initial stats
+        const stats = engine.getStats();
+        entityCountElement.textContent = stats.entityCount;
+        systemCountElement.textContent = stats.systemCount;
+        
+        // Start the engine automatically
+        engine.start();
+    </script>
+</body>
+</html>
