@@ -163,7 +163,8 @@ describe('ECS Game', () => {
       expect(content).toContain('const go = new Go()');
       expect(content).toContain('WebAssembly.instantiateStreaming');
       expect(content).toContain('go.run(result.instance)');
-      expect(content).toContain('canvas.width = window.innerWidth');
+      expect(content).toContain('canvas.width = 800'); // Fixed size instead of viewport
+      expect(content).toContain('canvas.height = 600'); // Fixed size instead of viewport
     });
 
     test('should be integrated into main index.html', () => {
