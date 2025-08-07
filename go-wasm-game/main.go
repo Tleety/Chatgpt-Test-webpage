@@ -102,11 +102,8 @@ func main() {
 	// Initialize unit manager
 	unitManager = NewUnitManager(gameMap)
 	
-	// Create some initial units for demonstration
+	// Create one initial unit for demonstration
 	unitManager.CreateUnit(UnitWarrior, 95, 95, "")
-	unitManager.CreateUnit(UnitArcher, 97, 95, "")
-	unitManager.CreateUnit(UnitMage, 95, 97, "")
-	unitManager.CreateUnit(UnitScout, 97, 97, "")
 	
 	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
