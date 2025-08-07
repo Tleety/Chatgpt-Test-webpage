@@ -8,6 +8,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
 - **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
+- **ECS Game** – Entity-Component-System architecture demo using Ebiten game engine and Go WebAssembly.
 
 ## Running locally
 
@@ -37,6 +38,13 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
+5. **Build the ECS Game demo**
+   ```
+   cd ecs-game
+   GOOS=js GOARCH=wasm go build -o game.wasm
+   ```
+   After building, serve the folder with any static web server and open `index.html` in a browser.
+
 ## Testing
 
 Unit tests are available for multiple projects and are **required to pass** for all deployments and merges:
@@ -62,8 +70,9 @@ npm test -- --coverage
 - **Deployment Info**: Tests for CI/CD integration and deployment information generation
 - **Version Update**: Tests for version management and update system
 - **WASM Game Refactoring**: Tests for code organization and module structure
+- **ECS Game**: Tests for Entity-Component-System architecture, Ebiten integration, and game logic
 
-**Total: 179 tests across 9 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 286 tests across 10 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
@@ -204,7 +213,9 @@ Our development workflow enforces quality through automated testing and deployme
 #### Pre-commit Best Practices
 - Run tests locally before committing: `npm test`
 - Ensure all builds complete successfully
-- Verify Go WASM builds work: `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
+- Verify Go WASM builds work: 
+  - `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
+  - `cd ecs-game && GOOS=js GOARCH=wasm go build -o game.wasm`
 - Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
 
 ### Test Visualization
