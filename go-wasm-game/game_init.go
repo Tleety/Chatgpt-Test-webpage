@@ -21,7 +21,7 @@ func initializeGameEntities(gameMap *world.Map) (*entities.Player, *units.UnitMa
 	// Create player at center of map
 	centerX := (mapWorldWidth - 20) / 2
 	centerY := (mapWorldHeight - 20) / 2
-	p := entities.NewPlayer(centerX, centerY)
+	p := entities.NewPlayer(centerX, centerY, gameMap)
 
 	// Initialize UI system
 	uiSys := ui.NewUISystem()

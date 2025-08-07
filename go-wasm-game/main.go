@@ -49,8 +49,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 	gameAreaHeight := canvasHeight - uiSystem.GetUIAreaHeight()
 	
 	// Update camera to follow player (center player on screen)
-	cameraX = playerX - canvasWidth/2 + player.Width/2
-	cameraY = playerY - gameAreaHeight/2 + player.Height/2
+	width, height := player.MovableEntity.GetSize()
+	cameraX = playerX - canvasWidth/2 + width/2
+	cameraY = playerY - gameAreaHeight/2 + height/2
 	
 	// Clamp camera to map bounds
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
