@@ -9,6 +9,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 - **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
 - **ECS Game** – Entity-Component-System architecture demo using Ebiten game engine and Go WebAssembly.
+- **Bevy Game Foundation** – Minimal Bevy-style game engine foundation built with Rust and WebAssembly.
 
 ## Running locally
 
@@ -45,6 +46,13 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
+6. **Build the Bevy Game Foundation**
+   ```
+   cd bevy-game
+   ./build.sh
+   ```
+   After building, serve the folder with any static web server and open `index.html` in a browser.
+
 ## Testing
 
 Unit tests are available for multiple projects and are **required to pass** for all deployments and merges:
@@ -71,8 +79,9 @@ npm test -- --coverage
 - **Version Update**: Tests for version management and update system
 - **WASM Game Refactoring**: Tests for code organization and module structure
 - **ECS Game**: Tests for Entity-Component-System architecture, Ebiten integration, and game logic
+- **Bevy Game Foundation**: Tests for Rust WebAssembly compilation, ECS architecture patterns, and Bevy integration foundation
 
-**Total: 286 tests across 10 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 302 tests across 11 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
@@ -113,6 +122,7 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - **Jekyll** - Ruby-based static site generator for the todo list project
 - **Phaser 3** - JavaScript game framework loaded via CDN for interactive demos
 - **Go + WebAssembly** - Compiled Go code running in the browser for performance-critical applications
+- **Rust + WebAssembly** - Modern systems programming language compiled to WebAssembly for Bevy game engine foundation
 - **Jest** - JavaScript testing framework with jsdom environment for unit testing
 - **GitHub Pages** - Static site hosting and deployment
 
@@ -143,6 +153,13 @@ This project uses a diverse set of technologies to demonstrate different web dev
 - Keep WASM modules focused and lightweight
 - Provide clear build instructions with proper GOOS/GOARCH flags
 - Include necessary runtime files (`wasm_exec.js`)
+
+#### Rust + WebAssembly
+- Use standard Cargo project structure with proper crate configuration
+- Configure WebAssembly target with `wasm-pack` for browser compatibility
+- Structure code for both native and WASM compilation targets
+- Use Bevy-style Entity-Component-System architecture patterns
+- Include proper build scripts and documentation for WASM compilation
 
 ### Unit Testing Guidelines
 
@@ -216,6 +233,8 @@ Our development workflow enforces quality through automated testing and deployme
 - Verify Go WASM builds work: 
   - `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
   - `cd ecs-game && GOOS=js GOARCH=wasm go build -o game.wasm`
+- Verify Rust WASM builds work:
+  - `cd bevy-game && ./build.sh`
 - Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
 
 ### Test Visualization

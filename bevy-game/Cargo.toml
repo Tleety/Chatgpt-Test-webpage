@@ -1,0 +1,32 @@
+[package]
+name = "bevy-game"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = [
+  "console",
+  "Window",
+  "Document",
+  "HtmlCanvasElement",
+  "CanvasRenderingContext2d",
+  "Element",
+] }
+js-sys = "0.3"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies.bevy]
+version = "0.14"
+default-features = false
+features = ["bevy_sprite", "bevy_render", "bevy_winit", "webgl2"]
+optional = true
+
+[features]
+default = []
+bevy_enabled = ["bevy"]
