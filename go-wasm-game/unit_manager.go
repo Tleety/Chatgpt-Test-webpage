@@ -5,6 +5,7 @@ import (
 	"syscall/js"
 	"time"
 	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // UnitManager manages all units in the game
@@ -99,7 +100,7 @@ func (um *UnitManager) validatePosition(tileX, tileY int) error {
 
 	// Check walkability
 	tileType := um.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := TileDefinitions[tileType]
+	tileDef, exists := world.TileDefinitions[tileType]
 	if !exists || !tileDef.Walkable {
 		return fmt.Errorf("cannot place unit on non-walkable tile at (%d, %d)", tileX, tileY)
 	}

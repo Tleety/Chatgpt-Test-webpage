@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
+)
 
 // addDirtPaths creates snaking dirt paths across the landscape
 func (m *Map) addDirtPaths() {
@@ -37,8 +40,8 @@ func (m *Map) addPath(startX, startY, endX, endY, width int, avoidWater bool) {
 					px, py := x+dx, y+dy
 					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
 						// Only place dirt path on grass (don't overwrite water)
-						if m.Tiles[py][px] == TileGrass {
-							m.Tiles[py][px] = TileDirtPath
+						if m.Tiles[py][px] == world.TileGrass {
+							m.Tiles[py][px] = world.TileDirtPath
 						}
 					}
 				}
@@ -93,8 +96,8 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 		// Place the path tile
 		if tileX >= 0 && tileX < m.Width && tileY >= 0 && tileY < m.Height {
 			// Only place dirt path on grass (don't overwrite water)
-			if m.Tiles[tileY][tileX] == TileGrass {
-				m.Tiles[tileY][tileX] = TileDirtPath
+			if m.Tiles[tileY][tileX] == world.TileGrass {
+				m.Tiles[tileY][tileX] = world.TileDirtPath
 			}
 		}
 		
@@ -111,11 +114,11 @@ func (m *Map) addSnakingPath(startX, startY, endX, endY, windiness int) {
 				
 				if adjX >= 0 && adjX < m.Width && adjY >= 0 && adjY < m.Height {
 					// Only fill small gaps to maintain path continuity
-					if m.Tiles[adjY][adjX] == TileGrass {
+					if m.Tiles[adjY][adjX] == world.TileGrass {
 						// Check if this helps connect the path
 						distToLine := math.Abs(float64(dx)) + math.Abs(float64(dy))
 						if distToLine <= 1.0 { // Only immediate neighbors
-							m.Tiles[adjY][adjX] = TileDirtPath
+							m.Tiles[adjY][adjX] = world.TileDirtPath
 						}
 					}
 				}
@@ -148,8 +151,8 @@ func (m *Map) addCurvedPath(startX, startY, endX, endY, width int) {
 					px, py := x+dx, y+dy
 					if px >= 0 && px < m.Width && py >= 0 && py < m.Height {
 						// Only place dirt path on grass (don't overwrite water)
-						if m.Tiles[py][px] == TileGrass {
-							m.Tiles[py][px] = TileDirtPath
+						if m.Tiles[py][px] == world.TileGrass {
+							m.Tiles[py][px] = world.TileDirtPath
 						}
 					}
 				}

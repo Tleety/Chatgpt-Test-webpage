@@ -1,13 +1,16 @@
 package main
 
-import "math"
+import (
+	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
+)
 
 // generateTerrain creates a more realistic terrain pattern with grass and water
 func (m *Map) generateTerrain() {
 	// Initialize all tiles to grass
 	for y := 0; y < m.Height; y++ {
 		for x := 0; x < m.Width; x++ {
-			m.Tiles[y][x] = TileGrass
+			m.Tiles[y][x] = world.TileGrass
 		}
 	}
 	
@@ -43,7 +46,7 @@ func (m *Map) generateTerrain() {
 				distance := math.Sqrt(distX*distX + distY*distY)
 				
 				if distance < 1.0 {
-					m.Tiles[y][x] = TileWater
+					m.Tiles[y][x] = world.TileWater
 				}
 			}
 		}
@@ -84,7 +87,7 @@ func (m *Map) addRiver(startX, startY, endX, endY, width int) {
 				if dx*dx + dy*dy <= width*width {
 					rx, ry := x+dx, y+dy
 					if rx >= 0 && rx < m.Width && ry >= 0 && ry < m.Height {
-						m.Tiles[ry][rx] = TileWater
+						m.Tiles[ry][rx] = world.TileWater
 					}
 				}
 			}
@@ -99,7 +102,7 @@ func (m *Map) addCoastalAreas() {
 		depth := int(6 + 4*math.Sin(float64(y)*0.1))
 		for x := 0; x < depth; x++ {
 			if x < m.Width {
-				m.Tiles[y][x] = TileWater
+				m.Tiles[y][x] = world.TileWater
 			}
 		}
 	}
@@ -109,7 +112,7 @@ func (m *Map) addCoastalAreas() {
 		depth := int(4 + 3*math.Sin(float64(x)*0.15))
 		for y := m.Height - depth; y < m.Height; y++ {
 			if y >= 0 {
-				m.Tiles[y][x] = TileWater
+				m.Tiles[y][x] = world.TileWater
 			}
 		}
 	}
@@ -136,7 +139,7 @@ func (m *Map) addSmallPonds() {
 						// Add some irregularity to pond edges
 						if dx*dx + dy*dy <= (pond.radius-1)*(pond.radius-1) || 
 						   (x+y)%3 == 0 {
-							m.Tiles[y][x] = TileWater
+							m.Tiles[y][x] = world.TileWater
 						}
 					}
 				}

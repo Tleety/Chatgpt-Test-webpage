@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
+)
 
 // IsPositionWalkable checks if the player can walk on the tiles at the given position
 // This checks all four corners of the player rectangle against tile types
@@ -17,10 +20,10 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 	for _, corner := range corners {
 		tileX, tileY := gameMap.WorldToGrid(corner.px, corner.py)
 		tileType := gameMap.GetTile(tileX, tileY)
-		tileDef, exists := TileDefinitions[tileType]
+		tileDef, exists := world.TileDefinitions[tileType]
 		if !exists {
 			// If tile definition not found, assume it's walkable (fallback to grass)
-			tileDef = TileDefinitions[TileGrass]
+			tileDef = world.TileDefinitions[world.TileGrass]
 		}
 		if !tileDef.Walkable {
 			return false
@@ -35,10 +38,10 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 	// If the target tile is already walkable, return it
 	tileType := gameMap.GetTile(targetX, targetY)
-	tileDef, exists := TileDefinitions[tileType]
+	tileDef, exists := world.TileDefinitions[tileType]
 	if !exists {
 		// If tile definition not found, assume it's walkable (fallback to grass)
-		tileDef = TileDefinitions[TileGrass]
+		tileDef = world.TileDefinitions[world.TileGrass]
 	}
 	if tileDef.Walkable {
 		return targetX, targetY
@@ -67,10 +70,10 @@ func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 				if checkX >= 0 && checkX < gameMap.Width && 
 				   checkY >= 0 && checkY < gameMap.Height {
 					tileType := gameMap.GetTile(checkX, checkY)
-					tileDef, exists := TileDefinitions[tileType]
+					tileDef, exists := world.TileDefinitions[tileType]
 					if !exists {
 						// If tile definition not found, assume it's walkable (fallback to grass)
-						tileDef = TileDefinitions[TileGrass]
+						tileDef = world.TileDefinitions[world.TileGrass]
 					}
 					if tileDef.Walkable {
 						return checkX, checkY
