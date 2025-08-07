@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"math"
 	"syscall/js"
 )
 
@@ -37,14 +38,70 @@ func NewPlayer(startX, startY float64) *Player {
 	return player
 }
 
-// Update handles player movement logic (placeholder for now)
+// Update handles player movement logic
 func (p *Player) Update() {
-	// Movement logic to be implemented
+	if !p.IsMovingFlag {
+		return
+	}
+	
+	// Calculate distance to target
+	dx := p.TargetX - p.X
+	dy := p.TargetY - p.Y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	
+	// Fixed thresholds to prevent dead zones
+	const snapThreshold = 0.2  // Much smaller than before to prevent premature stopping
+	const precisionThreshold = 0.1  // Even smaller to ensure movement continues
+	
+	// Check if we've reached the target
+	if distance <= snapThreshold {
+		// Snap to target and stop moving
+		p.X = p.TargetX
+		p.Y = p.TargetY
+		p.IsMovingFlag = false
+		return
+	}
+	
+	// Move toward target if distance is significant
+	if distance > precisionThreshold {
+		// Prevent overshoot by checking if we would overshoot with full speed
+		if distance < p.MoveSpeed {
+			// Move exactly to target to prevent overshoot
+			p.X = p.TargetX
+			p.Y = p.TargetY
+			p.IsMovingFlag = false
+		} else {
+			// Normal movement
+			p.X += (dx / distance) * p.MoveSpeed
+			p.Y += (dy / distance) * p.MoveSpeed
+		}
+	}
+	// Note: No dead zone - if distance is between precisionThreshold and snapThreshold,
+	// we still continue moving until we reach snapThreshold
 }
 
-// MoveToTile initiates pathfinding-based movement to a specific tile
+// MoveToTile initiates movement to a specific tile
 func (p *Player) MoveToTile(tileX, tileY int) {
-	// Pathfinding logic to be implemented
+	// For now, implement direct movement to tile center
+	// Later this could be enhanced with pathfinding for complex maps
+	
+	// Convert tile coordinates to world coordinates (tile center)
+	const tileSize = 32.0
+	tileCenterX := float64(tileX)*tileSize + tileSize/2
+	tileCenterY := float64(tileY)*tileSize + tileSize/2
+	
+	// Calculate where to position the player so they're centered on the tile
+	p.TargetX = tileCenterX - p.Width/2
+	p.TargetY = tileCenterY - p.Height/2
+	
+	// Only start moving if we're not already at the target
+	dx := p.TargetX - p.X
+	dy := p.TargetY - p.Y
+	distance := math.Sqrt(dx*dx + dy*dy)
+	
+	if distance > 0.1 { // Small threshold to avoid unnecessary movement
+		p.IsMovingFlag = true
+	}
 }
 
 // ClampToMapBounds ensures the player stays within map boundaries
