@@ -7,5 +7,6 @@ jekyll-site/.sass-cache/
 jekyll-site/.jekyll-cache/
 jekyll-site/.jekyll-metadata
 deployment.json
+go-wasm-game/deployment.json
 tests/test-results.json
 tests/test-summary.json
