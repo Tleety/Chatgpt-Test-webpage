@@ -1,7 +1,8 @@
-package main
+package systems
 
 import (
 	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // Movable represents an entity that can move using the unified movement system
@@ -22,14 +23,19 @@ type Movable interface {
 
 // MovementSystem handles unified movement logic for both players and units
 type MovementSystem struct {
-	gameMap *Map
+	gameMap *world.Map
 }
 
 // NewMovementSystem creates a new movement system
-func NewMovementSystem(gameMap *Map) *MovementSystem {
+func NewMovementSystem(gameMap *world.Map) *MovementSystem {
 	return &MovementSystem{
 		gameMap: gameMap,
 	}
+}
+
+// GetGameMap returns the game map (getter for accessing unexported field)
+func (ms *MovementSystem) GetGameMap() *world.Map {
+	return ms.gameMap
 }
 
 // Update handles movement logic with pathfinding and tile-based speed adjustment
@@ -105,10 +111,10 @@ func (ms *MovementSystem) moveTowardTargetWithTileSpeed(entity Movable) {
 	width, height := entity.GetSize()
 	currentTileX, currentTileY := ms.gameMap.WorldToGrid(x + width/2, y + height/2)
 	currentTileType := ms.gameMap.GetTile(currentTileX, currentTileY)
-	tileDef, exists := TileDefinitions[currentTileType]
+	tileDef, exists := world.TileDefinitions[currentTileType]
 	if !exists {
 		// If tile definition not found, assume it's grass
-		tileDef = TileDefinitions[TileGrass]
+		tileDef = world.TileDefinitions[world.TileGrass]
 	}
 	
 	// Apply tile speed multiplier to base movement speed
@@ -159,7 +165,7 @@ func (ms *MovementSystem) MoveToTile(entity Movable, tileX, tileY int) {
 	
 	// Ensure the destination is walkable - if not, find nearest walkable tile
 	endTileType := ms.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := TileDefinitions[endTileType]
+	tileDef, exists := world.TileDefinitions[endTileType]
 	if !exists || !tileDef.Walkable {
 		// Find nearest walkable tile
 		adjustedX, adjustedY := FindNearestWalkableTile(tileX, tileY, ms.gameMap)

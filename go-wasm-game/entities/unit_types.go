@@ -1,4 +1,4 @@
-package main
+package entities
 
 // UnitType represents different types of units
 type UnitType int

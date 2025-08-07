@@ -1,6 +1,8 @@
-package main
+package world
 
-import "math"
+import (
+	"math"
+)
 
 // addDirtPaths creates snaking dirt paths across the landscape
 func (m *Map) addDirtPaths() {

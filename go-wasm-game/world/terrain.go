@@ -1,6 +1,8 @@
-package main
+package world
 
-import "math"
+import (
+	"math"
+)
 
 // generateTerrain creates a more realistic terrain pattern with grass and water
 func (m *Map) generateTerrain() {

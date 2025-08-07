@@ -2,17 +2,21 @@ package main
 
 import (
 	"syscall/js"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/game"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/units"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 var (
 	ctx          js.Value
 	canvas       js.Value
-	player       *Player
+	player       *entities.Player
 	canvasWidth  float64
 	canvasHeight float64
-	gameMap      *Map
-	unitManager  *UnitManager
-	environment  *Environment
+	gameMap      *world.Map
+	unitManager  *units.UnitManager
+	environment  *world.Environment
 	cameraX      float64
 	cameraY      float64
 )
@@ -25,13 +29,13 @@ func draw(this js.Value, args []js.Value) interface{} {
 	canvasHeight = canvas.Get("height").Float()
 	
 	// Update player (handles movement animations with pathfinding and tile-based speed)
-	player.Update(gameMap)
+	player.Update()
 	
 	// Update all units using the unified movement system
 	unitManager.Update()
 	
 	// Keep player within world bounds (map bounds)
-	player.ClampToMapBounds(gameMap)
+	player.ClampToMapBounds(float64(gameMap.Width), float64(gameMap.Height), gameMap.TileSize)
 	
 	// Get player position
 	playerX, playerY := player.GetPosition()
@@ -56,6 +60,9 @@ func draw(this js.Value, args []js.Value) interface{} {
 	if cameraY > mapWorldHeight-canvasHeight {
 		cameraY = mapWorldHeight - canvasHeight
 	}
+	
+	// Update the game state with current camera position
+	game.State.UpdateCamera(cameraX, cameraY)
 	
 	// Clear canvas
 	ctx.Call("clearRect", 0, 0, canvasWidth, canvasHeight)
@@ -97,13 +104,13 @@ func main() {
 	canvasHeight = canvas.Get("height").Float()
 
 	// Initialize the map (200x200 tiles, 32px per tile)
-	gameMap = NewMap(200, 200, 32.0)
+	gameMap = world.NewMap(200, 200, 32.0)
 	
 	// Initialize unit manager
-	unitManager = NewUnitManager(gameMap)
+	unitManager = units.NewUnitManager(gameMap)
 	
 	// Create one initial unit for demonstration
-	unitManager.CreateUnit(UnitWarrior, 95, 95, "")
+	unitManager.CreateUnit(entities.UnitWarrior, 95, 95, "")
 	
 	// Calculate world dimensions and create player at center
 	mapWorldWidth := float64(gameMap.Width) * gameMap.TileSize
@@ -112,16 +119,19 @@ func main() {
 	// Create player at center of map
 	centerX := (mapWorldWidth - 20) / 2
 	centerY := (mapWorldHeight - 20) / 2
-	player = NewPlayer(centerX, centerY, gameMap)
+	player = entities.NewPlayer(centerX, centerY)
   
-	environment = NewEnvironment(gameMap)
+	environment = world.NewEnvironment(gameMap)
+
+	// Initialize game state for shared access
+	game.InitializeState(ctx, canvas, player, gameMap, unitManager, environment)
 
 	// Initialize game layers
 	initializeGameLayers()
 
 	// Initialize event handlers and JavaScript interface
-	initializeEventHandlers(canvas)
-	initializeJSInterface()
+	game.InitializeEventHandlers(canvas)
+	game.InitializeJSInterface()
 	
 	// Set flag to indicate WASM is loaded
 	js.Global().Set("wasmLoaded", true)

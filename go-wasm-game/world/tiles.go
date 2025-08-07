@@ -1,4 +1,4 @@
-package main
+package world
 
 // Tile represents a terrain tile with properties
 type Tile struct {

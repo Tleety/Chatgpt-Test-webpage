@@ -1,10 +1,13 @@
-package main
+package systems
 
-import "math"
+import (
+	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
+)
 
 // IsPositionWalkable checks if the player can walk on the tiles at the given position
 // This checks all four corners of the player rectangle against tile types
-func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
+func IsPositionWalkable(x, y, width, height float64, gameMap *world.Map) bool {
 	// Get the corners of the player rectangle at the new position
 	corners := []struct{ px, py float64 }{
 		{x, y},                           // Top-left
@@ -17,10 +20,10 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 	for _, corner := range corners {
 		tileX, tileY := gameMap.WorldToGrid(corner.px, corner.py)
 		tileType := gameMap.GetTile(tileX, tileY)
-		tileDef, exists := TileDefinitions[tileType]
+		tileDef, exists := world.TileDefinitions[tileType]
 		if !exists {
 			// If tile definition not found, assume it's walkable (fallback to grass)
-			tileDef = TileDefinitions[TileGrass]
+			tileDef = world.TileDefinitions[world.TileGrass]
 		}
 		if !tileDef.Walkable {
 			return false
@@ -32,13 +35,13 @@ func IsPositionWalkable(x, y, width, height float64, gameMap *Map) bool {
 
 // FindNearestWalkableTile finds the closest walkable tile to the target coordinates
 // This is used when the player clicks on water - we find the nearest grass tile
-func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
+func FindNearestWalkableTile(targetX, targetY int, gameMap *world.Map) (int, int) {
 	// If the target tile is already walkable, return it
 	tileType := gameMap.GetTile(targetX, targetY)
-	tileDef, exists := TileDefinitions[tileType]
+	tileDef, exists := world.TileDefinitions[tileType]
 	if !exists {
 		// If tile definition not found, assume it's walkable (fallback to grass)
-		tileDef = TileDefinitions[TileGrass]
+		tileDef = world.TileDefinitions[world.TileGrass]
 	}
 	if tileDef.Walkable {
 		return targetX, targetY
@@ -67,10 +70,10 @@ func FindNearestWalkableTile(targetX, targetY int, gameMap *Map) (int, int) {
 				if checkX >= 0 && checkX < gameMap.Width && 
 				   checkY >= 0 && checkY < gameMap.Height {
 					tileType := gameMap.GetTile(checkX, checkY)
-					tileDef, exists := TileDefinitions[tileType]
+					tileDef, exists := world.TileDefinitions[tileType]
 					if !exists {
 						// If tile definition not found, assume it's walkable (fallback to grass)
-						tileDef = TileDefinitions[TileGrass]
+						tileDef = world.TileDefinitions[world.TileGrass]
 					}
 					if tileDef.Walkable {
 						return checkX, checkY
@@ -94,7 +97,7 @@ func abs(x int) int {
 
 // CanPlayerMoveToTile checks if a player can move to a specific tile position
 // This validates that the entire player rectangle would be on walkable terrain
-func CanPlayerMoveToTile(tileX, tileY int, playerWidth, playerHeight float64, gameMap *Map) bool {
+func CanPlayerMoveToTile(tileX, tileY int, playerWidth, playerHeight float64, gameMap *world.Map) bool {
 	// Convert tile coordinates to world coordinates (center of tile)
 	worldX, worldY := gameMap.GridToWorld(tileX, tileY)
 	

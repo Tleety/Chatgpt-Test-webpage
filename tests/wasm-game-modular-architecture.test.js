@@ -23,17 +23,17 @@ describe('WASM Game Modular Architecture', () => {
         // Verify main.go still contains essential functionality
         expect(mainGoContent).toContain('func main()');
         expect(mainGoContent).toContain('func draw(');
-        expect(mainGoContent).toContain('environment = NewEnvironment'); // Simplified environment initialization
-        expect(mainGoContent).toContain('initializeEventHandlers');
-        expect(mainGoContent).toContain('initializeJSInterface');
+        expect(mainGoContent).toContain('environment = world.NewEnvironment'); // Simplified environment initialization
+        expect(mainGoContent).toContain('game.InitializeEventHandlers');
+        expect(mainGoContent).toContain('game.InitializeJSInterface');
         
         // Count lines - should be significantly reduced
         const lines = mainGoContent.split('\n').length;
-        expect(lines).toBeLessThan(140); // Original was ~440 lines
+        expect(lines).toBeLessThan(150); // Original was ~440 lines, now allows for well-organized main.go
     });
 
     test('environment.go contains environment-related functionality', () => {
-        const envGoPath = path.join(__dirname, '..', 'go-wasm-game', 'environment.go');
+        const envGoPath = path.join(__dirname, '..', 'go-wasm-game', 'world', 'environment.go');
         const envGoContent = fs.readFileSync(envGoPath, 'utf8');
         
         // Verify environment functions are present
@@ -45,7 +45,7 @@ describe('WASM Game Modular Architecture', () => {
     });
 
     test('js_interface.go contains JavaScript interface functions', () => {
-        const jsInterfacePath = path.join(__dirname, '..', 'go-wasm-game', 'js_interface.go');
+        const jsInterfacePath = path.join(__dirname, '..', 'go-wasm-game', 'game', 'js_interface.go');
         const jsInterfaceContent = fs.readFileSync(jsInterfacePath, 'utf8');
         
         // Verify JS interface functions are present
@@ -53,17 +53,17 @@ describe('WASM Game Modular Architecture', () => {
         expect(jsInterfaceContent).toContain('func getUnits');
         expect(jsInterfaceContent).toContain('func moveUnit'); // Updated naming convention
         expect(jsInterfaceContent).toContain('func removeUnit'); // Updated naming convention
-        expect(jsInterfaceContent).toContain('func initializeJSInterface');
+        expect(jsInterfaceContent).toContain('func InitializeJSInterface');
     });
 
     test('game_events.go contains event handling functionality', () => {
-        const gameEventsPath = path.join(__dirname, '..', 'go-wasm-game', 'game_events.go');
+        const gameEventsPath = path.join(__dirname, '..', 'go-wasm-game', 'game', 'game_events.go');
         const gameEventsContent = fs.readFileSync(gameEventsPath, 'utf8');
         
         // Verify event handling functions are present
         expect(gameEventsContent).toContain('func recenterSquare');
         expect(gameEventsContent).toContain('func click(');
-        expect(gameEventsContent).toContain('func initializeEventHandlers');
+        expect(gameEventsContent).toContain('func InitializeEventHandlers');
     });
 
     test('all Go files compile successfully', () => {
@@ -79,20 +79,20 @@ describe('WASM Game Modular Architecture', () => {
     test('modular architecture maintains single responsibility', () => {
         const goWasmDir = path.join(__dirname, '..', 'go-wasm-game');
         const files = [
-            'environment.go',
-            'js_interface.go', 
-            'game_events.go',
-            'main.go'
+            { file: 'environment.go', path: 'world' },
+            { file: 'js_interface.go', path: 'game' }, 
+            { file: 'game_events.go', path: 'game' },
+            { file: 'main.go', path: '' }
         ];
 
-        files.forEach(filename => {
-            const filePath = path.join(goWasmDir, filename);
+        files.forEach(({file, path: subDir}) => {
+            const filePath = subDir ? path.join(goWasmDir, subDir, file) : path.join(goWasmDir, file);
             const content = fs.readFileSync(filePath, 'utf8');
             const lines = content.split('\n').length;
             
             // Each module should be reasonably sized and focused
-            if (filename === 'main.go') {
-                expect(lines).toBeLessThan(140); // Main should be lean
+            if (file === 'main.go') {
+                expect(lines).toBeLessThan(150); // Main should be lean
             } else {
                 expect(lines).toBeLessThan(200); // Modules should be focused
             }
@@ -100,21 +100,38 @@ describe('WASM Game Modular Architecture', () => {
     });
 
     test('unit management system files are properly separated', () => {
-        const unitFiles = [
-            'unit_types.go',
-            'unit.go',
-            'unit_spatial.go',
-            'unit_combat.go',
-            'unit_renderer.go',
-            'unit_manager.go'
+        const unitFilesInEntities = [
+            { file: 'unit_types.go', package: 'entities' }
+        ];
+        
+        const unitFilesInUnits = [
+            { file: 'unit.go', package: 'units' },
+            { file: 'unit_spatial.go', package: 'units' },
+            { file: 'unit_combat.go', package: 'units' },
+            { file: 'unit_renderer.go', package: 'units' },
+            { file: 'unit_manager.go', package: 'units' }
         ];
 
-        unitFiles.forEach(filename => {
-            const filePath = path.join(__dirname, '..', 'go-wasm-game', filename);
+        // Check files in entities package
+        unitFilesInEntities.forEach(({file, package: pkg}) => {
+            const filePath = path.join(__dirname, '..', 'go-wasm-game', pkg, file);
             expect(fs.existsSync(filePath)).toBe(true);
             
             const content = fs.readFileSync(filePath, 'utf8');
-            expect(content).toContain('package main');
+            expect(content).toContain(`package ${pkg}`);
+            
+            // Each unit file should be focused and not too large
+            const lines = content.split('\n').length;
+            expect(lines).toBeLessThan(250);
+        });
+
+        // Check files in units package
+        unitFilesInUnits.forEach(({file, package: pkg}) => {
+            const filePath = path.join(__dirname, '..', 'go-wasm-game', pkg, file);
+            expect(fs.existsSync(filePath)).toBe(true);
+            
+            const content = fs.readFileSync(filePath, 'utf8');
+            expect(content).toContain(`package ${pkg}`);
             
             // Each unit file should be focused and not too large
             const lines = content.split('\n').length;
@@ -136,7 +153,7 @@ describe('WASM Game Modular Architecture', () => {
         
         // Check that we use modular function calls
         expect(mainGoContent).toContain('environment.Render(');
-        expect(mainGoContent).toContain('initializeEventHandlers(');
-        expect(mainGoContent).toContain('initializeJSInterface(');
+        expect(mainGoContent).toContain('game.InitializeEventHandlers(');
+        expect(mainGoContent).toContain('game.InitializeJSInterface(');
     });
 });

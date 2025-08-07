@@ -1,8 +1,9 @@
-package main
+package systems
 
 import (
 	"container/heap"
 	"math"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // PathNode represents a node in the pathfinding search
@@ -53,7 +54,7 @@ type Path []struct {
 }
 
 // FindPath uses A* algorithm to find the shortest walkable path between two grid points
-func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
+func FindPath(startX, startY, endX, endY int, gameMap *world.Map) Path {
 	// Check if start and end are within bounds
 	if startX < 0 || startX >= gameMap.Width || startY < 0 || startY >= gameMap.Height ||
 	   endX < 0 || endX >= gameMap.Width || endY < 0 || endY >= gameMap.Height {
@@ -62,14 +63,14 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 	
 	// Check if start is walkable
 	startTile := gameMap.GetTile(startX, startY)
-	if !TileDefinitions[startTile].Walkable {
+	if !world.TileDefinitions[startTile].Walkable {
 		// Find nearest walkable tile to start from
 		startX, startY = FindNearestWalkableTile(startX, startY, gameMap)
 	}
 	
 	// Check if end is walkable
 	endTile := gameMap.GetTile(endX, endY)
-	if !TileDefinitions[endTile].Walkable {
+	if !world.TileDefinitions[endTile].Walkable {
 		// Find nearest walkable tile to end at
 		endX, endY = FindNearestWalkableTile(endX, endY, gameMap)
 	}
@@ -150,7 +151,7 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 			
 			// Skip if not walkable
 			neighborTile := gameMap.GetTile(neighborX, neighborY)
-			if !TileDefinitions[neighborTile].Walkable {
+			if !world.TileDefinitions[neighborTile].Walkable {
 				continue
 			}
 			
@@ -162,7 +163,7 @@ func FindPath(startX, startY, endX, endY int, gameMap *Map) Path {
 			
 			// Factor in terrain movement cost (slower terrain = higher pathfinding cost)
 			// This encourages pathfinding through faster terrain when available
-			tileDef := TileDefinitions[neighborTile]
+			tileDef := world.TileDefinitions[neighborTile]
 			terrainCost := baseCost / tileDef.WalkSpeed // Invert speed to get cost
 			
 			tentativeGCost := current.GCost + terrainCost

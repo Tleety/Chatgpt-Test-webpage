@@ -1,23 +1,26 @@
-package main
+package units
 
 import (
 	"fmt"
 	"syscall/js"
 	"time"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/entities"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/systems"
+	"github.com/Tleety/Chatgpt-Test-webpage/go-wasm-game/world"
 )
 
 // UnitManager manages all units in the game
 type UnitManager struct {
 	units        map[string]*Unit
 	nextUnitID   int
-	gameMap      *Map
+	gameMap      *world.Map
 	spatialIndex *UnitSpatialIndex
 	combatSystem *UnitCombatSystem
 	renderer     *UnitRenderer
 }
 
 // NewUnitManager creates a new unit manager
-func NewUnitManager(gameMap *Map) *UnitManager {
+func NewUnitManager(gameMap *world.Map) *UnitManager {
 	return &UnitManager{
 		units:        make(map[string]*Unit),
 		nextUnitID:   1,
@@ -29,14 +32,14 @@ func NewUnitManager(gameMap *Map) *UnitManager {
 }
 
 // CreateUnit creates a new unit at the specified tile coordinates
-func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name string) (*Unit, error) {
+func (um *UnitManager) CreateUnit(unitType entities.UnitType, tileX, tileY int, name string) (*Unit, error) {
 	// Validate position
 	if err := um.validatePosition(tileX, tileY); err != nil {
 		return nil, err
 	}
 
 	// Get unit type definition
-	typeDef, exists := UnitTypeDefinitions[unitType]
+	typeDef, exists := entities.UnitTypeDefinitions[unitType]
 	if !exists {
 		return nil, fmt.Errorf("unknown unit type: %v", unitType)
 	}
@@ -68,7 +71,7 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 		Status:       "idle",
 		CreatedAt:    time.Now(),
 		LastMoved:    time.Now(),
-		MovableEntity: MovableEntity{
+		MovableEntity: systems.MovableEntity{
 			X:         worldX - unitWidth/2,
 			Y:         worldY - unitHeight/2,
 			Width:     unitWidth,
@@ -80,7 +83,7 @@ func (um *UnitManager) CreateUnit(unitType UnitType, tileX, tileY int, name stri
 			Path:      nil,
 			PathStep:  0,
 		},
-		movementSystem: NewMovementSystem(um.gameMap),
+		movementSystem: systems.NewMovementSystem(um.gameMap),
 	}
 
 	um.units[unitID] = unit
@@ -98,7 +101,7 @@ func (um *UnitManager) validatePosition(tileX, tileY int) error {
 
 	// Check walkability
 	tileType := um.gameMap.GetTile(tileX, tileY)
-	tileDef, exists := TileDefinitions[tileType]
+	tileDef, exists := world.TileDefinitions[tileType]
 	if !exists || !tileDef.Walkable {
 		return fmt.Errorf("cannot place unit on non-walkable tile at (%d, %d)", tileX, tileY)
 	}
@@ -209,8 +212,8 @@ func (um *UnitManager) HealUnit(unitID string, healAmount int) error {
 }
 
 // GetUnitTypeCounts returns the count of each unit type
-func (um *UnitManager) GetUnitTypeCounts() map[UnitType]int {
-	counts := make(map[UnitType]int)
+func (um *UnitManager) GetUnitTypeCounts() map[entities.UnitType]int {
+	counts := make(map[entities.UnitType]int)
 	
 	for _, unit := range um.units {
 		if unit.IsAlive {
