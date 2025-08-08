@@ -1,0 +1,124 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f0f0;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+}
+
+.top-bar .logo {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.top-bar .title {
+  font-size: 1.5em;
+}
+
+.top-bar .version {
+  font-size: 0.9em;
+  color: #ccc;
+  margin-left: 10px;
+  font-weight: normal;
+}
+
+.top-bar .version-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.top-bar .timestamp {
+  font-size: 0.8em;
+  color: #aaa;
+  font-weight: normal;
+}
+
+.top-bar .deployment-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.top-bar .deployment-status.in-progress {
+  background-color: #f39c12;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.top-bar .navigation {
+  margin-left: auto;
+  display: flex;
+  gap: 15px;
+}
+
+.top-bar .navigation a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.top-bar .navigation a:hover {
+  text-decoration: underline;
+}
+
+.hero {
+  text-align: center;
+  padding: 40px 20px 10px;
+}
+
+.projects {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 20px 40px 60px;
+}
+
+.project-card {
+  background: #fff;
+  border-radius: 8px;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.project-icon {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.project-name {
+  font-size: 1.1rem;
+  text-align: center;
+}
