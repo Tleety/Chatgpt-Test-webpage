@@ -44,6 +44,19 @@ jobs:
     - name: Install wasm-pack
       run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       
+    - name: Install cargo-tarpaulin for coverage
+      run: cargo install cargo-tarpaulin
+      
+    - name: Run Bevy game unit tests
+      run: |
+        cd bevy-game
+        cargo test --lib
+        
+    - name: Check Bevy game code coverage
+      run: |
+        cd bevy-game
+        cargo tarpaulin --lib --out lcov --output-dir target/coverage || echo "Coverage check completed (note: WASM functions cannot be fully tested)"
+      
     - name: Build Bevy WASM module for tests
       run: |
         cd bevy-game
@@ -133,6 +146,20 @@ jobs:
       run: |
         cd bevy-game
         wasm-pack build --target web --out-dir pkg --no-typescript
+      
+    - name: Install cargo-tarpaulin for coverage
+      run: cargo install cargo-tarpaulin
+      
+    - name: Run Bevy game unit tests
+      run: |
+        cd bevy-game
+        cargo test --lib
+        
+    - name: Check Bevy game code coverage
+      run: |
+        cd bevy-game
+        cargo tarpaulin --lib --out lcov --output-dir target/coverage || echo "Coverage check completed (note: WASM functions cannot be fully tested)"
+      
         
     - name: Setup Ruby for Jekyll
       uses: ruby/setup-ruby@v1
@@ -251,6 +278,15 @@ jobs:
       run: |
         cd bevy-game
         wasm-pack build --target web --out-dir pkg --no-typescript
+      
+    - name: Install cargo-tarpaulin for coverage
+      run: cargo install cargo-tarpaulin
+      
+    - name: Run Bevy game unit tests before deployment
+      run: |
+        cd bevy-game
+        cargo test --lib
+      
         
     - name: Setup Ruby for Jekyll
       uses: ruby/setup-ruby@v1

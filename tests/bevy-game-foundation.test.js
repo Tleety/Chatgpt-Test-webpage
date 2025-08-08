@@ -44,9 +44,8 @@ describe('Bevy Game Foundation', () => {
       expect(fs.existsSync(htmlPath)).toBe(true);
       
       const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-      expect(htmlContent).toContain('Bevy Game Foundation');
       expect(htmlContent).toContain('bevy-game-canvas');
-      expect(htmlContent).toContain('Entity-Component-System');
+      expect(htmlContent).toContain('Build Required');
     });
   });
 
@@ -157,8 +156,8 @@ describe('Bevy Game Foundation', () => {
       const htmlContent = fs.readFileSync(htmlPath, 'utf8');
       
       expect(htmlContent).toContain('<canvas id="bevy-game-canvas"');
-      expect(htmlContent).toContain('width="800"');
-      expect(htmlContent).toContain('height="600"');
+      expect(htmlContent).toContain('width: 100vw');
+      expect(htmlContent).toContain('height: calc(100vh - 60px)');
     });
 
     test('should have fallback handling', () => {

@@ -27,6 +27,20 @@ default-features = false
 features = ["bevy_sprite", "bevy_render", "bevy_winit", "webgl2"]
 optional = true
 
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
 [features]
 default = []
 bevy_enabled = ["bevy"]
+
+# Configuration for cargo-tarpaulin code coverage
+[package.metadata.tarpaulin]
+# Include all source files
+include = ["src/**/*"]
+# Exclude test files from coverage calculation
+exclude = ["tests/**/*"]
+# Set minimum coverage threshold
+fail-under = 95
+# Output formats
+out = ["Html", "Lcov"]

@@ -8,36 +8,29 @@
     <style>
         #bevy-game-canvas {
             display: block;
-            margin: 20px auto;
-            border: 2px solid #333;
-            border-radius: 8px;
+            margin: 0;
+            border: none;
             background: #1a1a1a;
+            width: 100vw;
+            height: calc(100vh - 60px); /* Full height minus top bar */
         }
         
         .game-container {
             text-align: center;
-            padding: 20px;
-        }
-        
-        .game-info {
-            max-width: 800px;
-            margin: 0 auto 20px;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: left;
-        }
-        
-        .controls {
-            margin: 10px 0;
-            font-style: italic;
-            color: #666;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: calc(100vh - 60px);
         }
         
         .loading {
             font-size: 18px;
             color: #333;
             margin: 20px 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         
         .fallback {
@@ -45,7 +38,12 @@
             border: 1px solid #ff9999;
             padding: 15px;
             border-radius: 5px;
-            margin: 20px 0;
+            margin: 20px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 600px;
         }
         
         .fallback h3 {
@@ -78,7 +76,7 @@
             </div>
             
             <div id="loading" class="loading">Loading Bevy game foundation...</div>
-            <canvas id="bevy-game-canvas" width="800" height="600" style="display: none;"></canvas>
+            <canvas id="bevy-game-canvas" style="display: none;"></canvas>
             
             <div id="fallback" class="fallback" style="display: none;">
                 <h3>Build Required</h3>
