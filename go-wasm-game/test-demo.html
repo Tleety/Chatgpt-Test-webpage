@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Go WASM Game - Test Replica Demo</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../style.css">
+    <style>
+      body {
+        margin: 0;
+        overflow: auto;
+        background: #f0f0f0;
+      }
+      main {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding-top: 60px;
+        display: flex;
+        flex-direction: column;
+      }
+      .demo-container {
+        display: flex;
+        height: calc(100vh - 60px);
+        gap: 10px;
+        padding: 10px;
+      }
+      .game-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .panel-header {
+        background: #333;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        text-align: center;
+      }
+      .panel-content {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .original-game {
+        background: #f9f9f9;
+      }
+      .test-game {
+        background: #f0f8ff;
+      }
+      canvas {
+        border: 2px solid #ddd;
+        border-radius: 4px;
+      }
+      .game-info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        max-width: 200px;
+        line-height: 1.4;
+      }
+      .test-status {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-align: center;
+      }
+      .status-running {
+        border-left: 4px solid #4CAF50;
+      }
+      .status-completed {
+        border-left: 4px solid #2196F3;
+      }
+      .hero {
+        position: absolute;
+        top: 70px;
+        left: 10px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+      }
+      .hero h1 {
+        margin: 0 0 10px 0;
+        font-size: 1.4em;
+        color: #333;
+      }
+      .hero p {
+        margin: 0 0 10px 0;
+        color: #666;
+        font-size: 0.9em;
+        line-height: 1.5;
+      }
+      .test-controls {
+        margin-top: 10px;
+      }
+      .test-controls button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+        font-size: 12px;
+      }
+      .test-controls button:hover {
+        background: #45a049;
+      }
+      .test-controls button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="../top-bar.js"></script>
+    <main>
+      <div class="hero">
+        <h1>WASM Game Test Replica Demo</h1>
+        <p>
+          <strong>Left:</strong> Original 200x200 game with complex terrain<br>
+          <strong>Right:</strong> Test replica with 9x9 grass-only world
+        </p>
+        <p>
+          The test automatically spawns a player in the top-right corner and simulates a click to the bottom-left corner, demonstrating pathfinding on a simplified grass-only terrain.
+        </p>
+        <div class="test-controls">
+          <button id="startTest">Start Test Loop</button>
+          <button id="stopTest">Stop Test</button>
+          <button id="resetTest">Reset Test</button>
+        </div>
+      </div>
+
+      <div class="demo-container">
+        <!-- Original Game Panel -->
+        <div class="game-panel">
+          <div class="panel-header">Original Game (200x200)</div>
+          <div class="panel-content original-game">
+            <iframe 
+              src="index.html" 
+              style="width: 100%; height: 100%; border: none;"
+              title="Original WASM Game">
+            </iframe>
+            <div class="game-info">
+              🎮 Click to move the player<br>
+              🗺️ Complex terrain with water<br>
+              📏 200x200 tiles, 32px each<br>
+              🚶 Pathfinding around obstacles
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Replica Panel -->
+        <div class="game-panel">
+          <div class="panel-header">Test Replica (9x9)</div>
+          <div class="panel-content test-game">
+            <canvas id="testCanvas" width="288" height="288"></canvas>
+            <div class="game-info">
+              🧪 Test simulation<br>
+              🌱 Grass-only terrain<br>
+              📐 9x9 tiles, 32px each<br>
+              🔄 Automated movement test
+            </div>
+            <div class="test-status" id="testStatus">
+              Click "Start Test Loop" to begin
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Test Game Implementation
+      class TestGame {
+        constructor(canvas) {
+          this.canvas = canvas;
+          this.ctx = canvas.getContext('2d');
+          this.running = false;
+          this.animationId = null;
+          
+          // Create 9x9 grass map
+          this.map = this.createGrassMap(9, 9, 32);
+          
+          // Create player at top-right corner (8, 0)
+          this.player = this.createPlayer(8 * 32, 0 * 32 + 16);
+          
+          this.setupTestLoop();
+        }
+        
+        createGrassMap(width, height, tileSize) {
+          const map = {
+            width,
+            height,
+            tileSize,
+            tiles: [],
+            getTile: function(x, y) {
+              if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+                return { type: 'water', walkable: false, color: '#4169E1' };
+              }
+              return this.tiles[y][x];
+            }
+          };
+          
+          // Initialize with grass tiles
+          for (let y = 0; y < height; y++) {
+            map.tiles[y] = [];
+            for (let x = 0; x < width; x++) {
+              map.tiles[y][x] = {
+                type: 'grass',
+                walkable: true,
+                color: '#90EE90'
+              };
+            }
+          }
+          
+          return map;
+        }
+        
+        createPlayer(x, y) {
+          return {
+            x,
+            y,
+            width: 20,
+            height: 20,
+            targetX: x,
+            targetY: y,
+            isMoving: false,
+            moveSpeed: 2,
+            path: null,
+            pathStep: 0,
+            
+            moveTo: (targetX, targetY) => {
+              // Simple pathfinding for grass-only terrain
+              const path = this.calculatePath(
+                Math.floor(this.player.x / this.map.tileSize),
+                Math.floor(this.player.y / this.map.tileSize),
+                Math.floor(targetX / this.map.tileSize),
+                Math.floor(targetY / this.map.tileSize)
+              );
+              
+              if (path && path.length > 1) {
+                this.player.path = path;
+                this.player.pathStep = 1;
+                this.player.isMoving = true;
+                this.player.targetX = path[1].x * this.map.tileSize;
+                this.player.targetY = path[1].y * this.map.tileSize;
+              }
+            },
+            
+            update: () => {
+              if (!this.player.isMoving || !this.player.path) return;
+              
+              const dx = this.player.targetX - this.player.x;
+              const dy = this.player.targetY - this.player.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < this.player.moveSpeed) {
+                this.player.x = this.player.targetX;
+                this.player.y = this.player.targetY;
+                this.player.pathStep++;
+                
+                if (this.player.pathStep >= this.player.path.length) {
+                  this.player.isMoving = false;
+                  this.player.path = null;
+                  this.player.pathStep = 0;
+                } else {
+                  const nextStep = this.player.path[this.player.pathStep];
+                  this.player.targetX = nextStep.x * this.map.tileSize;
+                  this.player.targetY = nextStep.y * this.map.tileSize;
+                }
+              } else {
+                this.player.x += (dx / distance) * this.player.moveSpeed;
+                this.player.y += (dy / distance) * this.player.moveSpeed;
+              }
+            }
+          };
+        }
+        
+        calculatePath(startX, startY, endX, endY) {
+          // Simple A* for grass-only terrain
+          const openSet = [{ x: startX, y: startY, g: 0, h: 0, f: 0, parent: null }];
+          const closedSet = [];
+          const directions = [
+            { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+            { x: -1, y: 0 },                   { x: 1, y: 0 },
+            { x: -1, y: 1 },  { x: 0, y: 1 },  { x: 1, y: 1 }
+          ];
+          
+          while (openSet.length > 0) {
+            let currentIndex = 0;
+            for (let i = 1; i < openSet.length; i++) {
+              if (openSet[i].f < openSet[currentIndex].f) {
+                currentIndex = i;
+              }
+            }
+            
+            const current = openSet.splice(currentIndex, 1)[0];
+            closedSet.push(current);
+            
+            if (current.x === endX && current.y === endY) {
+              const path = [];
+              let node = current;
+              while (node) {
+                path.unshift({ x: node.x, y: node.y });
+                node = node.parent;
+              }
+              return path;
+            }
+            
+            for (const dir of directions) {
+              const neighborX = current.x + dir.x;
+              const neighborY = current.y + dir.y;
+              
+              if (neighborX < 0 || neighborX >= this.map.width || 
+                  neighborY < 0 || neighborY >= this.map.height) {
+                continue;
+              }
+              
+              if (closedSet.find(node => node.x === neighborX && node.y === neighborY)) {
+                continue;
+              }
+              
+              const isDiagonal = dir.x !== 0 && dir.y !== 0;
+              const moveCost = isDiagonal ? 1.414 : 1;
+              const g = current.g + moveCost;
+              const h = Math.sqrt((endX - neighborX) ** 2 + (endY - neighborY) ** 2);
+              const f = g + h;
+              
+              const existing = openSet.find(node => node.x === neighborX && node.y === neighborY);
+              if (existing && existing.g <= g) {
+                continue;
+              }
+              
+              if (existing) {
+                existing.g = g;
+                existing.f = f;
+                existing.parent = current;
+              } else {
+                openSet.push({
+                  x: neighborX,
+                  y: neighborY,
+                  g, h, f,
+                  parent: current
+                });
+              }
+            }
+          }
+          
+          return null;
+        }
+        
+        setupTestLoop() {
+          this.testCycle = 0;
+          this.testPhase = 'waiting'; // waiting, moving, completed
+        }
+        
+        startTestLoop() {
+          if (this.running) return;
+          
+          this.running = true;
+          this.testCycle = 0;
+          this.runTestCycle();
+          this.gameLoop();
+          
+          document.getElementById('startTest').disabled = true;
+          document.getElementById('stopTest').disabled = false;
+        }
+        
+        stopTestLoop() {
+          this.running = false;
+          if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+          }
+          
+          document.getElementById('startTest').disabled = false;
+          document.getElementById('stopTest').disabled = true;
+          
+          this.updateStatus('Test stopped');
+        }
+        
+        resetTest() {
+          this.stopTestLoop();
+          
+          // Reset player to top-right corner
+          this.player.x = 8 * 32;
+          this.player.y = 16;
+          this.player.targetX = this.player.x;
+          this.player.targetY = this.player.y;
+          this.player.isMoving = false;
+          this.player.path = null;
+          this.player.pathStep = 0;
+          
+          this.testCycle = 0;
+          this.testPhase = 'waiting';
+          this.render();
+          this.updateStatus('Test reset - ready to start');
+        }
+        
+        runTestCycle() {
+          if (!this.running) return;
+          
+          this.testCycle++;
+          this.testPhase = 'moving';
+          
+          // Move player from top-right to bottom-left
+          this.player.moveTo(0, 8 * 32);
+          
+          this.updateStatus(`Test cycle ${this.testCycle}: Moving from top-right to bottom-left`, 'running');
+          
+          // Wait for movement to complete, then start next cycle
+          setTimeout(() => {
+            if (this.running) {
+              // Reset to top-right for next cycle
+              this.player.x = 8 * 32;
+              this.player.y = 16;
+              this.player.targetX = this.player.x;
+              this.player.targetY = this.player.y;
+              this.player.isMoving = false;
+              this.player.path = null;
+              this.player.pathStep = 0;
+              
+              // Start next cycle after a brief pause
+              setTimeout(() => {
+                if (this.running) {
+                  this.runTestCycle();
+                }
+              }, 1000);
+            }
+          }, 3000);
+        }
+        
+        gameLoop() {
+          if (!this.running) return;
+          
+          this.player.update();
+          this.render();
+          
+          this.animationId = requestAnimationFrame(() => this.gameLoop());
+        }
+        
+        render() {
+          // Clear canvas
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          
+          // Draw map
+          for (let y = 0; y < this.map.height; y++) {
+            for (let x = 0; x < this.map.width; x++) {
+              const tile = this.map.getTile(x, y);
+              this.ctx.fillStyle = tile.color;
+              this.ctx.fillRect(x * this.map.tileSize, y * this.map.tileSize, 
+                               this.map.tileSize, this.map.tileSize);
+              
+              // Draw grid lines
+              this.ctx.strokeStyle = '#ccc';
+              this.ctx.lineWidth = 1;
+              this.ctx.strokeRect(x * this.map.tileSize, y * this.map.tileSize, 
+                                 this.map.tileSize, this.map.tileSize);
+            }
+          }
+          
+          // Draw path if exists
+          if (this.player.path) {
+            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            for (let i = 0; i < this.player.path.length; i++) {
+              const step = this.player.path[i];
+              const centerX = step.x * this.map.tileSize + this.map.tileSize / 2;
+              const centerY = step.y * this.map.tileSize + this.map.tileSize / 2;
+              
+              if (i === 0) {
+                this.ctx.moveTo(centerX, centerY);
+              } else {
+                this.ctx.lineTo(centerX, centerY);
+              }
+            }
+            this.ctx.stroke();
+          }
+          
+          // Draw player
+          this.ctx.fillStyle = 'green';
+          this.ctx.fillRect(this.player.x, this.player.y, 
+                           this.player.width, this.player.height);
+          
+          // Draw player outline
+          this.ctx.strokeStyle = 'darkgreen';
+          this.ctx.lineWidth = 2;
+          this.ctx.strokeRect(this.player.x, this.player.y, 
+                             this.player.width, this.player.height);
+        }
+        
+        updateStatus(message, type = 'info') {
+          const statusEl = document.getElementById('testStatus');
+          statusEl.textContent = message;
+          statusEl.className = 'test-status';
+          
+          if (type === 'running') {
+            statusEl.classList.add('status-running');
+          } else if (type === 'completed') {
+            statusEl.classList.add('status-completed');
+          }
+        }
+      }
+      
+      // Initialize test game when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('testCanvas');
+        const testGame = new TestGame(canvas);
+        
+        // Initial render
+        testGame.render();
+        testGame.updateStatus('Test ready - 9x9 grass world created');
+        
+        // Wire up controls
+        document.getElementById('startTest').addEventListener('click', () => {
+          testGame.startTestLoop();
+        });
+        
+        document.getElementById('stopTest').addEventListener('click', () => {
+          testGame.stopTestLoop();
+        });
+        
+        document.getElementById('resetTest').addEventListener('click', () => {
+          testGame.resetTest();
+        });
+        
+        // Initial state
+        document.getElementById('stopTest').disabled = true;
+      });
+    </script>
+  </body>
+</html>

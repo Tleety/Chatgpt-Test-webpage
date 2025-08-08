@@ -146,3 +146,31 @@ func (m *Map) addSmallPonds() {
 		}
 	}
 }
+
+// NewSimpleGrassMap creates a simple map with only grass tiles for testing
+func NewSimpleGrassMap(width, height int, tileSize float64) *Map {
+	m := &Map{
+		Width:    width,
+		Height:   height,
+		TileSize: tileSize,
+		Tiles:    make([][]TileType, height),
+		Layers:   NewLayers(),
+	}
+	
+	// Initialize the 2D slice
+	for i := range m.Tiles {
+		m.Tiles[i] = make([]TileType, width)
+	}
+	
+	// Fill entire map with grass tiles
+	for y := 0; y < m.Height; y++ {
+		for x := 0; x < m.Width; x++ {
+			m.Tiles[y][x] = TileGrass
+		}
+	}
+	
+	// Initialize default layers
+	m.initializeLayers()
+	
+	return m
+}
