@@ -21,87 +21,107 @@ describe('ECS Click-to-Move Component', () => {
       
       const componentContent = fs.readFileSync(componentsPath, 'utf8');
       expect(componentContent).toContain('ClickToMove');
-      expect(componentContent).toContain('TargetX, TargetY float64');
-      expect(componentContent).toContain('Speed');
-      expect(componentContent).toContain('HasTarget');
+      expect(componentContent).toContain('Speed float64');
+      // ClickToMove component should be simplified - no target coordinates
+      expect(componentContent).not.toContain('TargetX, TargetY');
+      expect(componentContent).not.toContain('HasTarget');
     });
 
-    test('should contain ClickToMoveSystem implementation', () => {
+    test('should contain Target component and no ClickToMoveSystem', () => {
       const systemsPath = path.join(__dirname, '..', 'ecs-game', 'systems', 'systems.go');
       expect(fs.existsSync(systemsPath)).toBe(true);
       
       const systemContent = fs.readFileSync(systemsPath, 'utf8');
-      expect(systemContent).toContain('ClickToMoveSystem');
-      expect(systemContent).toContain('NewClickToMoveSystem');
-      expect(systemContent).toContain('func (s *ClickToMoveSystem) Update');
+      // ClickToMoveSystem should be removed in favor of unified MovementSystem
+      expect(systemContent).not.toContain('ClickToMoveSystem');
+      expect(systemContent).not.toContain('NewClickToMoveSystem');
+      expect(systemContent).not.toContain('func (s *ClickToMoveSystem) Update');
+      
+      // Should have Target component handling in systems
+      expect(systemContent).toContain('components.Target{');
+      expect(systemContent).toContain('StopWhenTargetReached');
     });
 
-    test('should have updated main game to include ClickToMoveSystem', () => {
+    test('should have updated main game to not include ClickToMoveSystem', () => {
       const mainPath = path.join(__dirname, '..', 'ecs-game', 'main.go');
       expect(fs.existsSync(mainPath)).toBe(true);
       
       const mainContent = fs.readFileSync(mainPath, 'utf8');
-      expect(mainContent).toContain('clickToMoveSystem');
-      expect(mainContent).toContain('ClickToMoveSystem');
-      expect(mainContent).toContain('NewClickToMoveSystem');
+      // ClickToMoveSystem should be removed from main game
+      expect(mainContent).not.toContain('clickToMoveSystem');
+      expect(mainContent).not.toContain('ClickToMoveSystem');
+      expect(mainContent).not.toContain('NewClickToMoveSystem');
+      
+      // Should have the three remaining systems
+      expect(mainContent).toContain('inputSystem');
+      expect(mainContent).toContain('movementSystem');
+      expect(mainContent).toContain('aiSystem');
     });
 
-    test('should create entities with ClickToMove component', () => {
+    test('should create entities with simplified ClickToMove component', () => {
       const mainPath = path.join(__dirname, '..', 'ecs-game', 'main.go');
       const mainContent = fs.readFileSync(mainPath, 'utf8');
       
       expect(mainContent).toContain('components.ClickToMove');
       expect(mainContent).toContain('Speed: 120');
-      expect(mainContent).toContain('HasTarget: false');
+      // Should not contain old ClickToMove fields
+      expect(mainContent).not.toContain('HasTarget: false');
+      expect(mainContent).not.toContain('TargetX:');
+      expect(mainContent).not.toContain('TargetY:');
     });
 
-    test('should have updated input system for click handling', () => {
+    test('should have updated input system to set Target components', () => {
       const systemsPath = path.join(__dirname, '..', 'ecs-game', 'systems', 'systems.go');
       const systemContent = fs.readFileSync(systemsPath, 'utf8');
       
-      expect(systemContent).toContain('ClickToMove{}');
-      expect(systemContent).toContain('clickToMove.TargetX = float64(mx)');
-      expect(systemContent).toContain('clickToMove.TargetY = float64(my)');
-      expect(systemContent).toContain('clickToMove.HasTarget = true');
+      expect(systemContent).toContain('components.ClickToMove{}');
+      expect(systemContent).toContain('target := components.Target{');
+      expect(systemContent).toContain('X:                     float64(mx)');
+      expect(systemContent).toContain('Y:                     float64(my)');
+      expect(systemContent).toContain('StopWhenTargetReached: true');
+      expect(systemContent).toContain('e.AddComponent(target)');
     });
   });
 
   describe('Component Logic Verification', () => {
-    test('ClickToMove component should have required fields', () => {
+    test('ClickToMove component should have simplified structure', () => {
       const componentsPath = path.join(__dirname, '..', 'ecs-game', 'components', 'components.go');
       const componentContent = fs.readFileSync(componentsPath, 'utf8');
       
-      // Check that ClickToMove component has all necessary fields
+      // Check that ClickToMove component has simplified structure
       const clickToMoveMatch = componentContent.match(/type ClickToMove struct \{[\s\S]*?\}/);
       expect(clickToMoveMatch).toBeTruthy();
       
       const clickToMoveStruct = clickToMoveMatch[0];
-      expect(clickToMoveStruct).toContain('TargetX, TargetY float64');
-      expect(clickToMoveStruct).toContain('Speed            float64');
-      expect(clickToMoveStruct).toContain('HasTarget        bool');
+      expect(clickToMoveStruct).toContain('Speed float64');
+      // Should not contain target coordinates anymore (moved to Target component)
+      expect(clickToMoveStruct).not.toContain('TargetX, TargetY');
+      expect(clickToMoveStruct).not.toContain('HasTarget');
     });
 
-    test('ClickToMoveSystem should handle target reaching logic', () => {
+    test('MovementSystem should handle target reaching logic', () => {
       const systemsPath = path.join(__dirname, '..', 'ecs-game', 'systems', 'systems.go');
       const systemContent = fs.readFileSync(systemsPath, 'utf8');
       
-      // Check for proper target reaching logic
-      expect(systemContent).toContain('if dist < 5');
-      expect(systemContent).toContain('clickToMove.HasTarget = false');
-      expect(systemContent).toContain('vel.X = 0');
-      expect(systemContent).toContain('vel.Y = 0');
+      // Check for proper target reaching logic in MovementSystem
+      expect(systemContent).toContain('if dist < 5 && target.StopWhenTargetReached');
+      expect(systemContent).toContain('velocity.X = 0');
+      expect(systemContent).toContain('velocity.Y = 0');
+      expect(systemContent).toContain('e.RemoveComponent(components.Target{})');
     });
 
-    test('ClickToMoveSystem should handle movement calculations', () => {
+    test('MovementSystem should handle unified movement calculations', () => {
       const systemsPath = path.join(__dirname, '..', 'ecs-game', 'systems', 'systems.go');
       const systemContent = fs.readFileSync(systemsPath, 'utf8');
       
-      // Check for proper movement calculation
-      expect(systemContent).toContain('dx := clickToMove.TargetX - pos.X');
-      expect(systemContent).toContain('dy := clickToMove.TargetY - pos.Y');
+      // Check for proper movement calculation in unified MovementSystem
+      expect(systemContent).toContain('dx := target.X - position.X');
+      expect(systemContent).toContain('dy := target.Y - position.Y');
       expect(systemContent).toContain('math.Sqrt(dx*dx + dy*dy)');
-      expect(systemContent).toContain('(dx / dist) * clickToMove.Speed');
-      expect(systemContent).toContain('(dy / dist) * clickToMove.Speed');
+      expect(systemContent).toContain('clickToMove.Speed');
+      expect(systemContent).toContain('ai.Speed');
+      expect(systemContent).toContain('(dx / dist) * speed');
+      expect(systemContent).toContain('(dy / dist) * speed');
     });
 
     test('InputSystem should handle clicks for ClickToMove entities', () => {
@@ -152,13 +172,15 @@ describe('ECS Click-to-Move Component', () => {
       expect(systemContent).toContain('// Handle mouse input for player (existing behavior)');
     });
 
-    test('should properly initialize ClickToMove entities with default state', () => {
+    test('should properly initialize ClickToMove entities with simplified state', () => {
       const mainPath = path.join(__dirname, '..', 'ecs-game', 'main.go');
       const mainContent = fs.readFileSync(mainPath, 'utf8');
       
-      // Check default initialization
-      expect(mainContent).toContain('HasTarget: false');
-      expect(mainContent).toContain('Speed: 120');
+      // Check simplified initialization
+      expect(mainContent).toContain('components.ClickToMove{Speed: 120}');
+      expect(mainContent).not.toContain('HasTarget: false');
+      expect(mainContent).not.toContain('TargetX:');
+      expect(mainContent).not.toContain('TargetY:');
     });
 
     test('should maintain existing AI system functionality', () => {
@@ -170,11 +192,11 @@ describe('ECS Click-to-Move Component', () => {
       expect(systemContent).toContain('components.AI{}');
     });
 
-    test('should update all systems in proper order', () => {
+    test('should update systems in simplified order without ClickToMoveSystem', () => {
       const mainPath = path.join(__dirname, '..', 'ecs-game', 'main.go');
       const mainContent = fs.readFileSync(mainPath, 'utf8');
       
-      // Check system update order
+      // Check system update order - should not include clickToMoveSystem
       const updateSection = mainContent.match(/func \(g \*Game\) Update\(\)[\s\S]*?return nil/);
       expect(updateSection).toBeTruthy();
       
@@ -182,7 +204,7 @@ describe('ECS Click-to-Move Component', () => {
       expect(updateOrder).toContain('g.inputSystem.Update()');
       expect(updateOrder).toContain('g.movementSystem.Update(dt)');
       expect(updateOrder).toContain('g.aiSystem.Update(dt)');
-      expect(updateOrder).toContain('g.clickToMoveSystem.Update(dt)');
+      expect(updateOrder).not.toContain('g.clickToMoveSystem.Update(dt)');
     });
   });
 
@@ -198,13 +220,15 @@ describe('ECS Click-to-Move Component', () => {
       expect(systemContent).toContain('return');
     });
 
-    test('should handle case when entity has no target', () => {
+    test('should handle entities without Target component gracefully', () => {
       const systemsPath = path.join(__dirname, '..', 'ecs-game', 'systems', 'systems.go');
       const systemContent = fs.readFileSync(systemsPath, 'utf8');
       
-      expect(systemContent).toContain('!clickToMove.HasTarget');
-      expect(systemContent).toContain('vel.X = 0');
-      expect(systemContent).toContain('vel.Y = 0');
+      // Check for component existence checks in MovementSystem
+      expect(systemContent).toContain('!e.HasComponent(components.ClickToMove{})');
+      expect(systemContent).toContain('!e.HasComponent(components.Position{})');
+      expect(systemContent).toContain('if targetComp, hasTarget := e.GetComponent(components.Target{})');
+      expect(systemContent).toContain('return');
     });
   });
 });

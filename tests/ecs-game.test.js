@@ -111,9 +111,10 @@ describe('ECS Game', () => {
       const content = fs.readFileSync(componentsPath, 'utf-8');
       
       // Check that components are properly structured
-      expect(content).toContain('X, Y float64'); // Position component
+      expect(content).toContain('X, Y float64'); // Position and Target components
       expect(content).toContain('ColorR, ColorG, ColorB uint8'); // Sprite component
-      expect(content).toContain('TargetX, TargetY float64'); // AI component
+      expect(content).toContain('Speed float64'); // AI and ClickToMove components
+      expect(content).toContain('StopWhenTargetReached bool'); // Target component
     });
 
     test('should have proper system implementations', () => {
