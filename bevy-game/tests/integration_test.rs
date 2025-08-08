@@ -1,7 +1,7 @@
 // Integration tests for the Bevy game module
 // These tests verify the overall functionality and integration between components
 
-use bevy_game::Sprite;
+use bevy_game::{Sprite};
 
 #[test]
 fn sprite_integration_full_lifecycle() {
