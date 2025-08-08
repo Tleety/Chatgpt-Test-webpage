@@ -120,6 +120,12 @@ impl BevyGame {
             .dyn_into::<HtmlCanvasElement>()
             .unwrap();
         
+        // Set canvas internal dimensions to match its CSS display size
+        let css_width = canvas.offset_width() as u32;
+        let css_height = canvas.offset_height() as u32;
+        canvas.set_width(css_width);
+        canvas.set_height(css_height);
+        
         let ctx = canvas
             .get_context("2d")
             .unwrap()
@@ -127,7 +133,7 @@ impl BevyGame {
             .dyn_into::<CanvasRenderingContext2d>()
             .unwrap();
 
-        let sprites = Self::create_default_sprites();
+        let sprites = Self::create_default_sprites(&canvas);
 
         log("Bevy-style game foundation initialized!");
 
@@ -139,25 +145,30 @@ impl BevyGame {
         })
     }
 
-    fn create_default_sprites() -> Vec<Sprite> {
+    fn create_default_sprites(canvas: &HtmlCanvasElement) -> Vec<Sprite> {
+        let canvas_width = canvas.width() as f64;
+        let canvas_height = canvas.height() as f64;
+        
+        // Scale sprite positions and sizes based on canvas size
+        // Use relative positioning instead of fixed coordinates
         vec![
             Sprite::new_with_target(
-                200.0, 150.0, 120.0, 80.0, 40.0, "#FF6B6B".to_string(),
+                canvas_width * 0.25, canvas_height * 0.25, 120.0, 80.0, 40.0, "#FF6B6B".to_string(),
                 Some(Target {
-                    x: 600.0,
-                    y: 400.0,
+                    x: canvas_width * 0.75,
+                    y: canvas_height * 0.6,
                     find_new_target: true,
                 })
             ),
             Sprite::new_with_target(
-                400.0, 300.0, -100.0, 150.0, 30.0, "#4ECDC4".to_string(),
+                canvas_width * 0.5, canvas_height * 0.5, -100.0, 150.0, 30.0, "#4ECDC4".to_string(),
                 Some(Target {
-                    x: 150.0,
-                    y: 100.0,
+                    x: canvas_width * 0.2,
+                    y: canvas_height * 0.15,
                     find_new_target: false,
                 })
             ),
-            Sprite::new(100.0, 400.0, 90.0, -120.0, 50.0, "#45B7D1".to_string()), // No target
+            Sprite::new(canvas_width * 0.125, canvas_height * 0.8, 90.0, -120.0, 50.0, "#45B7D1".to_string()), // No target
         ]
     }
 
@@ -249,7 +260,7 @@ impl BevyGame {
                 if distance <= tolerance {
                     // Reached target
                     if target.find_new_target {
-                        // Find a new random target
+                        // Find a new random target within canvas bounds
                         sprite.target = Some(Target {
                             x: (js_sys::Math::random() * (self.canvas.width() as f64 - sprite.size)) + sprite.size / 2.0,
                             y: (js_sys::Math::random() * (self.canvas.height() as f64 - sprite.size)) + sprite.size / 2.0,
@@ -315,6 +326,29 @@ pub fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Helper function for testing that creates sprites with mock canvas dimensions
+    fn create_test_sprites(canvas_width: f64, canvas_height: f64) -> Vec<Sprite> {
+        vec![
+            Sprite::new_with_target(
+                canvas_width * 0.25, canvas_height * 0.25, 120.0, 80.0, 40.0, "#FF6B6B".to_string(),
+                Some(Target {
+                    x: canvas_width * 0.75,
+                    y: canvas_height * 0.6,
+                    find_new_target: true,
+                })
+            ),
+            Sprite::new_with_target(
+                canvas_width * 0.5, canvas_height * 0.5, -100.0, 150.0, 30.0, "#4ECDC4".to_string(),
+                Some(Target {
+                    x: canvas_width * 0.2,
+                    y: canvas_height * 0.15,
+                    find_new_target: false,
+                })
+            ),
+            Sprite::new(canvas_width * 0.125, canvas_height * 0.8, 90.0, -120.0, 50.0, "#45B7D1".to_string()), // No target
+        ]
+    }
 
     #[test]
     fn sprite_new_creates_correct_sprite() {
@@ -423,30 +457,30 @@ mod tests {
 
     #[test]
     fn bevy_game_create_default_sprites_returns_three_sprites() {
-        let sprites = BevyGame::create_default_sprites();
+        let sprites = create_test_sprites(800.0, 600.0);
         
         assert_eq!(sprites.len(), 3);
     }
 
     #[test]
     fn bevy_game_create_default_sprites_has_correct_properties() {
-        let sprites = BevyGame::create_default_sprites();
+        let sprites = create_test_sprites(800.0, 600.0);
         
-        // First sprite
-        assert_eq!(sprites[0].x, 200.0);
-        assert_eq!(sprites[0].y, 150.0);
+        // First sprite - positioned at 25% width, 25% height
+        assert_eq!(sprites[0].x, 200.0); // 800 * 0.25
+        assert_eq!(sprites[0].y, 150.0); // 600 * 0.25
         assert_eq!(sprites[0].size, 40.0);
         assert_eq!(sprites[0].color, "#FF6B6B");
         
-        // Second sprite
-        assert_eq!(sprites[1].x, 400.0);
-        assert_eq!(sprites[1].y, 300.0);
+        // Second sprite - positioned at 50% width, 50% height
+        assert_eq!(sprites[1].x, 400.0); // 800 * 0.5
+        assert_eq!(sprites[1].y, 300.0); // 600 * 0.5
         assert_eq!(sprites[1].size, 30.0);
         assert_eq!(sprites[1].color, "#4ECDC4");
         
-        // Third sprite
-        assert_eq!(sprites[2].x, 100.0);
-        assert_eq!(sprites[2].y, 400.0);
+        // Third sprite - positioned at 12.5% width, 80% height
+        assert_eq!(sprites[2].x, 100.0); // 800 * 0.125
+        assert_eq!(sprites[2].y, 480.0); // 600 * 0.8
         assert_eq!(sprites[2].size, 50.0);
         assert_eq!(sprites[2].color, "#45B7D1");
     }
@@ -466,7 +500,7 @@ mod tests {
 
     #[test]
     fn mock_bevy_game_sprite_count_logic() {
-        let sprites = BevyGame::create_default_sprites();
+        let sprites = create_test_sprites(800.0, 600.0);
         assert_eq!(sprites.len(), 3);
     }
 
@@ -475,7 +509,7 @@ mod tests {
     #[test]
     fn bevy_game_update_sprites_with_mock() {
         // Test update logic by creating sprites directly and updating them
-        let mut sprites = BevyGame::create_default_sprites();
+        let mut sprites = create_test_sprites(800.0, 600.0);
         let dt = 0.1;
         let canvas_width = 800.0;
         let canvas_height = 600.0;
@@ -569,7 +603,7 @@ mod tests {
     #[test]
     fn bevy_game_default_sprites_velocity_values() {
         // Test specific velocity values of default sprites
-        let sprites = BevyGame::create_default_sprites();
+        let sprites = create_test_sprites(800.0, 600.0);
         
         assert_eq!(sprites[0].vx, 120.0);
         assert_eq!(sprites[0].vy, 80.0);
@@ -679,7 +713,7 @@ mod tests {
     #[test]
     fn test_sprite_collection_operations() {
         // Test operations on sprite collections
-        let sprites = BevyGame::create_default_sprites();
+        let sprites = create_test_sprites(800.0, 600.0);
         let sprite_count = sprites.len();
         
         assert_eq!(sprite_count, 3);
