@@ -56,6 +56,25 @@
     <script src="../top-bar.js"></script>
     <main>
         <div class="game-container">
+            <h1>Bevy Game Foundation</h1>
+            
+            <div class="game-info">
+                <h2>About This Demo</h2>
+                <p>This is a <strong>Bevy game engine foundation</strong> built with Rust and WebAssembly.</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Entity-Component-System (ECS) architecture</li>
+                    <li>Target-based movement system with configurable behavior</li>
+                    <li>Sprites can seek targets, find new ones, or stay still</li>
+                    <li>Built with Rust and compiled to WebAssembly</li>
+                    <li>Game loop with proper timing and rendering</li>
+                    <li>Foundation for expanding to full Bevy integration</li>
+                </ul>
+                <div class="controls">
+                    Watch the colored squares demonstrate target-seeking behavior! Red square finds new targets, cyan square stops after reaching its target, blue square has no target and stays still.
+                </div>
+            </div>
+            
             <div id="loading" class="loading">Loading Bevy game foundation...</div>
             <canvas id="bevy-game-canvas" style="display: none;"></canvas>
             

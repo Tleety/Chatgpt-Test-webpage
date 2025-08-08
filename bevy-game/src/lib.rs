@@ -16,6 +16,13 @@ pub struct BevyGame {
 }
 
 #[derive(Clone)]
+struct Target {
+    x: f64,
+    y: f64,
+    find_new_target: bool,
+}
+
+#[derive(Clone)]
 pub struct Sprite {
     pub x: f64,
     pub y: f64,
@@ -24,6 +31,7 @@ pub struct Sprite {
     pub size: f64,
     pub color: String,
     pub rotation: f64,
+    target: Option<Target>,
 }
 
 impl Sprite {
@@ -36,24 +44,42 @@ impl Sprite {
             size,
             color,
             rotation: 0.0,
+            target: None,
+        }
+    }
+
+    pub fn new_with_target(x: f64, y: f64, vx: f64, vy: f64, size: f64, color: String, target: Option<Target>) -> Self {
+        Self {
+            x,
+            y,
+            vx,
+            vy,
+            size,
+            color,
+            rotation: 0.0,
+            target,
         }
     }
 
     pub fn update(&mut self, dt: f64, canvas_width: f64, canvas_height: f64) {
-        // Update position
-        self.x += self.vx * dt;
-        self.y += self.vy * dt;
-        self.rotation += dt * 2.0;
+        // Update position based on velocity (for sprites without targets)
+        if self.target.is_none() {
+            self.x += self.vx * dt;
+            self.y += self.vy * dt;
 
-        // Bounce off edges
-        if self.x <= self.size/2.0 || self.x >= canvas_width - self.size/2.0 {
-            self.vx *= -1.0;
-            self.x = self.x.max(self.size/2.0).min(canvas_width - self.size/2.0);
+            // Bounce off edges
+            if self.x <= self.size/2.0 || self.x >= canvas_width - self.size/2.0 {
+                self.vx *= -1.0;
+                self.x = self.x.max(self.size/2.0).min(canvas_width - self.size/2.0);
+            }
+            if self.y <= self.size/2.0 || self.y >= canvas_height - self.size/2.0 {
+                self.vy *= -1.0;
+                self.y = self.y.max(self.size/2.0).min(canvas_height - self.size/2.0);
+            }
         }
-        if self.y <= self.size/2.0 || self.y >= canvas_height - self.size/2.0 {
-            self.vy *= -1.0;
-            self.y = self.y.max(self.size/2.0).min(canvas_height - self.size/2.0);
-        }
+
+        // Always update rotation
+        self.rotation += dt * 2.0;
     }
 
     pub fn get_position(&self) -> (f64, f64) {
@@ -72,6 +98,14 @@ impl Sprite {
     pub fn set_velocity(&mut self, vx: f64, vy: f64) {
         self.vx = vx;
         self.vy = vy;
+    }
+
+    pub fn get_target(&self) -> &Option<Target> {
+        &self.target
+    }
+
+    pub fn set_target(&mut self, target: Option<Target>) {
+        self.target = target;
     }
 }
 
@@ -107,9 +141,23 @@ impl BevyGame {
 
     fn create_default_sprites() -> Vec<Sprite> {
         vec![
-            Sprite::new(200.0, 150.0, 120.0, 80.0, 40.0, "#FF6B6B".to_string()),
-            Sprite::new(400.0, 300.0, -100.0, 150.0, 30.0, "#4ECDC4".to_string()),
-            Sprite::new(100.0, 400.0, 90.0, -120.0, 50.0, "#45B7D1".to_string()),
+            Sprite::new_with_target(
+                200.0, 150.0, 120.0, 80.0, 40.0, "#FF6B6B".to_string(),
+                Some(Target {
+                    x: 600.0,
+                    y: 400.0,
+                    find_new_target: true,
+                })
+            ),
+            Sprite::new_with_target(
+                400.0, 300.0, -100.0, 150.0, 30.0, "#4ECDC4".to_string(),
+                Some(Target {
+                    x: 150.0,
+                    y: 100.0,
+                    find_new_target: false,
+                })
+            ),
+            Sprite::new(100.0, 400.0, 90.0, -120.0, 50.0, "#45B7D1".to_string()), // No target
         ]
     }
 
@@ -188,12 +236,70 @@ impl BevyGame {
         let dt = 0.016;
         self.time += dt;
 
-        // Update sprites
-        self.update_sprites(dt);
+        // Update and render sprites with target-seeking behavior
+        for sprite in &mut self.sprites {
+            if let Some(target) = &sprite.target {
+                // Calculate direction to target
+                let dx = target.x - sprite.x;
+                let dy = target.y - sprite.y;
+                let distance = (dx * dx + dy * dy).sqrt();
+                
+                // Check if close enough to target (avoid floating point errors and wiggles)
+                let tolerance = 5.0; // pixels
+                if distance <= tolerance {
+                    // Reached target
+                    if target.find_new_target {
+                        // Find a new random target
+                        sprite.target = Some(Target {
+                            x: (js_sys::Math::random() * (self.canvas.width() as f64 - sprite.size)) + sprite.size / 2.0,
+                            y: (js_sys::Math::random() * (self.canvas.height() as f64 - sprite.size)) + sprite.size / 2.0,
+                            find_new_target: true,
+                        });
+                    } else {
+                        // Clear the target
+                        sprite.target = None;
+                    }
+                } else {
+                    // Move towards target
+                    let speed = 100.0; // pixels per second
+                    sprite.x += (dx / distance) * speed * dt;
+                    sprite.y += (dy / distance) * speed * dt;
+                }
+            } else {
+                // If no target, use regular movement with bouncing
+                sprite.update(dt, self.canvas.width() as f64, self.canvas.height() as f64);
+            }
+            
+            // Continue rotating sprites (for sprites with targets, this is done here)
+            if sprite.target.is_some() {
+                sprite.rotation += dt * 2.0;
+            }
+
+            // Keep sprites within bounds
+            sprite.x = sprite.x.max(sprite.size/2.0).min(self.canvas.width() as f64 - sprite.size/2.0);
+            sprite.y = sprite.y.max(sprite.size/2.0).min(self.canvas.height() as f64 - sprite.size/2.0);
+        }
 
         // Render sprites
         for sprite in &self.sprites {
             self.render_sprite(sprite);
+            
+            // Render target if it exists
+            if let Some(target) = &sprite.target {
+                self.ctx.save();
+                let _ = self.ctx.translate(target.x, target.y);
+                self.ctx.set_fill_style(&JsValue::from_str("rgba(255, 255, 255, 0.5)"));
+                self.ctx.fill_rect(-5.0, -5.0, 10.0, 10.0);
+                self.ctx.restore();
+                
+                // Draw line to target
+                self.ctx.set_stroke_style(&JsValue::from_str("rgba(255, 255, 255, 0.3)"));
+                self.ctx.set_line_width(1.0);
+                self.ctx.begin_path();
+                self.ctx.move_to(sprite.x, sprite.y);
+                self.ctx.line_to(target.x, target.y);
+                let _ = self.ctx.stroke();
+            }
         }
 
         // Render UI
