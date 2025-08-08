@@ -16,6 +16,13 @@ pub struct BevyGame {
 }
 
 #[derive(Clone)]
+struct Target {
+    x: f64,
+    y: f64,
+    find_new_target: bool,
+}
+
+#[derive(Clone)]
 struct Sprite {
     x: f64,
     y: f64,
@@ -24,6 +31,7 @@ struct Sprite {
     size: f64,
     color: String,
     rotation: f64,
+    target: Option<Target>,
 }
 
 #[wasm_bindgen]
@@ -53,6 +61,11 @@ impl BevyGame {
                 size: 40.0,
                 color: "#FF6B6B".to_string(),
                 rotation: 0.0,
+                target: Some(Target {
+                    x: 600.0,
+                    y: 400.0,
+                    find_new_target: true,
+                }),
             },
             Sprite {
                 x: 400.0,
@@ -62,6 +75,11 @@ impl BevyGame {
                 size: 30.0,
                 color: "#4ECDC4".to_string(),
                 rotation: 0.0,
+                target: Some(Target {
+                    x: 150.0,
+                    y: 100.0,
+                    find_new_target: false,
+                }),
             },
             Sprite {
                 x: 100.0,
@@ -71,6 +89,7 @@ impl BevyGame {
                 size: 50.0,
                 color: "#45B7D1".to_string(),
                 rotation: 0.0,
+                target: None, // This sprite has no target and will stay still
             },
         ];
 
@@ -103,20 +122,41 @@ impl BevyGame {
 
         // Update and render sprites
         for sprite in &mut self.sprites {
-            // Update position
-            sprite.x += sprite.vx * dt;
-            sprite.y += sprite.vy * dt;
-            sprite.rotation += dt * 2.0; // Rotate sprites
+            if let Some(target) = &sprite.target {
+                // Calculate direction to target
+                let dx = target.x - sprite.x;
+                let dy = target.y - sprite.y;
+                let distance = (dx * dx + dy * dy).sqrt();
+                
+                // Check if close enough to target (avoid floating point errors and wiggles)
+                let tolerance = 5.0; // pixels
+                if distance <= tolerance {
+                    // Reached target
+                    if target.find_new_target {
+                        // Find a new random target
+                        sprite.target = Some(Target {
+                            x: (js_sys::Math::random() * (self.canvas.width() as f64 - sprite.size)) + sprite.size / 2.0,
+                            y: (js_sys::Math::random() * (self.canvas.height() as f64 - sprite.size)) + sprite.size / 2.0,
+                            find_new_target: true,
+                        });
+                    } else {
+                        // Clear the target
+                        sprite.target = None;
+                    }
+                } else {
+                    // Move towards target
+                    let speed = 100.0; // pixels per second
+                    sprite.x += (dx / distance) * speed * dt;
+                    sprite.y += (dy / distance) * speed * dt;
+                }
+            }
+            // If no target, sprite stays still (no position update)
+            
+            sprite.rotation += dt * 2.0; // Continue rotating sprites
 
-            // Bounce off edges
-            if sprite.x <= sprite.size/2.0 || sprite.x >= self.canvas.width() as f64 - sprite.size/2.0 {
-                sprite.vx *= -1.0;
-                sprite.x = sprite.x.max(sprite.size/2.0).min(self.canvas.width() as f64 - sprite.size/2.0);
-            }
-            if sprite.y <= sprite.size/2.0 || sprite.y >= self.canvas.height() as f64 - sprite.size/2.0 {
-                sprite.vy *= -1.0;
-                sprite.y = sprite.y.max(sprite.size/2.0).min(self.canvas.height() as f64 - sprite.size/2.0);
-            }
+            // Keep sprites within bounds
+            sprite.x = sprite.x.max(sprite.size/2.0).min(self.canvas.width() as f64 - sprite.size/2.0);
+            sprite.y = sprite.y.max(sprite.size/2.0).min(self.canvas.height() as f64 - sprite.size/2.0);
 
             // Render sprite
             self.ctx.save();
@@ -124,6 +164,24 @@ impl BevyGame {
             let _ = self.ctx.rotate(sprite.rotation);
             self.ctx.set_fill_style(&JsValue::from_str(&sprite.color));
             self.ctx.fill_rect(-sprite.size/2.0, -sprite.size/2.0, sprite.size, sprite.size);
+            
+            // Render target if it exists
+            if let Some(target) = &sprite.target {
+                self.ctx.restore();
+                self.ctx.save();
+                let _ = self.ctx.translate(target.x, target.y);
+                self.ctx.set_fill_style(&JsValue::from_str("rgba(255, 255, 255, 0.5)"));
+                self.ctx.fill_rect(-5.0, -5.0, 10.0, 10.0);
+                
+                // Draw line to target
+                self.ctx.set_stroke_style(&JsValue::from_str("rgba(255, 255, 255, 0.3)"));
+                self.ctx.set_line_width(1.0);
+                self.ctx.begin_path();
+                self.ctx.move_to(sprite.x, sprite.y);
+                self.ctx.line_to(target.x, target.y);
+                let _ = self.ctx.stroke();
+            }
+            
             self.ctx.restore();
         }
 

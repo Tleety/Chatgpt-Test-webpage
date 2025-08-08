@@ -100,17 +100,42 @@ describe('Bevy Game Foundation', () => {
       expect(libContent).toContain('render_frame');
     });
 
-    test('should have physics simulation features', () => {
+    test('should have target-based movement system', () => {
       const libPath = path.join(__dirname, '..', 'bevy-game', 'src', 'lib.rs');
       const libContent = fs.readFileSync(libPath, 'utf8');
       
-      // Check for physics properties
-      expect(libContent).toContain('vx: f64');
-      expect(libContent).toContain('vy: f64');
-      expect(libContent).toContain('rotation');
+      // Check for Target component
+      expect(libContent).toContain('struct Target');
+      expect(libContent).toContain('find_new_target: bool');
       
-      // Check for collision detection
-      expect(libContent).toContain('// Bounce off edges');
+      // Check for target field in sprite
+      expect(libContent).toContain('target: Option<Target>');
+      
+      // Check for target-seeking behavior
+      expect(libContent).toContain('// Calculate direction to target');
+      expect(libContent).toContain('// Check if close enough to target');
+      expect(libContent).toContain('// Find a new random target');
+      expect(libContent).toContain('// Clear the target');
+      
+      // Check for rotation property
+      expect(libContent).toContain('rotation');
+    });
+
+    test('should demonstrate different target behaviors', () => {
+      const libPath = path.join(__dirname, '..', 'bevy-game', 'src', 'lib.rs');
+      const libContent = fs.readFileSync(libPath, 'utf8');
+      
+      // Check for sprite with findNewTarget = true
+      expect(libContent).toContain('find_new_target: true');
+      
+      // Check for sprite with findNewTarget = false  
+      expect(libContent).toContain('find_new_target: false');
+      
+      // Check for sprite with no target
+      expect(libContent).toContain('target: None');
+      
+      // Check for target reaching tolerance
+      expect(libContent).toContain('tolerance = 5.0');
     });
 
     test('should have rendering capabilities', () => {
