@@ -73,8 +73,13 @@ func (ms *MovementSystem) Update(entity Movable) {
 func (ms *MovementSystem) hasReachedTarget(entity Movable) bool {
 	x, y := entity.GetPosition()
 	targetX, targetY := entity.GetTarget()
-	dx := targetX - x
-	dy := targetY - y
+	return HasReachedTargetPure([2]float64{x, y}, [2]float64{targetX, targetY})
+}
+
+// HasReachedTargetPure is a pure function version for testing
+func HasReachedTargetPure(currentPos, targetPos [2]float64) bool {
+	dx := targetPos[0] - currentPos[0]
+	dy := targetPos[1] - currentPos[1]
 	distance := math.Sqrt(dx*dx + dy*dy)
 	
 	// Use a very small threshold to determine if we've reached the target
@@ -116,28 +121,32 @@ func (ms *MovementSystem) advanceToNextPathStep(entity Movable) bool {
 func (ms *MovementSystem) executeMovement(entity Movable) {
 	x, y := entity.GetPosition()
 	targetX, targetY := entity.GetTarget()
-	dx := targetX - x
-	dy := targetY - y
+	moveSpeed := ms.getTerrainAdjustedSpeed(entity)
+	
+	newX, newY := ExecuteMovementPure([2]float64{x, y}, [2]float64{targetX, targetY}, moveSpeed)
+	entity.SetPosition(newX, newY)
+}
+
+// ExecuteMovementPure is a pure function version for testing
+func ExecuteMovementPure(currentPos, targetPos [2]float64, moveSpeed float64) (float64, float64) {
+	dx := targetPos[0] - currentPos[0]
+	dy := targetPos[1] - currentPos[1]
 	distance := math.Sqrt(dx*dx + dy*dy)
 	
 	// If we're very close to target, snap exactly to it
 	if distance < 0.1 {
-		entity.SetPosition(targetX, targetY)
-		return
+		return targetPos[0], targetPos[1]
 	}
-	
-	// Calculate terrain-adjusted movement speed
-	moveSpeed := ms.getTerrainAdjustedSpeed(entity)
 	
 	// Move towards target, but never overshoot
 	if distance <= moveSpeed {
 		// If we would overshoot, move exactly to target
-		entity.SetPosition(targetX, targetY)
+		return targetPos[0], targetPos[1]
 	} else {
 		// Normal movement step
-		newX := x + (dx / distance) * moveSpeed
-		newY := y + (dy / distance) * moveSpeed
-		entity.SetPosition(newX, newY)
+		newX := currentPos[0] + (dx / distance) * moveSpeed
+		newY := currentPos[1] + (dy / distance) * moveSpeed
+		return newX, newY
 	}
 }
 
@@ -219,6 +228,24 @@ func (ms *MovementSystem) ClampToMapBounds(entity Movable) {
 	targetX, targetY := entity.GetTarget()
 	width, height := entity.GetSize()
 	
+	newX, newY, newTargetX, newTargetY := ClampToMapBoundsPure(
+		[2]float64{x, y}, 
+		[2]float64{targetX, targetY}, 
+		[2]float64{width, height}, 
+		[2]float64{mapWorldWidth, mapWorldHeight},
+	)
+	
+	entity.SetPosition(newX, newY)
+	entity.SetTarget(newTargetX, newTargetY)
+}
+
+// ClampToMapBoundsPure is a pure function version for testing
+func ClampToMapBoundsPure(pos, target, size, mapSize [2]float64) (float64, float64, float64, float64) {
+	x, y := pos[0], pos[1]
+	targetX, targetY := target[0], target[1]
+	width, height := size[0], size[1]
+	mapWorldWidth, mapWorldHeight := mapSize[0], mapSize[1]
+	
 	// Clamp current position
 	if x < 0 {
 		x = 0
@@ -247,8 +274,7 @@ func (ms *MovementSystem) ClampToMapBounds(entity Movable) {
 		targetY = mapWorldHeight - height
 	}
 	
-	entity.SetPosition(x, y)
-	entity.SetTarget(targetX, targetY)
+	return x, y, targetX, targetY
 }
 
 // MovableEntity provides a base implementation of the Movable interface
