@@ -8,7 +8,6 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
 - **Todo List** – Interactive todo list built with Jekyll, featuring add/complete/delete functionality.
 - **Snake Game** – Classic snake game implemented with HTML5 canvas.
 - **Go WASM Game** – Tiny Go WebAssembly demo that moves a square with the arrow keys.
-- **ECS Game** – Entity-Component-System architecture demo using Ebiten game engine and Go WebAssembly.
 - **Bevy Game Foundation** – Minimal Bevy-style game engine foundation built with Rust and WebAssembly.
 
 ## Running locally
@@ -39,14 +38,7 @@ View the site live at https://tleety.github.io/Chatgpt-Test-webpage/.
    ```
    After building, serve the folder with any static web server and open `index.html` in a browser.
 
-5. **Build the ECS Game demo**
-   ```
-   cd ecs-game
-   GOOS=js GOARCH=wasm go build -o game.wasm
-   ```
-   After building, serve the folder with any static web server and open `index.html` in a browser.
-
-6. **Build the Bevy Game Foundation**
+5. **Build the Bevy Game Foundation**
    ```
    cd bevy-game
    ./build.sh
@@ -78,10 +70,9 @@ npm test -- --coverage
 - **Deployment Info**: Tests for CI/CD integration and deployment information generation
 - **Version Update**: Tests for version management and update system
 - **WASM Game Refactoring**: Tests for code organization and module structure
-- **ECS Game**: Tests for Entity-Component-System architecture, Ebiten integration, and game logic
 - **Bevy Game Foundation**: Tests for Rust WebAssembly compilation, ECS architecture patterns, and Bevy integration foundation
 
-**Total: 302 tests across 11 test suites** (automatically synchronized with CI/CD pipeline)
+**Total: 280 tests across 10 test suites** (automatically synchronized with CI/CD pipeline)
 
 ### Test Visualizer
 
@@ -232,7 +223,6 @@ Our development workflow enforces quality through automated testing and deployme
 - Ensure all builds complete successfully
 - Verify Go WASM builds work: 
   - `cd go-wasm-game && GOOS=js GOARCH=wasm go build -o game.wasm`
-  - `cd ecs-game && GOOS=js GOARCH=wasm go build -o game.wasm`
 - Verify Rust WASM builds work:
   - `cd bevy-game && ./build.sh`
 - Test Jekyll builds locally: `cd jekyll-site && bundle exec jekyll serve`
