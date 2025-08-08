@@ -18,12 +18,11 @@ const (
 
 // Game represents the main game state
 type Game struct {
-	world             *ecs.World
-	inputSystem       *systems.InputSystem
-	movementSystem    *systems.MovementSystem
-	aiSystem          *systems.AISystem
-	clickToMoveSystem *systems.ClickToMoveSystem
-	lastUpdate        time.Time
+	world          *ecs.World
+	inputSystem    *systems.InputSystem
+	movementSystem *systems.MovementSystem
+	aiSystem       *systems.AISystem
+	lastUpdate     time.Time
 }
 
 // NewGame creates a new game instance
@@ -31,12 +30,11 @@ func NewGame() *Game {
 	world := ecs.NewWorld()
 	
 	game := &Game{
-		world:             world,
-		inputSystem:       systems.NewInputSystem(world),
-		movementSystem:    systems.NewMovementSystem(world),
-		aiSystem:          systems.NewAISystem(world),
-		clickToMoveSystem: systems.NewClickToMoveSystem(world),
-		lastUpdate:        time.Now(),
+		world:          world,
+		inputSystem:    systems.NewInputSystem(world),
+		movementSystem: systems.NewMovementSystem(world),
+		aiSystem:       systems.NewAISystem(world),
+		lastUpdate:     time.Now(),
 	}
 
 	game.initEntities()
@@ -60,7 +58,7 @@ func (g *Game) initEntities() {
 		ai.AddComponent(components.Position{X: x, Y: y})
 		ai.AddComponent(components.Velocity{X: 0, Y: 0})
 		ai.AddComponent(components.Sprite{ColorR: 255, ColorG: 100, ColorB: 100, Width: 15, Height: 15})
-		ai.AddComponent(components.AI{TargetX: x + 100, TargetY: y + 100, Speed: 50})
+		ai.AddComponent(components.AI{Speed: 50})
 	}
 
 	// Create ClickToMove entities (blue squares)
@@ -71,7 +69,7 @@ func (g *Game) initEntities() {
 		clickEntity.AddComponent(components.Position{X: x, Y: y})
 		clickEntity.AddComponent(components.Velocity{X: 0, Y: 0})
 		clickEntity.AddComponent(components.Sprite{ColorR: 100, ColorG: 100, ColorB: 255, Width: 18, Height: 18})
-		clickEntity.AddComponent(components.ClickToMove{Speed: 120, HasTarget: false})
+		clickEntity.AddComponent(components.ClickToMove{Speed: 120})
 	}
 }
 
@@ -85,7 +83,6 @@ func (g *Game) Update() error {
 	g.inputSystem.Update()
 	g.movementSystem.Update(dt)
 	g.aiSystem.Update(dt)
-	g.clickToMoveSystem.Update(dt)
 
 	return nil
 }

@@ -19,15 +19,18 @@ type Sprite struct {
 // Player marks an entity as controllable by player input
 type Player struct{}
 
-// AI marks an entity as computer-controlled
-type AI struct {
-	TargetX, TargetY float64
-	Speed            float64
+// Target represents a destination for an entity to move towards
+type Target struct {
+	X, Y                   float64
+	StopWhenTargetReached bool
 }
 
-// ClickToMove makes an entity move to where the user clicks
+// AI marks an entity as computer-controlled
+type AI struct {
+	Speed float64
+}
+
+// ClickToMove marks an entity as controllable by mouse clicks
 type ClickToMove struct {
-	TargetX, TargetY float64
-	Speed            float64
-	HasTarget        bool
+	Speed float64
 }

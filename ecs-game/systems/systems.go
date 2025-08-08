@@ -28,16 +28,13 @@ func (s *InputSystem) Update() {
 				return
 			}
 
-			clickComp, exists := e.GetComponent(components.ClickToMove{})
-			if !exists {
-				return
+			// Set target for click-to-move entities
+			target := components.Target{
+				X:                     float64(mx),
+				Y:                     float64(my),
+				StopWhenTargetReached: true,
 			}
-			
-			clickToMove := clickComp.(components.ClickToMove)
-			clickToMove.TargetX = float64(mx)
-			clickToMove.TargetY = float64(my)
-			clickToMove.HasTarget = true
-			e.AddComponent(clickToMove)
+			e.AddComponent(target)
 		})
 	}
 
@@ -114,6 +111,39 @@ func (s *MovementSystem) Update(dt float64) {
 		position := pos.(components.Position)
 		velocity := vel.(components.Velocity)
 
+		// Check if entity has a target and should move towards it
+		if targetComp, hasTarget := e.GetComponent(components.Target{}); hasTarget {
+			target := targetComp.(components.Target)
+			
+			// Calculate direction to target
+			dx := target.X - position.X
+			dy := target.Y - position.Y
+			dist := math.Sqrt(dx*dx + dy*dy)
+
+			// If close to target and should stop when reached, stop moving
+			if dist < 5 && target.StopWhenTargetReached {
+				velocity.X = 0
+				velocity.Y = 0
+				// Remove target component when reached
+				e.RemoveComponent(components.Target{})
+			} else if dist > 5 {
+				// Determine speed based on entity type
+				speed := 100.0 // default speed
+				
+				if clickComp, hasClick := e.GetComponent(components.ClickToMove{}); hasClick {
+					clickToMove := clickComp.(components.ClickToMove)
+					speed = clickToMove.Speed
+				} else if aiComp, hasAI := e.GetComponent(components.AI{}); hasAI {
+					ai := aiComp.(components.AI)
+					speed = ai.Speed
+				}
+				
+				// Move towards target
+				velocity.X = (dx / dist) * speed
+				velocity.Y = (dy / dist) * speed
+			}
+		}
+
 		// Update position based on velocity
 		position.X += velocity.X * dt
 		position.Y += velocity.Y * dt
@@ -133,6 +163,7 @@ func (s *MovementSystem) Update(dt float64) {
 		}
 
 		e.AddComponent(position)
+		e.AddComponent(velocity)
 	})
 }
 
@@ -151,87 +182,38 @@ func (s *AISystem) Update(dt float64) {
 			return
 		}
 
-		aiComp, _ := e.GetComponent(components.AI{})
 		posComp, _ := e.GetComponent(components.Position{})
-		velComp, exists := e.GetComponent(components.Velocity{})
-		if !exists {
-			return
-		}
-		
-		ai := aiComp.(components.AI)
 		pos := posComp.(components.Position)
-		vel := velComp.(components.Velocity)
 
-		// Calculate direction to target
-		dx := ai.TargetX - pos.X
-		dy := ai.TargetY - pos.Y
-		dist := math.Sqrt(dx*dx + dy*dy)
-
-		// If close to target, pick a new random target
-		if dist < 30 {
-			ai.TargetX = float64((int(pos.X) + 100 + (int(pos.X)*17)%300) % 760)
-			ai.TargetY = float64((int(pos.Y) + 100 + (int(pos.Y)*23)%200) % 560)
-			e.AddComponent(ai)
+		// Check if AI entity has a target
+		targetComp, hasTarget := e.GetComponent(components.Target{})
+		
+		if !hasTarget {
+			// No target, pick a new random target
+			target := components.Target{
+				X:                     float64((int(pos.X) + 100 + (int(pos.X)*17)%300) % 760),
+				Y:                     float64((int(pos.Y) + 100 + (int(pos.Y)*23)%200) % 560),
+				StopWhenTargetReached: false, // AI entities don't stop at targets, they pick new ones
+			}
+			e.AddComponent(target)
 		} else {
-			// Move towards target
-			vel.X = (dx / dist) * ai.Speed
-			vel.Y = (dy / dist) * ai.Speed
-			e.AddComponent(vel)
+			target := targetComp.(components.Target)
+			
+			// Calculate distance to current target
+			dx := target.X - pos.X
+			dy := target.Y - pos.Y
+			dist := math.Sqrt(dx*dx + dy*dy)
+
+			// If close to target, pick a new random target
+			if dist < 30 {
+				newTarget := components.Target{
+					X:                     float64((int(pos.X) + 100 + (int(pos.X)*17)%300) % 760),
+					Y:                     float64((int(pos.Y) + 100 + (int(pos.Y)*23)%200) % 560),
+					StopWhenTargetReached: false,
+				}
+				e.AddComponent(newTarget)
+			}
 		}
 	})
 }
 
-// ClickToMoveSystem handles entities that move to click positions
-type ClickToMoveSystem struct {
-	world *ecs.World
-}
-
-func NewClickToMoveSystem(world *ecs.World) *ClickToMoveSystem {
-	return &ClickToMoveSystem{world: world}
-}
-
-func (s *ClickToMoveSystem) Update(dt float64) {
-	s.world.ForEachEntity(func(e *ecs.Entity) {
-		if !e.HasComponent(components.ClickToMove{}) || !e.HasComponent(components.Position{}) {
-			return
-		}
-
-		clickComp, _ := e.GetComponent(components.ClickToMove{})
-		posComp, _ := e.GetComponent(components.Position{})
-		velComp, exists := e.GetComponent(components.Velocity{})
-		if !exists {
-			return
-		}
-		
-		clickToMove := clickComp.(components.ClickToMove)
-		pos := posComp.(components.Position)
-		vel := velComp.(components.Velocity)
-
-		// Only move if we have a target
-		if !clickToMove.HasTarget {
-			vel.X = 0
-			vel.Y = 0
-			e.AddComponent(vel)
-			return
-		}
-
-		// Calculate direction to target
-		dx := clickToMove.TargetX - pos.X
-		dy := clickToMove.TargetY - pos.Y
-		dist := math.Sqrt(dx*dx + dy*dy)
-
-		// If close to target, stop moving
-		if dist < 5 {
-			vel.X = 0
-			vel.Y = 0
-			clickToMove.HasTarget = false
-			e.AddComponent(clickToMove)
-			e.AddComponent(vel)
-		} else {
-			// Move towards target
-			vel.X = (dx / dist) * clickToMove.Speed
-			vel.Y = (dy / dist) * clickToMove.Speed
-			e.AddComponent(vel)
-		}
-	})
-}
